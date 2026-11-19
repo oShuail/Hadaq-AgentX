@@ -1,6 +1,6 @@
 # Basma: rain simulation, weather data, risk scoring, final PDF
 
-**Mission:** you own the physics and the numbers. When the agent says "zone R1C3 stays wet for 53 hours", that number comes from your model; when it says "risk is high", that comes from your ABC scoring. You also assemble and submit the Round 1 PDF.
+**Mission:** you own the physics and the numbers. When the agent says "zone R1C3 stays wet for 54 hours", that number comes from your model; when it says "risk is high", that comes from your ABC scoring. You also assemble and submit the Round 1 PDF.
 
 ## What you own
 
@@ -32,7 +32,7 @@ Each wall zone is a bucket of water. Every simulated hour:
 4. Zones dry with air dryness (vapour pressure deficit) and wind; the base dries at half speed.
 5. An erosion index adds up water hitting the surface x wind x wetness.
 
-Every parameter is in `WallParams` and marked ASSUMED. With the synthetic storm the base row stays above the critical level about 53 hours versus 5 to 6 for the upper rows, and `drainage_fixed` cuts the base to about 25 hours. That before-and-after is the demo's intervention story.
+Every parameter is in `WallParams` and marked ASSUMED. With the synthetic storm base zone R1C3 stays above the critical level about 54 hours versus about 6 for top zone R4C3, and `drainage_fixed` cuts R1C3 to about 29 hours. That before-and-after is the demo's intervention story.
 
 ## Tasks for Round 1, in order
 

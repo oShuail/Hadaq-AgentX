@@ -8,7 +8,7 @@
 | --- | --- |
 | `devices/esp32-node/` | PlatformIO firmware for the brick node |
 | `devices/sensor-sim/sensor_sim.py` | Simulated sensors on the same MQTT topics |
-| `apps/web/src/demo/ScenarioPanel.tsx` | Scenario buttons (desktop bar and phone page) |
+| `apps/web/src/demo/ScenarioPanel.tsx` | Scenario buttons (Activity tab and phone page) |
 | `docker-compose.yml` `mqtt` service (with Turky) | The broker |
 | `apps/ios/` (Round 2) | Capture app |
 
@@ -53,7 +53,7 @@ Film pouring a little water on the brick next to the laptop: the REAL moisture v
 
 ### 4. Scenario panel on a phone
 
-The panel is already in the bottom bar. For the phone version open `http://<laptop-LAN-IP>:5173/?panel=1` (Vite listens on the network). Polish ideas, in order of value:
+The buttons are in the web app's **Activity** tab. For the phone version open `http://<laptop-LAN-IP>:5173/?panel=1` (Vite listens on the network). Polish ideas, in order of value:
 
 ```tsx
 // apps/web/src/demo/ScenarioPanel.tsx: storm intensity before "Start storm"
@@ -66,7 +66,7 @@ Any new event type must be added to `contracts/` first (PR), then to the simulat
 
 ### 5. React Native and iOS (decision)
 
-- The **main app stays web** (React + CesiumJS). CesiumJS needs a browser, and judges watch a laptop screen or video. React Native would only show the map inside a WebView.
+- The **main app stays web** (React + three.js). The 3D twin needs a browser with WebGL, and judges watch a laptop screen or video. React Native would only show the map inside a WebView.
 - The **capture app** for inspectors is Round 2. If you prefer one language with the team, use Expo (React Native) with `expo-camera` to take guided photos and `POST /photos` them. For LiDAR scanning you need native Swift (ARKit / Object Capture), which Expo cannot do alone.
 - For Round 1, the phone panel page covers the "mobile" story.
 

@@ -1,6 +1,6 @@
 # Turky: API, database, MQTT, shared formats, map shell
 
-**Mission:** you own the hub. Every reading, photo, detection, simulation and event flows through your API, gets stored, gets an evidence ID, and is pushed live to the browser. You also own the shared formats and the app shell: the Cesium map, click-to-select and the side panel.
+**Mission:** you own the hub. Every reading, photo, detection, simulation and event flows through your API, gets stored, gets an evidence ID, and is pushed live to the browser. You also own the shared formats and the app shell: the 3D map, click-to-select and the side panel.
 
 ## What you own
 
@@ -46,12 +46,12 @@ make sensors   # terminal 2
 
 Open `/docs`, try `GET /buildings/B01/readings/latest`, then `POST /events` with `storm_started` and watch `moisture_anomaly` appear in `GET /buildings/B01/events`. Check `GET /health` shows `"mqtt": true`.
 
-### 3. Cesium map
+### 3. 3D map
 
-1. Create a free account at ion.cesium.com (Community plan, non-commercial), copy the default token.
-2. `apps/web/.env.local`: `VITE_CESIUM_ION_TOKEN=...`
-3. `make web`. You should see terrain, imagery and OSM buildings tinted mud color; Overview, At-Turaif and Focus building presets; click highlights a building and opens the panel.
-4. Style ideas (`SiteMap.tsx`): color by height (`"${cesium#estimatedHeight} > 10 ? color('#B08E6B') : color('#C9A27E')"`), warmer lighting, hide the default credits bar only where the ion terms allow (keep attribution visible somewhere).
+1. `make web`. No keys needed: the map is a three.js scene (`apps/web/src/twin3d/`) built from the baked open-data pack in `apps/web/public/site/`.
+2. You should see imagery-draped terrain, mud-style buildings in At-Turaif, palms, roads and our B01 model; the Explore panel has the views (Overview, At-Turaif, Focus building ...) and layer switches; hover shows a building card, click selects it and opens the Building twin tab.
+3. The bottom clock moves the real sun for any date and time; at night the lanterns and floodlights come on.
+4. Style ideas: colours and lighting live in `twin3d/buildings.ts` (palette, parapets, night glow) and `twin3d/Twin.ts` (`setTime`). To refresh the data, see `tools/site_data/README.md`.
 
 ### 4. Panel polish
 

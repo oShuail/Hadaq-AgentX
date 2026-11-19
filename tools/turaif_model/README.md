@@ -1,4 +1,6 @@
-# At-Turaif district model
+# At-Turaif district model (superseded)
+
+> Superseded by the three.js twin and its baked site pack: see [tools/site_data/README.md](../site_data/README.md). Kept for reference; the web app no longer reads `turaif.glb`.
 
 `build_district.py` turns the real OpenStreetMap building outlines of At-Turaif into one 3D model (`apps/web/public/models/turaif.glb`) plus a small sidecar (`turaif.json`) that the web app reads for names, heights and outlines.
 

@@ -1,6 +1,6 @@
 # 3D scan of the focus building
 
-The scan is **not** on the critical path. The app works today with the OSM building highlighted as the focus building; the scan replaces it when ready. Do the code setup first, scan when the light is right.
+The scan is **not** on the critical path. The app works today with our citadel model (`apps/web/public/models/b01_v3.glb`) as the focus building; a real scan replaces it when ready. Do the code setup first, scan when the light is right.
 
 ## When and how
 
@@ -18,10 +18,10 @@ The scan is **not** on the critical path. The app works today with the OSM build
 
 Then:
 1. Decimate to under 50 MB (Blender: Decimate modifier; or the app's export settings).
-2. Set the model's origin at the middle of the wall base, front facing +Y. Scale with the measuring stick.
-3. Save as `apps/web/public/models/b01.glb`, set `VITE_FOCUS_MODEL_URL=/models/b01.glb` in `apps/web/.env.local`.
-4. Check alignment with the wall zones; adjust heading in `SiteMap.tsx` if needed.
+2. Set the model's origin at the middle of the wall base: +Y up, +X straight out of the facade, +Z along the wall towards `base_line.start` (in Blender with "+Y Up" export: face the facade towards +X). Scale with the measuring stick.
+3. Save as `apps/web/public/models/b01.glb` with its outline in model metres as `b01.footprint.json` next to it (same format as `b01_v3.footprint.json`), set `VITE_FOCUS_MODEL_URL=/models/b01.glb` in `apps/web/.env.local`.
+4. Open the Focus building B01 view and check the wall zones sit on the facade; fix `base_line` / `azimuth_deg` in `contracts/building_b01.json` if not.
 
 ## Fallback
 
-No scan by 21 Nov: keep the highlighted OSM building, or model a simple massing in Blender (box + crenellations + mud texture). Say on the slide that the photogrammetry scan is next.
+No scan by 21 Nov: keep the citadel model (AI-generated, not a survey) and say on the slide that the photogrammetry scan is next. The detailed real scan we show today is the AL Turaif House embed (Sketchfab, by ATS), which opens when you click B01.

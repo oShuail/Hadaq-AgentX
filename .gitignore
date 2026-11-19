@@ -40,3 +40,5 @@ assets/camera/*/*/
 Thumbs.db
 .vscode/
 .idea/
+
+# Downloaded 3D models (large; the processed apps/web/public/models/b01.glb is made from these)

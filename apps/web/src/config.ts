@@ -6,6 +6,10 @@ export const WS_URL = `${API_URL.replace(/^http/, "ws")}/ws/live`;
 export const CESIUM_ION_TOKEN = env.VITE_CESIUM_ION_TOKEN || "";
 export const FOCUS_OSM_ID = env.VITE_FOCUS_OSM_ID ? Number(env.VITE_FOCUS_OSM_ID) : null;
 export const FOCUS_MODEL_URL = env.VITE_FOCUS_MODEL_URL || "";
+// Our own At-Turaif district model (tools/turaif_model). Set VITE_DISTRICT_URL= (empty) to use only the OSM boxes.
+export const DISTRICT_URL = env.VITE_DISTRICT_URL ?? "/models/turaif.glb";
+// Google Photorealistic 3D Tiles instead of OSM boxes and our district model: VITE_GOOGLE_3D=1
+export const GOOGLE_3D = env.VITE_GOOGLE_3D === "1" || env.VITE_GOOGLE_3D === "true";
 
 export const BUILDING_ID = "B01";
 export const SITE = { lon: 46.5725, lat: 24.7336 }; // At-Turaif

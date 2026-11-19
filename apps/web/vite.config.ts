@@ -22,5 +22,6 @@ export default defineConfig({
       ],
     }),
   ],
-  server: { port: 5173, host: true },
+  // fs.allow: the app imports contracts/building_b01.json from the repo root
+  server: { port: 5173, host: true, fs: { allow: ["../.."] } },
 });

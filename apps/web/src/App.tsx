@@ -3,10 +3,14 @@ import { useEffect, useMemo, useState } from "react";
 import ScenarioPanel from "./demo/ScenarioPanel";
 import SiteMap, { type FlyTarget, type Selection } from "./map/SiteMap";
 import BuildingPanel from "./panel/BuildingPanel";
+import ScanViewer from "./panel/ScanViewer";
 import TimeBar from "./TimeBar";
 import { BUILDING_ID } from "./config";
 import { useLive } from "./state/useLive";
 import { attentionItems } from "./twin/attention";
+import { FOCUS_SCAN } from "./twin/scans";
+import type { WallSpec } from "./types/contracts";
+import registry from "../../../contracts/building_b01.json";
 import { RISK_COLORS, moistureColor } from "./twin/colors";
 
 export default function App() {
@@ -18,8 +22,16 @@ export default function App() {
   const [playing, setPlaying] = useState(false);
   const [layer, setLayer] = useState<"moisture" | "risk">("moisture");
   const [coordinate, setCoordinate] = useState<string | null>(null);
+  const [scanOpen, setScanOpen] = useState(false);
 
-  const wall = live.building?.walls[0] ?? null;
+  // Clicking the focus building opens its real 3D scan straight away; Esc or Close goes back to the map.
+  const select = (s: Selection) => {
+    setSelection(s);
+    if (s.kind === "building" && s.focusLocked) setScanOpen(true);
+  };
+
+  // The wall comes from the API; with the API off ("Offline") the map still uses the registry file directly.
+  const wall: WallSpec | null = live.building?.walls[0] ?? (registry.walls[0] as WallSpec);
   const sim = live.simulation;
   const safeHour = sim ? Math.min(hour, sim.times.length - 1) : 0;
 
@@ -73,10 +85,10 @@ export default function App() {
           selectedZone={selection?.kind === "zone" ? selection.zoneId : null}
           fly={fly}
           clockIso={sim?.times[safeHour] ?? null}
-          onSelect={setSelection}
+          onSelect={select}
           onCoordinate={(lon, lat, h) => setCoordinate(`lon ${lon.toFixed(6)}, lat ${lat.toFixed(6)}, height ${h.toFixed(1)} m`)}
         />
-        <BuildingPanel selection={selection} live={live} hour={safeHour} onOpenTwin={openTwin} />
+        <BuildingPanel selection={selection} live={live} hour={safeHour} onOpenTwin={openTwin} onOpenScan={() => setScanOpen(true)} />
       </main>
 
       <TimeBar
@@ -91,6 +103,8 @@ export default function App() {
       >
         <ScenarioPanel buildingId={BUILDING_ID} compact />
       </TimeBar>
+
+      {scanOpen && <ScanViewer scan={FOCUS_SCAN} onClose={() => setScanOpen(false)} />}
 
       {coordinate && (
         <div className="toast" onClick={() => setCoordinate(null)} title="Click to close">

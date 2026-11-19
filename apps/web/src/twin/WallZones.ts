@@ -1,7 +1,6 @@
 // Wall zone overlay (owner: Omar): 4 x 8 colored panels drawn just in front of the facade.
 import {
   Cartesian3,
-  Cartographic,
   Color,
   ColorMaterialProperty,
   ConstantProperty,
@@ -9,20 +8,16 @@ import {
   HorizontalOrigin,
   VerticalOrigin,
   Viewer,
-  sampleTerrainMostDetailed,
 } from "cesium";
 
 import type { WallSpec } from "../types/contracts";
-import { offsetLonLat } from "./geo";
+import { offsetLonLat, wallGround } from "./geo";
 
 const OFFSET_M = 0.4; // panels float 40 cm in front of the wall so they do not flicker against it
 
 export async function createWallZones(viewer: Viewer, wall: WallSpec, buildingId: string): Promise<Map<string, Entity>> {
   const { start, end } = wall.base_line;
-  const ground = await sampleTerrainMostDetailed(viewer.terrainProvider, [
-    Cartographic.fromDegrees(start.lon, start.lat),
-    Cartographic.fromDegrees(end.lon, end.lat),
-  ]).then((points) => Math.min(...points.map((p) => p.height ?? 0)));
+  const ground = await wallGround(viewer, wall);
 
   const [sLon, sLat] = offsetLonLat(start.lon, start.lat, OFFSET_M, wall.azimuth_deg);
   const [eLon, eLat] = offsetLonLat(end.lon, end.lat, OFFSET_M, wall.azimuth_deg);
@@ -103,10 +98,7 @@ export interface AttentionLayer {
 
 export async function createAttentionLayer(viewer: Viewer, wall: WallSpec, buildingId: string): Promise<AttentionLayer> {
   const { start, end } = wall.base_line;
-  const ground = await sampleTerrainMostDetailed(viewer.terrainProvider, [
-    Cartographic.fromDegrees(start.lon, start.lat),
-    Cartographic.fromDegrees(end.lon, end.lat),
-  ]).then((points) => Math.min(...points.map((p) => p.height ?? 0)));
+  const ground = await wallGround(viewer, wall);
 
   const [sLon, sLat] = offsetLonLat(start.lon, start.lat, BOX_OFFSET_M, wall.azimuth_deg);
   const [eLon, eLat] = offsetLonLat(end.lon, end.lat, BOX_OFFSET_M, wall.azimuth_deg);

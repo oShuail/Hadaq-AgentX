@@ -3,33 +3,42 @@
   "site": {
     "id": "diriyah",
     "name": "Diriyah, At-Turaif",
-    "center": { "lon": 46.5725, "lat": 24.7336 },
+    "center": {
+      "lon": 46.5725,
+      "lat": 24.7336
+    },
     "heavy_rain_days_per_year": 2.0,
     "demo_storm_date": null,
     "notes": "heavy_rain_days_per_year is ASSUMED until Basma computes it (hadaq_sim.cli rain-frequency). demo_storm_date = the real past storm we replay (hadaq_sim.cli storms)."
   },
   "building": {
     "id": "B01",
-    "name": "Focus building (to be chosen)",
+    "name": "Focus building (palace model at the At-Turaif placeholder spot)",
     "osm_element_id": null,
-    "lon": null,
-    "lat": null,
-    "notes": "Pick the building, click it in the web app, copy its OSM elementId here and into apps/web/.env (VITE_FOCUS_OSM_ID)."
+    "lon": 46.572637,
+    "lat": 24.7335,
+    "notes": "3D model: 'Diriyah Palace Founding Day' by mohamed (@almehmadi_sa), CC BY 4.0, an AI-generated (Meshy) model, not a survey. Placed at a placeholder spot in At-Turaif; real scan of this building is Round 2. Scale ASSUMED 31.25 m per model unit (25 m plus 25% for presence). osm_element_id stays null: the focus building is found by location (40 m around the wall)."
   },
   "walls": [
     {
       "id": "W01",
       "building_id": "B01",
-      "name": "Main facade",
+      "name": "Main facade, street-level front wall",
       "azimuth_deg": 270,
-      "height_m": 6.0,
+      "height_m": 7.2,
       "rows": 4,
       "cols": 8,
       "base_line": {
-        "start": { "lon": 46.57235, "lat": 24.73340 },
-        "end": { "lon": 46.57235, "lat": 24.73360 }
+        "start": {
+          "lon": 46.57235,
+          "lat": 24.7336474
+        },
+        "end": {
+          "lon": 46.57235,
+          "lat": 24.7333526
+        }
       },
-      "notes": "azimuth_deg = direction the facade faces (outward), degrees from north. base_line is a PLACEHOLDER: Omar replaces it with the real wall base (Shift+click in the web app prints coordinates). start = LEFT end of the wall base when you stand in front of the facade (that is column C1)."
+      "notes": "Front wall of the palace model (about 33 m wide, 7.2 m tall at the assumed scale). azimuth_deg = direction the facade faces. start = LEFT end when you face the facade (column C1). Move the building by changing base_line and azimuth_deg together; the model follows the middle of base_line."
     }
   ],
   "zones": {
@@ -40,19 +49,72 @@
     "value_weight_overrides": {}
   },
   "sensors": [
-    { "id": "B01-S01", "kind": "moisture", "unit": "%rel", "zone_id": "B01-W01-R1C3", "device_id": "esp32-01", "source": "real", "label": "Base moisture (brick node)" },
-    { "id": "B01-S02", "kind": "temperature", "unit": "degC", "zone_id": "B01-W01-R1C3", "device_id": "esp32-01", "source": "real", "label": "Temperature (brick node)" },
-    { "id": "B01-S03", "kind": "humidity", "unit": "%RH", "zone_id": "B01-W01-R1C3", "device_id": "esp32-01", "source": "real", "label": "Humidity (brick node)" },
-    { "id": "B01-S04", "kind": "moisture", "unit": "%rel", "zone_id": "B01-W01-R1C6", "device_id": "sim-01", "source": "sim", "label": "Base moisture, east side" },
-    { "id": "B01-S05", "kind": "moisture", "unit": "%rel", "zone_id": "B01-W01-R3C4", "device_id": "sim-01", "source": "sim", "label": "Upper wall moisture" },
-    { "id": "B01-S06", "kind": "crack_width", "unit": "mm", "zone_id": "B01-W01-R2C5", "device_id": "sim-01", "source": "sim", "label": "Crack gauge" }
+    {
+      "id": "B01-S01",
+      "kind": "moisture",
+      "unit": "%rel",
+      "zone_id": "B01-W01-R1C3",
+      "device_id": "esp32-01",
+      "source": "real",
+      "label": "Base moisture (brick node)"
+    },
+    {
+      "id": "B01-S02",
+      "kind": "temperature",
+      "unit": "degC",
+      "zone_id": "B01-W01-R1C3",
+      "device_id": "esp32-01",
+      "source": "real",
+      "label": "Temperature (brick node)"
+    },
+    {
+      "id": "B01-S03",
+      "kind": "humidity",
+      "unit": "%RH",
+      "zone_id": "B01-W01-R1C3",
+      "device_id": "esp32-01",
+      "source": "real",
+      "label": "Humidity (brick node)"
+    },
+    {
+      "id": "B01-S04",
+      "kind": "moisture",
+      "unit": "%rel",
+      "zone_id": "B01-W01-R1C6",
+      "device_id": "sim-01",
+      "source": "sim",
+      "label": "Base moisture, east side"
+    },
+    {
+      "id": "B01-S05",
+      "kind": "moisture",
+      "unit": "%rel",
+      "zone_id": "B01-W01-R3C4",
+      "device_id": "sim-01",
+      "source": "sim",
+      "label": "Upper wall moisture"
+    },
+    {
+      "id": "B01-S06",
+      "kind": "crack_width",
+      "unit": "mm",
+      "zone_id": "B01-W01-R2C5",
+      "device_id": "sim-01",
+      "source": "sim",
+      "label": "Crack gauge"
+    }
   ],
   "cameras": [
     {
       "id": "B01-CAM01",
       "wall_id": "W01",
       "source": "sim",
-      "wall_bbox_px": [0, 0, 4000, 3000],
+      "wall_bbox_px": [
+        0,
+        0,
+        4000,
+        3000
+      ],
       "notes": "wall_bbox_px = [x0, y0, x1, y1] of the wall face inside the photo. Abdurhmn sets it from the real photo series."
     }
   ]

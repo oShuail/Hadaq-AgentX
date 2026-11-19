@@ -14,6 +14,7 @@ interface Props {
   live: LiveState;
   hour: number;
   onOpenTwin: () => void;
+  onOpenScan: () => void;
 }
 
 const LEVEL_ORDER: RiskLevel[] = ["low", "medium", "high", "very_high"];
@@ -27,7 +28,7 @@ function Badge({ level }: { level: RiskLevel | null }) {
   );
 }
 
-export default function BuildingPanel({ selection, live, hour, onOpenTwin }: Props) {
+export default function BuildingPanel({ selection, live, hour, onOpenTwin, onOpenScan }: Props) {
   const [tab, setTab] = useState<"live" | "agent">("live");
 
   if (!selection) {
@@ -105,6 +106,7 @@ export default function BuildingPanel({ selection, live, hour, onOpenTwin }: Pro
           <CameraFeed photo={live.photo} detections={live.detections} />
           <EventFeed events={live.events} />
           <button className="primary" onClick={onOpenTwin}>Open building twin</button>
+          <button onClick={onOpenScan}>Real 3D scan</button>
         </>
       ) : (
         <AgentChat buildingId={live.building?.building.id ?? "B01"} />

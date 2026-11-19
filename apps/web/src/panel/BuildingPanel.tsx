@@ -34,8 +34,8 @@ export default function BuildingPanel({ selection, live, hour, onOpenTwin, onOpe
   if (!selection) {
     return (
       <aside className="panel">
-        <h2>Hadaq</h2>
-        <p className="muted">Click a building on the map. The focus building (B01) has a live twin.</p>
+        <h2>No building selected</h2>
+        <p className="muted">Click a building on the map. The focus building B01 has a live twin: sensors, camera and the agent.</p>
         <EventFeed events={live.events} />
       </aside>
     );
@@ -45,7 +45,7 @@ export default function BuildingPanel({ selection, live, hour, onOpenTwin, onOpe
     return (
       <aside className="panel">
         <h2>{selection.name}</h2>
-        <p className="muted">No twin yet. OSM id {selection.osmId ?? "unknown"}.</p>
+        <p className="muted">No twin yet.{selection.osmId !== null ? ` OSM id ${selection.osmId}.` : ""}</p>
         <p className="muted small">Scaling to more buildings = scan it, register it, attach sensors. Same pipeline.</p>
       </aside>
     );
@@ -66,9 +66,6 @@ export default function BuildingPanel({ selection, live, hour, onOpenTwin, onOpe
         <h2>{zoneId ?? `Building ${live.building?.building.id ?? "B01"}`}</h2>
         <Badge level={zoneId ? zoneRisk?.level ?? null : worst} />
       </div>
-      {selection.kind === "building" && selection.osmId !== null && (
-        <p className="muted small">OSM id {selection.osmId}{" "}(set VITE_FOCUS_OSM_ID to this to lock the focus building)</p>
-      )}
       {zoneId && (
         <div className="zone-facts">
           <div>Simulated moisture now: {zoneMoisture !== undefined ? zoneMoisture.toFixed(2) : "run a simulation"}</div>

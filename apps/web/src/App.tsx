@@ -6,6 +6,7 @@ import BuildingPanel from "./panel/BuildingPanel";
 import TimeBar from "./TimeBar";
 import { BUILDING_ID } from "./config";
 import { useLive } from "./state/useLive";
+import { attentionItems } from "./twin/attention";
 import { RISK_COLORS, moistureColor } from "./twin/colors";
 
 export default function App() {
@@ -36,6 +37,9 @@ export default function App() {
     return Object.fromEntries(Object.entries(sim.zones).map(([zone, values]) => [zone, moistureColor(values[safeHour] ?? 0)]));
   }, [layer, live.risk, sim, safeHour]);
 
+  // Boxes around the wall areas that need attention: high risk, new or grown defects, moisture alerts.
+  const attention = useMemo(() => attentionItems(live.risk, live.detections, live.events), [live.risk, live.detections, live.events]);
+
   const go = (target: FlyTarget) => setFly((f) => ({ target, nonce: f.nonce + 1 }));
   const openTwin = () => {
     setZonesVisible(true);
@@ -64,6 +68,7 @@ export default function App() {
           buildingId={BUILDING_ID}
           wall={wall}
           zoneColors={zoneColors}
+          attention={attention}
           zonesVisible={zonesVisible}
           selectedZone={selection?.kind === "zone" ? selection.zoneId : null}
           fly={fly}

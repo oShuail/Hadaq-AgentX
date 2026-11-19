@@ -23,7 +23,7 @@ import { useEffect, useRef } from "react";
 import { CESIUM_ION_TOKEN, FOCUS_MODEL_URL, FOCUS_OSM_ID, SITE } from "../config";
 import { offsetLonLat } from "../twin/geo";
 import { placeFocusModel } from "../twin/focusModel";
-import { colorZones, createWallZones, highlightZone, showZones } from "../twin/WallZones";
+import { type AttentionItem, type AttentionLayer, colorZones, createAttentionLayer, createWallZones, highlightZone, showZones } from "../twin/WallZones";
 import type { WallSpec } from "../types/contracts";
 
 export type Selection =
@@ -36,6 +36,7 @@ interface Props {
   buildingId: string;
   wall: WallSpec | null;
   zoneColors: Record<string, string>;
+  attention: AttentionItem[];
   zonesVisible: boolean;
   selectedZone: string | null;
   fly: { target: FlyTarget; nonce: number };
@@ -72,6 +73,7 @@ export default function SiteMap(props: Props) {
   const container = useRef<HTMLDivElement>(null);
   const viewerRef = useRef<Viewer | null>(null);
   const zonesRef = useRef<Map<string, Entity>>(new Map());
+  const attentionRef = useRef<AttentionLayer | null>(null);
   const propsRef = useRef(props);
   propsRef.current = props;
 
@@ -168,6 +170,11 @@ export default function SiteMap(props: Props) {
       colorZones(zones, propsRef.current.zoneColors);
       showZones(zones, propsRef.current.zonesVisible);
     });
+    createAttentionLayer(viewer, props.wall, props.buildingId).then((layer) => {
+      if (cancelled) return;
+      attentionRef.current = layer;
+      layer.update(propsRef.current.attention);
+    });
     if (FOCUS_MODEL_URL) {
       const { start, end } = props.wall.base_line;
       placeFocusModel(viewer, FOCUS_MODEL_URL, (start.lon + end.lon) / 2, (start.lat + end.lat) / 2, props.wall.azimuth_deg).catch((err) =>
@@ -178,10 +185,13 @@ export default function SiteMap(props: Props) {
       cancelled = true;
       zonesRef.current.forEach((e) => viewer.entities.remove(e));
       zonesRef.current = new Map();
+      attentionRef.current?.destroy();
+      attentionRef.current = null;
     };
   }, [props.wall, props.buildingId]);
 
   useEffect(() => colorZones(zonesRef.current, props.zoneColors), [props.zoneColors]);
+  useEffect(() => attentionRef.current?.update(props.attention), [props.attention]);
   useEffect(() => showZones(zonesRef.current, props.zonesVisible), [props.zonesVisible]);
   useEffect(() => highlightZone(zonesRef.current, props.selectedZone), [props.selectedZone]);
 

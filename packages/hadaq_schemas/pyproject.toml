@@ -1,0 +1,13 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "hadaq-schemas"
+version = "0.1.0"
+description = "Shared data contracts for Hadaq (Pydantic models, IDs, MQTT topics)"
+requires-python = ">=3.11"
+dependencies = ["pydantic>=2.6"]
+
+[tool.setuptools.packages.find]
+include = ["hadaq_schemas*"]

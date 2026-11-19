@@ -1,0 +1,14 @@
+{
+  "building_id": "B01",
+  "wall_id": "W01",
+  "scenario": "storm_replay",
+  "weather": {
+    "mode": "synthetic_storm",
+    "hours": 72,
+    "peak_rain_mm_h": 12,
+    "wind_ms": 8,
+    "wind_dir_deg": 270,
+    "rain_multiplier": 1.0
+  },
+  "requested_by": "agent"
+}

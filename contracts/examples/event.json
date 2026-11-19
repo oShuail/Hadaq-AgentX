@@ -1,0 +1,9 @@
+{
+  "event_id": "evt_3f9a1c2b7d4e",
+  "type": "storm_started",
+  "building_id": "B01",
+  "ts": "2026-11-20T10:16:00+03:00",
+  "source": "scenario_panel",
+  "payload": { "peak_rain_mm_h": 12, "wind_ms": 8, "wind_dir_deg": 270 },
+  "provenance": "synthetic"
+}

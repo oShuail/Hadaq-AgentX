@@ -1,0 +1,17 @@
+{
+  "detection_id": "det_77aa01bb2c3d",
+  "photo_id": "ph_91ab0c33de12",
+  "camera_id": "B01-CAM01",
+  "building_id": "B01",
+  "zone_id": "B01-W01-R2C5",
+  "cls": "crack",
+  "confidence": 0.81,
+  "bbox_xyxy": [1820.0, 1210.0, 1905.0, 1530.0],
+  "polygon": null,
+  "length_px": 320.0,
+  "area_px": 2150.0,
+  "model": "rfdetr-seg-medium",
+  "provenance": "model_output",
+  "change": "grown",
+  "growth_pct": 18.5
+}

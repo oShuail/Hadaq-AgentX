@@ -1,0 +1,59 @@
+{
+  "schema_version": "1.0",
+  "site": {
+    "id": "diriyah",
+    "name": "Diriyah, At-Turaif",
+    "center": { "lon": 46.5725, "lat": 24.7336 },
+    "heavy_rain_days_per_year": 2.0,
+    "demo_storm_date": null,
+    "notes": "heavy_rain_days_per_year is ASSUMED until Basma computes it (hadaq_sim.cli rain-frequency). demo_storm_date = the real past storm we replay (hadaq_sim.cli storms)."
+  },
+  "building": {
+    "id": "B01",
+    "name": "Focus building (to be chosen)",
+    "osm_element_id": null,
+    "lon": null,
+    "lat": null,
+    "notes": "Pick the building, click it in the web app, copy its OSM elementId here and into apps/web/.env (VITE_FOCUS_OSM_ID)."
+  },
+  "walls": [
+    {
+      "id": "W01",
+      "building_id": "B01",
+      "name": "Main facade",
+      "azimuth_deg": 270,
+      "height_m": 6.0,
+      "rows": 4,
+      "cols": 8,
+      "base_line": {
+        "start": { "lon": 46.57235, "lat": 24.73340 },
+        "end": { "lon": 46.57235, "lat": 24.73360 }
+      },
+      "notes": "azimuth_deg = direction the facade faces (outward), degrees from north. base_line is a PLACEHOLDER: Omar replaces it with the real wall base (Shift+click in the web app prints coordinates). start = LEFT end of the wall base when you stand in front of the facade (that is column C1)."
+    }
+  ],
+  "zones": {
+    "id_format": "{building_id}-{wall_id}-R{row}C{col}",
+    "rows_counted_from": "bottom (R1 = wall base)",
+    "cols_counted_from": "left, standing in front of the facade",
+    "value_weight_default": 3,
+    "value_weight_overrides": {}
+  },
+  "sensors": [
+    { "id": "B01-S01", "kind": "moisture", "unit": "%rel", "zone_id": "B01-W01-R1C3", "device_id": "esp32-01", "source": "real", "label": "Base moisture (brick node)" },
+    { "id": "B01-S02", "kind": "temperature", "unit": "degC", "zone_id": "B01-W01-R1C3", "device_id": "esp32-01", "source": "real", "label": "Temperature (brick node)" },
+    { "id": "B01-S03", "kind": "humidity", "unit": "%RH", "zone_id": "B01-W01-R1C3", "device_id": "esp32-01", "source": "real", "label": "Humidity (brick node)" },
+    { "id": "B01-S04", "kind": "moisture", "unit": "%rel", "zone_id": "B01-W01-R1C6", "device_id": "sim-01", "source": "sim", "label": "Base moisture, east side" },
+    { "id": "B01-S05", "kind": "moisture", "unit": "%rel", "zone_id": "B01-W01-R3C4", "device_id": "sim-01", "source": "sim", "label": "Upper wall moisture" },
+    { "id": "B01-S06", "kind": "crack_width", "unit": "mm", "zone_id": "B01-W01-R2C5", "device_id": "sim-01", "source": "sim", "label": "Crack gauge" }
+  ],
+  "cameras": [
+    {
+      "id": "B01-CAM01",
+      "wall_id": "W01",
+      "source": "sim",
+      "wall_bbox_px": [0, 0, 4000, 3000],
+      "notes": "wall_bbox_px = [x0, y0, x1, y1] of the wall face inside the photo. Abdurhmn sets it from the real photo series."
+    }
+  ]
+}

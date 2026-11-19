@@ -1,0 +1,42 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+.pytest_cache/
+
+# Node
+node_modules/
+dist/
+
+# Local config and secrets
+.env
+.env.local
+apps/web/.env.local
+devices/esp32-node/include/secrets.h
+
+# Runtime data (SQLite, uploaded photos, weather cache)
+data/
+*.db
+
+# PlatformIO
+devices/esp32-node/.pio/
+
+# Vision: datasets, weights, photo series (share on Drive, not git)
+services/vision/data/
+runs/
+*.pth
+*.pt
+assets/camera/*/*/
+!assets/camera/README.md
+
+# 3D models above 50 MB go on Drive; small GLB files in apps/web/public/models are fine
+*.las
+*.laz
+*.e57
+
+# OS / editors
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/

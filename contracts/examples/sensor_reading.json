@@ -1,0 +1,12 @@
+{
+  "sensor_id": "B01-S01",
+  "building_id": "B01",
+  "zone_id": "B01-W01-R1C3",
+  "kind": "moisture",
+  "value": 41.2,
+  "unit": "%rel",
+  "ts": "2026-11-20T10:15:00+03:00",
+  "provenance": "measured",
+  "device_id": "esp32-01",
+  "quality": "ok"
+}

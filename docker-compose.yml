@@ -1,0 +1,26 @@
+# Local infrastructure. Round 1 only needs the MQTT broker:   docker compose up -d mqtt
+# Postgres + TimescaleDB is optional:                         docker compose --profile postgres up -d
+services:
+  mqtt:
+    image: eclipse-mosquitto:2
+    ports:
+      - "1883:1883"   # devices, simulators, API
+      - "9001:9001"   # websockets (browser MQTT clients, MQTT Explorer)
+    volumes:
+      - ./infra/mosquitto/mosquitto.conf:/mosquitto/config/mosquitto.conf:ro
+    restart: unless-stopped
+
+  db:
+    image: timescale/timescaledb:latest-pg16
+    profiles: ["postgres"]
+    environment:
+      POSTGRES_USER: hadaq
+      POSTGRES_PASSWORD: hadaq
+      POSTGRES_DB: hadaq
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+
+volumes:
+  pgdata: {}

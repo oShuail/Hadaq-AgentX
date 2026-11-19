@@ -1,0 +1,18 @@
+#!/bin/sh
+# Team rule: commits are credited to Hadaq team members only. No AI tool as co-author or "generated with" line.
+# Enabled by: make hooks   (git config core.hooksPath .githooks)
+# Commit authors are also checked in CI (no-ai-contributors job).
+MSG_FILE="$1"
+AI='claude|anthropic|copilot|chatgpt|openai|gemini|cursor|codeium|windsurf|devin|codex'
+
+if grep -iE "^(co-authored-by|signed-off-by):.*($AI)" "$MSG_FILE" >/dev/null 2>&1; then
+  echo "Commit blocked: remove the AI Co-Authored-By / Signed-off-by line from the message." >&2
+  exit 1
+fi
+
+if grep -iE "(generated|created|written) (with|by) .*($AI)" "$MSG_FILE" >/dev/null 2>&1; then
+  echo "Commit blocked: remove the 'Generated with <AI tool>' line from the message." >&2
+  exit 1
+fi
+
+exit 0

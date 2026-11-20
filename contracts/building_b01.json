@@ -7,9 +7,9 @@
       "lon": 46.5725,
       "lat": 24.7336
     },
-    "heavy_rain_days_per_year": 2.0,
-    "demo_storm_date": null,
-    "notes": "heavy_rain_days_per_year is ASSUMED until Basma computes it (hadaq_sim.cli rain-frequency). demo_storm_date = the real past storm we replay (hadaq_sim.cli storms)."
+    "heavy_rain_days_per_year": 1.91,
+    "demo_storm_date": "2023-01-05",
+    "notes": "heavy_rain_days_per_year = 1.91, computed from Open-Meteo ERA5 (2015-2025) with an ASSUMED 10 mm/day threshold (hadaq_sim.cli rain-frequency). demo_storm_date = the real past storm we replay, picked from the wettest days (hadaq_sim.cli storms). ERA5 is a reanalysis, not a station measurement."
   },
   "building": {
     "id": "B01",

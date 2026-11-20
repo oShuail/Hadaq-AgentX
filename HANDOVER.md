@@ -74,6 +74,8 @@ After pulling the 3D map change, run `cd apps/web && npm install` once (Cesium w
 - The Qasr Salwa view also selects B01, so the Building twin tab shows it straight away. Offline, the sensor list comes from the registry file ("no data").
 - Removed `panel/ExplorePanel.tsx` (its parts moved to `hud/`).
 - Checked: `npm run build` passes; screenshots at 1440 x 900, 1366 x 768 and 390 x 844.
+- `omar/turaif-district` was force-pushed once to fix the committer name on the last two commits (no code change). If you pulled it before, run `git pull --rebase` once.
+- Handed out two tasks: the agents (real LLM, autonomy, more tools) and the sensor and camera data feeds for B01 (sensor simulator tuning, camera photo series, vision worker). See `docs/team/omar.md`, `saleh.md` and `abdurhmn.md`.
 
 ### 2026-11-20 (Omar, with an AI assistant)
 

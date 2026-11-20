@@ -49,8 +49,8 @@ Open `/docs`, try `GET /buildings/B01/readings/latest`, then `POST /events` with
 ### 3. 3D map
 
 1. `make web`. No keys needed: the map is a three.js scene (`apps/web/src/twin3d/`) built from the baked open-data pack in `apps/web/public/site/`.
-2. You should see imagery-draped terrain, mud-style buildings in At-Turaif, palms, roads and our B01 model; the Explore panel has the views (Overview, At-Turaif, Focus building ...) and layer switches; hover shows a building card, click selects it and opens the Building twin tab.
-3. The bottom clock moves the real sun for any date and time; at night the lanterns and floodlights come on.
+2. You should see imagery-draped terrain, mud-style buildings in At-Turaif, palms, roads and our B01 model; the views (Overview, At-Turaif, Qasr Salwa ...) sit bottom left and the Layers button top right; hover shows a building card, click selects it and opens the Building twin tab.
+3. The sun-arc clock at the bottom moves the real sun for any date and time (drag the sun); at night the floodlights come on.
 4. Style ideas: colours and lighting live in `twin3d/buildings.ts` (palette, parapets, night glow) and `twin3d/Twin.ts` (`setTime`). To refresh the data, see `tools/site_data/README.md`.
 
 ### 4. Panel polish

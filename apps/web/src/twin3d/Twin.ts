@@ -18,7 +18,7 @@ import { FOCUS_TWIN, TWINS } from "../twins";
 import type { WallSpec } from "../types/contracts";
 import { type BuildingLayer, buildBuildings } from "./buildings";
 import type { AttentionItem } from "../twin/WallZones";
-import { type FocusPlacement, WallOverlay, focusPlacement, loadFocusModel } from "./focus";
+import { type Callout, type FocusPlacement, WallOverlay, focusPlacement, loadFocusModel } from "./focus";
 import { type InfraLayer, buildInfra } from "./infra";
 import { LabelLayer } from "./labels";
 import { turaifInfill } from "./infill";
@@ -163,6 +163,7 @@ export class Twin {
   private raycaster = new THREE.Raycaster();
   private hovered = -2;
   private wantZones = false;
+  private pendingCallouts: Callout[] = [];
   private layerState: Partial<Record<LayerId, boolean>> = {};
   private resizeObserver: ResizeObserver;
   private paused = false;
@@ -339,7 +340,8 @@ export class Twin {
     // Focus building, zones and its label.
     if (wall && this.place) {
       this.overlay = new WallOverlay(wall, buildingId, this.place);
-      this.scene.add(this.overlay.group, this.overlay.attentionGroup);
+      this.scene.add(this.overlay.group, this.overlay.attentionGroup, this.overlay.callouts);
+      this.overlay.setCallouts(this.pendingCallouts, (zoneId) => this.cb.onSelect({ kind: "zone", zoneId }));
       this.overlay.setVisible(this.wantZones);
       this.overlay.setResolution(this.container.clientWidth, this.container.clientHeight);
       this.labels.add({
@@ -600,6 +602,11 @@ export class Twin {
   setAttention(items: AttentionItem[]) {
     this.overlay?.setAttention(items);
   }
+  /** Reading cards pinned to the wall zones; shown only when the zones are on and the camera is close. */
+  setCallouts(items: Callout[]) {
+    this.pendingCallouts = items;
+    this.overlay?.setCallouts(items, (zoneId) => this.cb.onSelect({ kind: "zone", zoneId }));
+  }
 
   private selectFocus() {
     if (this.buildings) this.buildings.uniforms.uSelected.value = -1;
@@ -808,6 +815,10 @@ export class Twin {
     if (t - this.lastLabels > 0.15) {
       this.lastLabels = t;
       this.labels.update(this.camera, this.container.clientWidth, this.container.clientHeight);
+    }
+    if (this.overlay && this.place) {
+      const near = this.camera.position.distanceTo(new THREE.Vector3(this.place.midX, this.place.ground, -this.place.midY)) < 420;
+      this.overlay.callouts.visible = near && this.overlay.group.visible && this.layerState.twin !== false && !this.fly;
     }
     this.composer.render();
     this.labelsRenderer.render(this.scene, this.camera);

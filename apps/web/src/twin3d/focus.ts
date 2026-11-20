@@ -79,9 +79,21 @@ export async function loadFocusModel(url: string, place: FocusPlacement): Promis
 const ZONE_OFFSET = 0.4; // panels float 40 cm in front of the wall
 const BOX_OFFSET = 0.6;
 
+/** A reading card pinned to a wall zone with a leader line (the HUD's "in-world" callouts). */
+export interface Callout {
+  zoneId: string;
+  title: string; // e.g. "R1C3"
+  rows: { label: string; value: string; unit: string; tag: "REAL" | "SIM" | ""; fault?: boolean }[];
+  tone?: "alert" | "";
+  side: "left" | "right";
+  dx: number; // screen px from the zone to the card
+  dy: number;
+}
+
 export class WallOverlay {
   group = new THREE.Group();
   zones = new Map<string, THREE.Mesh>();
+  callouts = new THREE.Group();
   private attention = new THREE.Group();
   private outlines = new Map<string, THREE.LineSegments>();
   private lineMaterials: LineMaterial[] = [];
@@ -149,6 +161,66 @@ export class WallOverlay {
 
   setResolution(w: number, h: number) {
     for (const m of this.lineMaterials) m.resolution.set(w, h);
+  }
+
+  /** Replace the pinned reading cards. Each sits on its zone's centre, its card offset by (dx, dy) screen px. */
+  setCallouts(items: Callout[], onPick: (zoneId: string) => void) {
+    for (const child of [...this.callouts.children]) {
+      this.callouts.remove(child);
+      if (child instanceof CSS2DObject) child.element.remove();
+    }
+    const [ox, oy] = this.place.out;
+    for (const item of items) {
+      const zone = this.zones.get(item.zoneId);
+      if (!zone) continue;
+      const root = document.createElement("div");
+      root.className = `twin-callout ${item.side}${item.tone ? ` ${item.tone}` : ""}`;
+      const dot = document.createElement("i");
+      dot.className = "dot";
+      const leader = document.createElement("span");
+      leader.className = "leader";
+      const sx = item.side === "left" ? -item.dx : item.dx;
+      leader.style.width = `${Math.hypot(sx, item.dy)}px`;
+      leader.style.transform = `rotate(${Math.atan2(item.dy, sx)}rad)`;
+      const card = document.createElement("button");
+      card.type = "button";
+      card.className = "card";
+      card.style.top = `${item.dy}px`;
+      card.style[item.side === "left" ? "right" : "left"] = `${item.dx}px`;
+      card.title = "Open this zone";
+      const head = document.createElement("span");
+      head.className = "head";
+      head.textContent = item.title;
+      card.appendChild(head);
+      for (const r of item.rows) {
+        const row = document.createElement("span");
+        row.className = `row${r.fault ? " fault" : ""}`;
+        const label = document.createElement("span");
+        label.className = "label";
+        label.textContent = r.label;
+        const value = document.createElement("b");
+        value.textContent = r.value;
+        const unit = document.createElement("small");
+        unit.textContent = r.unit;
+        row.append(label, value, unit);
+        if (r.tag) {
+          const tag = document.createElement("em");
+          tag.className = `tag ${r.tag === "REAL" ? "real" : ""}`;
+          tag.textContent = r.tag;
+          row.appendChild(tag);
+        }
+        card.appendChild(row);
+      }
+      card.addEventListener("click", (e) => {
+        e.stopPropagation();
+        onPick(item.zoneId);
+      });
+      root.append(leader, dot, card);
+      const obj = new CSS2DObject(root);
+      obj.position.set(zone.position.x + ox * 0.2, zone.position.y, zone.position.z - oy * 0.2);
+      obj.center.set(0, 0);
+      this.callouts.add(obj);
+    }
   }
 
   setAttention(items: AttentionItem[]) {

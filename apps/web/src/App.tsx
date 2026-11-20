@@ -1,7 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 
 import BuildingPage from "./building/BuildingPage";
-import Brand from "./Brand";
 
 import AgentChat from "./chat/AgentChat";
 import { goldenHourToday } from "./clock";
@@ -9,26 +8,21 @@ import ScenarioPanel from "./demo/ScenarioPanel";
 import SiteMap, { type FlyTarget, type Selection } from "./map/SiteMap";
 import BuildingPanel from "./panel/BuildingPanel";
 import EventFeed from "./panel/EventFeed";
-import ExplorePanel from "./panel/ExplorePanel";
+import BrandTower, { type Tab } from "./hud/BrandTower";
+import { sensorCallouts } from "./hud/callouts";
+import LayersMenu from "./hud/LayersMenu";
+import ViewsTower from "./hud/ViewsTower";
 import TimeBar from "./TimeBar";
 import { BUILDING_ID } from "./config";
 import { useLive } from "./state/useLive";
 import { attentionItems } from "./twin/attention";
-import { twinById } from "./twins";
+import { FOCUS_TWIN, twinById } from "./twins";
 import { LAYERS, type LayerId, type TwinStats } from "./twin3d/Twin";
-import type { WallSpec } from "./types/contracts";
+import type { SensorSpec, WallSpec } from "./types/contracts";
 import registry from "../../../contracts/building_b01.json";
 import { RISK_COLORS, moistureColor } from "./twin/colors";
 
-type Tab = "explore" | "twin" | "agent" | "activity";
-
-const TABS: { id: Tab; label: string }[] = [
-  { id: "explore", label: "Explore" },
-  { id: "twin", label: "Building twin" },
-  { id: "agent", label: "Agent" },
-  { id: "activity", label: "Activity" },
-];
-
+// Explore = the map alone (views bottom left, layers top right); the other tabs open the panel bottom right.
 const TAB_TITLES: Record<Tab, string> = { explore: "Explore", twin: "Building twin", agent: "Ask the agent", activity: "Activity" };
 
 // Two pages: the map (/) and a building's own twin page (/building/<id>). Plain history API, no router library.
@@ -50,7 +44,6 @@ export default function App() {
   const [coordinate, setCoordinate] = useState<string | null>(null);
   const [route, setRoute] = useState<Route>(() => parseRoute(window.location.pathname));
   const [tab, setTab] = useState<Tab>("explore");
-  const [panelOpen, setPanelOpen] = useState(true);
   const [time, setTime] = useState<Date>(goldenHourToday);
   const [playing, setPlaying] = useState(false);
   const [speed, setSpeed] = useState(10);
@@ -75,7 +68,6 @@ export default function App() {
     setSelection(s);
     if (!s) return;
     setTab("twin");
-    setPanelOpen(true);
     if (s.kind === "building" && s.twinId) openPage(s.twinId);
   };
 
@@ -107,10 +99,20 @@ export default function App() {
   // Boxes around the wall areas that need attention: high risk, new or grown defects, moisture alerts.
   const attention = useMemo(() => attentionItems(live.risk, live.detections, live.events), [live.risk, live.detections, live.events]);
 
+  // Sensor readings pinned to the facade next to their zones.
+  const callouts = useMemo(
+    () => sensorCallouts(live.building?.sensors ?? (registry.sensors as SensorSpec[]), live.readings, attention, wall?.cols ?? 8, tab !== "explore"),
+    [live.building, live.readings, attention, wall?.cols, tab],
+  );
+
   const go = (target: FlyTarget) => {
     setView(target);
     setFly((f) => ({ target, nonce: f.nonce + 1 }));
-    if (target === "focus") setZonesVisible(true);
+    if (target === "focus") {
+      setZonesVisible(true);
+      // The Qasr Salwa view also makes it the building the twin panel talks about.
+      setSelection((s) => s ?? { kind: "building", osmId: null, name: FOCUS_TWIN.name, isFocus: true, focusLocked: true, twinId: FOCUS_TWIN.id });
+    }
   };
 
   const pageTwin = route.page === "building" ? twinById(route.id) : null;
@@ -131,13 +133,14 @@ export default function App() {
         />
       )}
       {/* The map stays loaded (and paused) while a building page is open, so going back is instant. */}
-      <div className="app" style={pageTwin ? { display: "none" } : undefined}>
+      <div className={`app hud${tab !== "explore" ? " with-panel" : ""}`} style={pageTwin ? { display: "none" } : undefined}>
         <SiteMap
           paused={!!pageTwin}
           buildingId={BUILDING_ID}
           wall={wall}
           zoneColors={zoneColors}
           attention={attention}
+          callouts={callouts}
           zonesVisible={zonesVisible}
           selectedZone={selection?.kind === "zone" ? selection.zoneId : null}
           fly={fly}
@@ -148,51 +151,28 @@ export default function App() {
           onCoordinate={(lon, lat, h) => setCoordinate(`lon ${lon.toFixed(6)}, lat ${lat.toFixed(6)}, height ${h.toFixed(1)} m`)}
         />
 
-        <header className="topbar">
-          <Brand title="At-Turaif digital twin" subtitle="Mud-wall monitoring model from open data and live sensors" />
-          <nav className="toptabs">
-            {TABS.map((t) => (
-              <button
-                key={t.id}
-                className={tab === t.id && panelOpen ? "on" : ""}
-                onClick={() => {
-                  setTab(t.id);
-                  setPanelOpen(true);
-                }}
-              >
-                {t.label}
-              </button>
-            ))}
-          </nav>
-          <div className="top-right">
-            <span className={`conn ${live.connected ? "up" : ""}`}>
-              <i />
-              {live.connected ? "Live" : "Offline"}
-            </span>
-            <span className="badge sim">Simulated data</span>
-            <button className="icon" onClick={() => setPanelOpen((o) => !o)} aria-label={panelOpen ? "Hide panel" : "Show panel"}>
-              <svg viewBox="0 0 20 20" width="18" height="18" aria-hidden="true">
-                <path d="M3 5h14M3 10h14M3 15h14" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
-              </svg>
-            </button>
-          </div>
-        </header>
+        <BrandTower tab={tab} onTab={(t) => setTab((cur) => (cur === t && t !== "explore" ? "explore" : t))} />
 
-        {panelOpen && (
-          <aside className="float-panel">
-            <div className="float-head">
+        <LayersMenu
+          connected={live.connected}
+          layers={layers}
+          setLayer={(id, on) => setLayers((l) => ({ ...l, [id]: on }))}
+          stats={stats}
+        />
+
+        <ViewsTower view={view} onView={go} stats={stats} />
+
+        {tab !== "explore" && (
+          <aside className="tower tower-panel" aria-label={TAB_TITLES[tab]}>
+            <div className="tower-panel-head">
               <h2>{TAB_TITLES[tab]}</h2>
+              <button className="x" aria-label="Close the panel" onClick={() => setTab("explore")}>
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
+                  <path d="M6 6l12 12M18 6L6 18" />
+                </svg>
+              </button>
             </div>
-            <div className="float-body">
-              {tab === "explore" && (
-                <ExplorePanel
-                  view={view}
-                  onView={go}
-                  layers={layers}
-                  setLayer={(id, on) => setLayers((l) => ({ ...l, [id]: on }))}
-                  stats={stats}
-                />
-              )}
+            <div className="tower-panel-body">
               {tab === "twin" && (
                 <BuildingPanel selection={selection} live={live} hour={safeHour} onFlyToFocus={() => go("focus")} onOpenPage={openPage} />
               )}

@@ -10,7 +10,7 @@ Read this first when you start a session (human or AI). Update it before you end
 
 | Area | State | Owner |
 | --- | --- | --- |
-| Web app (`apps/web`) | Working. Budots-style 3D twin of Diriyah in three.js, Explore / Building twin / Agent / Activity tabs, day clock with real sun. Clicking a twin building opens its own page at `/building/<id>` (not a popup) | Omar (twin), Turky (shell) |
+| Web app (`apps/web`) | Working. Budots-style 3D twin of Diriyah in three.js with the **Courtyard HUD** (design 3): the map is full screen and four corner towers sit over it (brand and tabs top left, status and the Layers menu top right, views and About bottom left, the panel bottom right), a sun-arc clock bottom centre, and sensor readings pinned to the B01 facade. Clicking a twin building opens its own page at `/building/<id>` (not a popup) | Omar (twin), Turky (shell) |
 | Building pages (`src/building/`, list in `src/twins.ts`) | **B01 Qasr Salwa (قصر سلوى)**: our model with the wall zone grid, wall condition, sensors, camera, activity, agent. **B02 AL Turaif House**: opened from "palace of Nasr" on the map, shows the Sketchfab scan with placeholders (no registry, sensors or camera yet) | Omar |
 | 3D map data (`apps/web/public/site/`) | Baked and committed (about 9 MB): OSM + Microsoft footprints, Esri imagery, AWS terrain, 76k palms. No keys needed | Omar |
 | Focus building model | B01 is named Qasr Salwa (قصر سلوى). Model `apps/web/public/models/b01_v3.glb` (decimated Meshy citadel from `assets/turaif/`), placed by `contracts/building_b01.json` `base_line` and `azimuth_deg` | Omar |
@@ -37,7 +37,9 @@ After pulling the 3D map change, run `cd apps/web && npm install` once (Cesium w
 | `apps/web/src/twin3d/focus.ts` | B01 model placement, wall zone grid, attention boxes |
 | `apps/web/src/twin3d/{terrain,palms,infra,lights,labels,walkers,sun,siteData}.ts` | Terrain, palms, roads and water, glow lights, place names, visitors, sun position, data loading |
 | `apps/web/src/bake/bake.ts` + `apps/web/bake.html` | Re-bakes the site data (dev server only), see `tools/site_data/README.md` |
-| `apps/web/src/App.tsx`, `TimeBar.tsx`, `panel/ExplorePanel.tsx` | Layout, clock bar, Explore panel |
+| `apps/web/src/App.tsx` | Map screen layout and state (tabs, selection, simulation hour) |
+| `apps/web/src/hud/` | The HUD towers: `BrandTower` (brand + tabs), `LayersMenu` (status + Layers button and menu), `ViewsTower` (views, About and sources, attribution), `callouts.ts` (which sensor cards get pinned to which zone) |
+| `apps/web/src/TimeBar.tsx` | Sun-arc clock (drag the sun, play, date, speed, Now) and the simulation pill above it |
 
 ## Known issues and honesty notes
 
@@ -55,14 +57,23 @@ After pulling the 3D map change, run `cd apps/web && npm install` once (Cesium w
 
 - **Everyone:** pull `omar/turaif-district` (or `main` once merged), `npm install` in `apps/web`, open the app and check your part still shows up in the new tabs.
 - **Omar:** merge `omar/turaif-district` into `main`; fill the building pages (wall condition details, camera per wall, per-building agent context); register B02 in `contracts/` when it gets sensors; real LLM answers with evidence chips; check the wall zones line up with the B01 facade in the Focus building view; full demo run twice (`docs/demo-script.md`).
-- **Turky:** app shell is now `App.tsx` + `twin3d/`; panel polish in the Building twin tab (one screen at 1080p, no scrolling for key info).
+- **Turky:** app shell is now `App.tsx` + `hud/` + `twin3d/`; panel polish in the Building twin tab (it now lives in the bottom-right tower: one screen at 1080p, no scrolling for key info).
 - **Saleh:** scenario buttons moved from the bottom bar to the **Activity** tab; the phone page `?panel=1` is unchanged.
-- **Basma:** no web changes needed; Moisture and Risk toggles now sit in the simulation row under the clock.
-- **Abdurhmn:** demo video shots changed (tabs and views), see the updated `docs/demo-script.md`.
+- **Basma:** no web changes needed; Moisture and Risk toggles now sit in the simulation pill above the sun clock.
+- **Abdurhmn:** demo video shots changed again (HUD layout, views bottom left, readings pinned on the facade in the Qasr Salwa view), see `docs/demo-script.md`.
 
 ---
 
 ## Session log
+
+### 2026-11-20, later (Omar, with an AI assistant)
+
+- Picked UI direction 3 (Courtyard HUD) from five mockups, with the Layers menu from direction 2. Brief and mockups: the "Hadaq UI redesign brief" doc and the "Hadaq UI: five Diriyah directions" canvas on claude.ai.
+- Built it: top tabs and the floating panel are gone. Explore = map only; Building twin, Agent and Activity open the bottom-right panel (click the tab again or X to close). Layers is a button top right that opens a menu (click outside or Escape closes it). Views moved bottom left with "About and sources" (model facts, honesty notes, sources). The clock is a sun arc you can drag.
+- Sensor readings are pinned to their wall zones with leader lines when the camera is close to Qasr Salwa and the wall zones are on (`setCallouts` in `twin3d/Twin.ts`, built in `twin3d/focus.ts`). Click a card to open that zone. With the panel open they all move to the left so the panel does not hide them.
+- The Qasr Salwa view also selects B01, so the Building twin tab shows it straight away. Offline, the sensor list comes from the registry file ("no data").
+- Removed `panel/ExplorePanel.tsx` (its parts moved to `hud/`).
+- Checked: `npm run build` passes; screenshots at 1440 x 900, 1366 x 768 and 390 x 844.
 
 ### 2026-11-20 (Omar, with an AI assistant)
 

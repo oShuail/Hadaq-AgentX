@@ -3,6 +3,7 @@ import { useEffect, useRef, useState } from "react";
 
 import { FOCUS_MODEL_URL } from "../config";
 import { type LayerId, Twin, type TwinSelection, type TwinStats, type ViewId } from "../twin3d/Twin";
+import type { Callout } from "../twin3d/focus";
 import type { AttentionItem } from "../twin/WallZones";
 import type { WallSpec } from "../types/contracts";
 
@@ -14,6 +15,7 @@ interface Props {
   wall: WallSpec | null;
   zoneColors: Record<string, string>;
   attention: AttentionItem[];
+  callouts: Callout[];
   zonesVisible: boolean;
   selectedZone: string | null;
   fly: { target: FlyTarget; nonce: number };
@@ -70,6 +72,7 @@ export default function SiteMap(props: Props) {
   }, [props.layers, props.zonesVisible, ready]);
   useEffect(() => twinRef.current?.setZoneColors(props.zoneColors), [props.zoneColors, ready]);
   useEffect(() => twinRef.current?.setAttention(props.attention), [props.attention, ready]);
+  useEffect(() => twinRef.current?.setCallouts(props.callouts), [props.callouts, ready]);
   useEffect(() => twinRef.current?.setSelectedZone(props.selectedZone), [props.selectedZone, ready]);
   useEffect(() => {
     if (props.fly.nonce > 0) twinRef.current?.flyTo(props.fly.target);

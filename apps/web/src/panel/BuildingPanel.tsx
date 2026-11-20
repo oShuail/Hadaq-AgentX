@@ -6,7 +6,8 @@ import type { Selection } from "../map/SiteMap";
 import type { LiveState } from "../state/useLive";
 import { RISK_COLORS } from "../twin/colors";
 import { FOCUS_TWIN, twinById, twinTitle } from "../twins";
-import type { RiskLevel } from "../types/contracts";
+import type { RiskLevel, SensorSpec } from "../types/contracts";
+import registry from "../../../../contracts/building_b01.json";
 import CameraFeed from "./CameraFeed";
 import EventFeed from "./EventFeed";
 
@@ -65,7 +66,8 @@ export default function BuildingPanel({ selection, live, hour, onFlyToFocus, onO
     (acc, r) => (acc === null || LEVEL_ORDER.indexOf(r.level) > LEVEL_ORDER.indexOf(acc) ? r.level : acc),
     null,
   );
-  const sensors = live.building?.sensors ?? [];
+  // With the API off ("Offline") the sensor list still comes from the registry file, each "no data".
+  const sensors = live.building?.sensors ?? (registry.sensors as SensorSpec[]);
   const zoneId = selection.kind === "zone" ? selection.zoneId : null;
   const zoneRisk = zoneId ? live.risk.find((r) => r.zone_id === zoneId) : undefined;
   const zoneMoisture = zoneId && live.simulation ? live.simulation.zones[zoneId]?.[hour] : undefined;

@@ -19,7 +19,7 @@ Open the **Activity** tab and press **Reset demo**. Fill the weather cache once 
 | Time | Screen | Voice-over (short) |
 | --- | --- | --- |
 | 0:00 | Explore: **Overview**, then **At-Turaif** (the camera flies) | "At-Turaif is one of the largest mud-brick districts in the world. Rain is its biggest short-term threat." |
-| 0:15 | **Focus building B01** view, click the building: the real AL Turaif House scan opens; close it, the **Building twin** tab is open | "Hadaq is a digital eye on each building: live sensors, a camera, and AI agents." |
+| 0:15 | **Qasr Salwa** view, click the building: its own page opens with the model, wall condition grid, sensors and camera | "Hadaq is a digital eye on each building: live sensors, a camera, and AI agents." |
 | 0:25 | Sensor list: one REAL, others SIM. Cut to the water-pour clip | "This sensor is real, inside a mud brick we made. The others are simulated and labeled." |
 | 0:40 | **Activity** tab: press **Start storm** (or the phone panel, in shot if possible) | "We replay a real past storm in Riyadh." |
 | 0:50 | Activity: moisture anomaly, agent investigating; wall zones start animating | "No one typed anything. The agent noticed rising moisture and decided to run a simulation." |

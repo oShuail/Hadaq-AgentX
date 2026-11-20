@@ -10,10 +10,11 @@ Read this first when you start a session (human or AI). Update it before you end
 
 | Area | State | Owner |
 | --- | --- | --- |
-| Web app (`apps/web`) | Working. Budots-style 3D twin of Diriyah in three.js, focus building B01 with wall zones and attention boxes, Explore / Building twin / Agent / Activity tabs, day clock with real sun | Omar (twin), Turky (shell) |
+| Web app (`apps/web`) | Working. Budots-style 3D twin of Diriyah in three.js, Explore / Building twin / Agent / Activity tabs, day clock with real sun. Clicking a twin building opens its own page at `/building/<id>` (not a popup) | Omar (twin), Turky (shell) |
+| Building pages (`src/building/`, list in `src/twins.ts`) | **B01 Qasr Salwa (قصر سلوى)**: our model with the wall zone grid, wall condition, sensors, camera, activity, agent. **B02 AL Turaif House**: opened from "palace of Nasr" on the map, shows the Sketchfab scan with placeholders (no registry, sensors or camera yet) | Omar |
 | 3D map data (`apps/web/public/site/`) | Baked and committed (about 9 MB): OSM + Microsoft footprints, Esri imagery, AWS terrain, 76k palms. No keys needed | Omar |
-| Focus building model | `apps/web/public/models/b01_v3.glb` (decimated Meshy citadel from `assets/turaif/`), placed by `contracts/building_b01.json` `base_line` and `azimuth_deg` | Omar |
-| Real scan | AL Turaif House (Sketchfab embed, by ATS) opens when you click B01. Our own photogrammetry scan is not done | Omar |
+| Focus building model | B01 is named Qasr Salwa (قصر سلوى). Model `apps/web/public/models/b01_v3.glb` (decimated Meshy citadel from `assets/turaif/`), placed by `contracts/building_b01.json` `base_line` and `azimuth_deg` | Omar |
+| Real scan | AL Turaif House (Sketchfab embed, by ATS) is the 3D view of the B02 page. Our own photogrammetry scan is not done | Omar |
 | API, simulation, agents, vision, devices | Scaffolded and tested (see each team guide in `docs/team/`). Not changed in the last session | Turky, Basma, Omar, Abdurhmn, Saleh |
 
 ### Run it
@@ -40,6 +41,9 @@ After pulling the 3D map change, run `cd apps/web && npm install` once (Cesium w
 
 ## Known issues and honesty notes
 
+- Map layers switched off for now (built but hidden, kept in code): car parks and cars, lanterns, street lights, visitors, helipads. Turn one back on by removing it from `DISABLED_LAYERS` in `apps/web/src/twin3d/Twin.ts`.
+- B01 is called Qasr Salwa but stands at a placeholder spot west of the real Salwa Palace; the real palace is not a separate outline in our OSM data. Say "placeholder location" if asked, or move it with `base_line`.
+- B02 ("AL Turaif House", the OSM "palace of Nasr") has no registry in `contracts/`, so its page has placeholders and the agent does not answer for it.
 - Building heights are estimates unless OSM has them. The ruins filling At-Turaif are illustrative, not surveyed. Visitors and cars are simulated. Say this on the slide.
 - B01 is an AI-generated model at a placeholder spot, not a survey of a real building.
 - Esri imagery is fine for a non-commercial demo with the attribution kept (Explore, About).
@@ -50,7 +54,7 @@ After pulling the 3D map change, run `cd apps/web && npm install` once (Cesium w
 ## Next steps
 
 - **Everyone:** pull `omar/turaif-district` (or `main` once merged), `npm install` in `apps/web`, open the app and check your part still shows up in the new tabs.
-- **Omar:** merge `omar/turaif-district` into `main`; real LLM answers with evidence chips; check the wall zones line up with the B01 facade in the Focus building view; full demo run twice (`docs/demo-script.md`).
+- **Omar:** merge `omar/turaif-district` into `main`; fill the building pages (wall condition details, camera per wall, per-building agent context); register B02 in `contracts/` when it gets sensors; real LLM answers with evidence chips; check the wall zones line up with the B01 facade in the Focus building view; full demo run twice (`docs/demo-script.md`).
 - **Turky:** app shell is now `App.tsx` + `twin3d/`; panel polish in the Building twin tab (one screen at 1080p, no scrolling for key info).
 - **Saleh:** scenario buttons moved from the bottom bar to the **Activity** tab; the phone page `?panel=1` is unchanged.
 - **Basma:** no web changes needed; Moisture and Risk toggles now sit in the simulation row under the clock.
@@ -59,6 +63,16 @@ After pulling the 3D map change, run `cd apps/web && npm install` once (Cesium w
 ---
 
 ## Session log
+
+### 2026-11-20 (Omar, with an AI assistant)
+
+- Switched off five map layers (car parks and cars, lanterns, street lights, visitors, helipads): hidden from the Explore panel and the scene, code kept (`DISABLED_LAYERS` in `twin3d/Twin.ts`).
+- Renamed B01 to Qasr Salwa (قصر سلوى) on the map, the panels and `contracts/building_b01.json` (`building.name` only; id stays B01).
+- Added full building pages at `/building/<id>` (`src/building/BuildingPage.tsx`, `ModelViewer.tsx`, list in `src/twins.ts`): 3D view, wall condition grid with Moisture / Risk, attention list, sensors, cameras, activity, agent. The map stays loaded and paused behind them; browser back works.
+- Clicking Qasr Salwa opens its page with our model. Clicking "palace of Nasr" opens the AL Turaif House page with the Sketchfab scan. The scan popup is no longer used (`ScanViewer.tsx` kept).
+- Removed the ornament from the floating panel header.
+- Toned down the daytime look: bloom only at golden hour and night, exposure and fill light drop as the sun climbs (`setTime` in `twin3d/Twin.ts`), so noon no longer washes out white.
+- Checked: `npm run build` passes; both pages and the back button checked in the browser.
 
 ### 2026-11-19 to 2026-11-20 (Omar, with an AI assistant)
 

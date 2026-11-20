@@ -19,6 +19,7 @@ interface Props {
   fly: { target: FlyTarget; nonce: number };
   time: Date;
   layers: Record<LayerId, boolean>;
+  paused?: boolean; // a building page covers the map: stop drawing
   onSelect: (selection: Selection | null) => void;
   onCoordinate: (lon: number, lat: number, height: number) => void;
   onStats: (stats: TwinStats) => void;
@@ -60,6 +61,7 @@ export default function SiteMap(props: Props) {
   }, []);
 
   useEffect(() => twinRef.current?.setTime(props.time), [props.time]);
+  useEffect(() => twinRef.current?.setPaused(!!props.paused), [props.paused]);
   useEffect(() => {
     const t = twinRef.current;
     if (!t) return;

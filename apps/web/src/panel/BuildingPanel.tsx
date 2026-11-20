@@ -5,6 +5,7 @@ import AgentChat from "../chat/AgentChat";
 import type { Selection } from "../map/SiteMap";
 import type { LiveState } from "../state/useLive";
 import { RISK_COLORS } from "../twin/colors";
+import { FOCUS_TWIN, twinById, twinTitle } from "../twins";
 import type { RiskLevel } from "../types/contracts";
 import CameraFeed from "./CameraFeed";
 import EventFeed from "./EventFeed";
@@ -13,8 +14,8 @@ interface Props {
   selection: Selection | null;
   live: LiveState;
   hour: number;
-  onOpenTwin: () => void;
-  onOpenScan: () => void;
+  onFlyToFocus: () => void;
+  onOpenPage: (twinId: string) => void;
 }
 
 const LEVEL_ORDER: RiskLevel[] = ["low", "medium", "high", "very_high"];
@@ -28,20 +29,29 @@ function Badge({ level }: { level: RiskLevel | null }) {
   );
 }
 
-export default function BuildingPanel({ selection, live, hour, onOpenTwin, onOpenScan }: Props) {
+export default function BuildingPanel({ selection, live, hour, onFlyToFocus, onOpenPage }: Props) {
   const [tab, setTab] = useState<"live" | "agent">("live");
 
   if (!selection) {
     return (
       <aside className="panel">
         <h2>No building selected</h2>
-        <p className="muted">Click a building on the map. The focus building B01 has a live twin: sensors, camera and the agent.</p>
+        <p className="muted">Click a building on the map. {twinTitle(FOCUS_TWIN)} has a live twin: sensors, camera and the agent.</p>
         <EventFeed events={live.events} />
       </aside>
     );
   }
 
   if (selection.kind === "building" && !selection.isFocus) {
+    const twin = twinById(selection.twinId);
+    if (twin)
+      return (
+        <aside className="panel">
+          <h2>{twinTitle(twin)}</h2>
+          <p className="muted">{twin.note}</p>
+          <button className="primary" onClick={() => onOpenPage(twin.id)}>Open building page</button>
+        </aside>
+      );
     return (
       <aside className="panel">
         <h2>{selection.name}</h2>
@@ -63,7 +73,7 @@ export default function BuildingPanel({ selection, live, hour, onOpenTwin, onOpe
   return (
     <aside className="panel">
       <div className="panel-head">
-        <h2>{zoneId ?? `Building ${live.building?.building.id ?? "B01"}`}</h2>
+        <h2>{zoneId ?? twinTitle(FOCUS_TWIN)}</h2>
         <Badge level={zoneId ? zoneRisk?.level ?? null : worst} />
       </div>
       {zoneId && (
@@ -102,8 +112,8 @@ export default function BuildingPanel({ selection, live, hour, onOpenTwin, onOpe
           </ul>
           <CameraFeed photo={live.photo} detections={live.detections} />
           <EventFeed events={live.events} />
-          <button className="primary" onClick={onOpenTwin}>Open building twin</button>
-          <button onClick={onOpenScan}>Real 3D scan</button>
+          <button className="primary" onClick={() => onOpenPage(FOCUS_TWIN.id)}>Open building page</button>
+          <button onClick={onFlyToFocus}>Show the wall zones on the map</button>
         </>
       ) : (
         <AgentChat buildingId={live.building?.building.id ?? "B01"} />

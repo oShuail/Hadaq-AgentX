@@ -14,6 +14,7 @@ import { acceleratedRaycast, computeBoundsTree, disposeBoundsTree } from "three-
 
 import { centroid, pointInRing, ringBounds } from "../site/poly";
 import type { SiteBuilding } from "../site/types";
+import { FOCUS_TWIN, TWINS } from "../twins";
 import type { WallSpec } from "../types/contracts";
 import { type BuildingLayer, buildBuildings } from "./buildings";
 import type { AttentionItem } from "../twin/WallZones";
@@ -36,7 +37,7 @@ export type LayerId =
   | "terrain" | "context" | "buildings" | "palms" | "roads" | "parking" | "water" | "walls"
   | "lanterns" | "streetlights" | "visitors" | "helipads" | "labels" | "twin";
 
-export const LAYERS: { id: LayerId; label: string }[] = [
+export const ALL_LAYERS: { id: LayerId; label: string }[] = [
   { id: "terrain", label: "Terrain and imagery" },
   { id: "context", label: "Context terrain" },
   { id: "buildings", label: "Buildings" },
@@ -53,19 +54,26 @@ export const LAYERS: { id: LayerId; label: string }[] = [
   { id: "twin", label: "Hadaq wall zones" },
 ];
 
+/** Layers that are built but switched off in the app for now (kept in the code to bring back later). */
+export const DISABLED_LAYERS = new Set<LayerId>(["parking", "lanterns", "streetlights", "visitors", "helipads"]);
+
+/** The layers the Explore panel offers. */
+export const LAYERS = ALL_LAYERS.filter((l) => !DISABLED_LAYERS.has(l.id));
+
 export type ViewId = "overview" | "turaif" | "focus" | "bujairi" | "wadi" | "plan";
 
 export const VIEWS: { id: ViewId; label: string }[] = [
   { id: "overview", label: "Overview" },
   { id: "turaif", label: "At-Turaif" },
-  { id: "focus", label: "Focus building B01" },
+  { id: "focus", label: FOCUS_TWIN.name },
   { id: "bujairi", label: "Bujairi Terrace" },
   { id: "wadi", label: "Wadi Hanifah" },
   { id: "plan", label: "Plan view" },
 ];
 
 export type TwinSelection =
-  | { kind: "building"; osmId: number | null; name: string; isFocus: boolean; focusLocked?: boolean }
+  // twinId: this building has its own twin page (twins.ts).
+  | { kind: "building"; osmId: number | null; name: string; isFocus: boolean; focusLocked?: boolean; twinId?: string }
   | { kind: "zone"; zoneId: string };
 
 export interface TwinStats {
@@ -100,6 +108,11 @@ const KIND_LABEL: Record<SiteBuilding["k"], string> = {
 const POI_IMPORTANT = new Set(["museum", "attraction", "historic", "gallery", "viewpoint", "artwork", "arts_centre", "theatre", "palace", "castle"]);
 const POI_MINOR = new Set(["place_of_worship", "park", "cafe", "restaurant", "hotel", "townhall", "information", "fountain"]);
 const GENERIC = /^(exit|tickets?|water|toilets?|parking|park mosque|مسجد|بوفية)\b|bottles|refreshments|check$/i;
+// Names that would be confused with our own twins (a cafe called "Salwa" 1 km north is not Qasr Salwa).
+const CONFUSING = /^(salwa|سلوى)$/i;
+
+/** The twin page a mapped building opens, if any (matched on its OSM name, see twins.ts). */
+const twinFor = (b: SiteBuilding) => TWINS.find((t) => t.onMap !== "focus" && !!b.n && t.onMap.test(b.n)) ?? null;
 
 const smooth = (a: number, b: number, x: number) => {
   const t = Math.min(1, Math.max(0, (x - a) / (b - a)));
@@ -152,6 +165,7 @@ export class Twin {
   private wantZones = false;
   private layerState: Partial<Record<LayerId, boolean>> = {};
   private resizeObserver: ResizeObserver;
+  private paused = false;
   private ratio = 1;
   private maxRatio = 1;
   private perf = { frames: 0, since: 0 };
@@ -310,7 +324,7 @@ export class Twin {
       }
     for (const p of pack.pois) {
       const name = clean(p.n);
-      if (areaNames.has(name) || name.length < 3 || /^\d+$/.test(name) || GENERIC.test(name)) continue;
+      if (areaNames.has(name) || name.length < 3 || /^\d+$/.test(name) || GENERIC.test(name) || CONFUSING.test(name)) continue;
       const big = !!p.big;
       const important = POI_IMPORTANT.has(p.k);
       if (!big && !important && !POI_MINOR.has(p.k)) continue;
@@ -329,8 +343,8 @@ export class Twin {
       this.overlay.setVisible(this.wantZones);
       this.overlay.setResolution(this.container.clientWidth, this.container.clientHeight);
       this.labels.add({
-        text: `${buildingId} · Focus building`,
-        sub: "Live twin: sensors, camera, agent",
+        text: FOCUS_TWIN.ar ? `${FOCUS_TWIN.name} · ${FOCUS_TWIN.ar}` : FOCUS_TWIN.name,
+        sub: `${buildingId} live twin: sensors, camera, agent`,
         kind: "focus",
         position: new THREE.Vector3(this.place.midX - this.place.out[0] * 25, this.place.ground + 32, -(this.place.midY - this.place.out[1] * 25)),
         priority: 10,
@@ -366,7 +380,7 @@ export class Twin {
       ["labels", []],
       ["twin", this.overlay ? [this.overlay.attentionGroup] : []],
     ]);
-    for (const [id, v] of Object.entries(this.layerState)) this.setLayer(id as LayerId, v);
+    for (const { id } of ALL_LAYERS) this.setLayer(id, this.layerState[id] ?? true);
 
     this.makePoses();
     this.setTime(this.time);
@@ -379,20 +393,19 @@ export class Twin {
         buildings: c.total,
         palms: this.palms.count,
         roads: this.infra.counts.roads + this.infra.counts.paths,
-        parking: this.infra.counts.parkingBays,
         water: this.infra.counts.water,
         walls: this.infra.counts.walls + this.infra.counts.towers,
-        lanterns: this.lanterns.count,
-        streetlights: this.streetGlow.count,
-        visitors: this.walkers?.max ?? 0,
-        helipads: this.infra.counts.helipads,
+        ...(DISABLED_LAYERS.has("parking") ? {} : { parking: this.infra.counts.parkingBays }),
+        ...(DISABLED_LAYERS.has("lanterns") ? {} : { lanterns: this.lanterns.count }),
+        ...(DISABLED_LAYERS.has("streetlights") ? {} : { streetlights: this.streetGlow.count }),
+        ...(DISABLED_LAYERS.has("visitors") ? {} : { visitors: this.walkers?.max ?? 0 }),
+        ...(DISABLED_LAYERS.has("helipads") ? {} : { helipads: this.infra.counts.helipads }),
       },
       model: [
         { label: "buildings", value: `${c.total.toLocaleString()} · Najdi ${c.najdi.toLocaleString()} · ruins ${c.ruin.toLocaleString()}` },
         { label: "palms", value: this.palms.count.toLocaleString() },
         { label: "places", value: pack.pois.length.toLocaleString() },
-        { label: "parking bays", value: this.infra.counts.parkingBays.toLocaleString() },
-        { label: "lanterns", value: this.lanterns.count.toLocaleString() },
+        { label: "twin pages", value: TWINS.map((t) => t.name).join(", ") },
         { label: "heights", value: "estimated unless OSM has them" },
       ],
       sources: pack.sources,
@@ -514,13 +527,16 @@ export class Twin {
     this.sun.intensity = altitude > -2 ? 3.6 * (0.35 + 0.65 * smooth(-2, 10, altitude)) * smooth(-2, 1, altitude) : 0.35 * night;
     this.hemi.color.set("#3a4a74").lerp(new THREE.Color("#d6dceb"), day);
     this.hemi.groundColor.set("#2a2026").lerp(new THREE.Color("#7b5f45"), day);
-    this.hemi.intensity = 0.55 + day * 0.95;
+    this.hemi.intensity = 0.55 + day * 0.45;
     const fog = new THREE.Color("#121826").lerp(new THREE.Color("#d39b66"), day).lerp(new THREE.Color("#cdbca2"), day * (1 - golden));
     (this.scene.fog as THREE.FogExp2).color.copy(fog);
     this.sky.visible = altitude > -9;
     this.scene.background = new THREE.Color("#0b1020");
-    this.renderer.toneMappingExposure = 0.95 + night * 0.55;
-    this.bloom.strength = 0.22 + night * 0.55;
+    // A high midday sun on pale sand blows out: bring the exposure down as the sun climbs.
+    this.renderer.toneMappingExposure = 0.95 - 0.25 * smooth(12, 55, altitude) + night * 0.55;
+    // Bloom is for the lights at night; by day it bleeds bright sand into a white haze.
+    this.bloom.strength = 0.08 * golden * (1 - night) + night * 0.6;
+    this.bloom.enabled = this.bloom.strength > 0.01;
 
     if (this.lanterns) this.lanterns.uniforms.uNight.value = night;
     if (this.buildings) this.buildings.uniforms.uNight.value = night;
@@ -537,7 +553,7 @@ export class Twin {
     });
     if (this.streetGlow) {
       this.streetGlow.uniforms.uNight.value = night;
-      this.streetGlow.points.visible = night > 0.02 && this.layerState.streetlights !== false;
+      this.streetGlow.points.visible = night > 0.02 && this.layerState.streetlights !== false && !DISABLED_LAYERS.has("streetlights");
     }
     const hour = Number(new Intl.DateTimeFormat("en-GB", { hour: "numeric", hour12: false, timeZone: "Asia/Riyadh" }).format(date)) % 24;
     const minute = date.getUTCMinutes();
@@ -551,17 +567,24 @@ export class Twin {
       this.envTarget?.dispose();
       this.envTarget = this.pmrem.fromScene(this.envScene);
       this.scene.environment = this.envTarget.texture;
-      this.scene.environmentIntensity = 0.25 + day * 0.35;
+      this.scene.environmentIntensity = 0.15 + day * 0.15;
     }
   }
 
   // ------------------------------------------------------------------------------------------------
   // Layers and the focus overlay
 
-  setLayer(id: LayerId, visible: boolean) {
+  setLayer(id: LayerId, requested: boolean) {
+    const visible = requested && !DISABLED_LAYERS.has(id);
     this.layerState[id] = visible;
     if (id === "labels") this.labels.enabled = visible;
     for (const o of this.groups.get(id) ?? []) o.visible = visible;
+  }
+
+  /** Stop drawing while the map is hidden (e.g. a building page is open). */
+  setPaused(p: boolean) {
+    this.paused = p;
+    if (!p) this.resize();
   }
 
   setZonesVisible(v: boolean) {
@@ -580,7 +603,7 @@ export class Twin {
 
   private selectFocus() {
     if (this.buildings) this.buildings.uniforms.uSelected.value = -1;
-    this.cb.onSelect({ kind: "building", osmId: null, name: "Focus building", isFocus: true, focusLocked: true });
+    this.cb.onSelect({ kind: "building", osmId: null, name: FOCUS_TWIN.name, isFocus: true, focusLocked: true, twinId: FOCUS_TWIN.id });
   }
 
   // ------------------------------------------------------------------------------------------------
@@ -655,15 +678,18 @@ export class Twin {
       sub = "Wall zone · click for its readings";
       this.setHover(-1);
     } else if (what.focus) {
-      title = "Focus building B01";
-      sub = "Live twin · sensors, camera, agent";
+      title = FOCUS_TWIN.ar ? `${FOCUS_TWIN.name} (${FOCUS_TWIN.ar})` : FOCUS_TWIN.name;
+      sub = "Live twin · click to open its page";
       this.setHover(-1);
     } else if (what.building !== undefined) {
       const info = this.buildings.infos[what.building];
       const b = info?.b;
       if (b) {
         title = b.n ?? KIND_LABEL[b.k];
-        sub = `${b.n ? KIND_LABEL[b.k] + " · " : ""}about ${Math.round(b.h)} m${b.hs === "estimated" ? " (estimated)" : ""}`;
+        const twin = twinFor(b);
+        sub = twin
+          ? `Twin page: ${twin.name} · click to open`
+          : `${b.n ? KIND_LABEL[b.k] + " · " : ""}about ${Math.round(b.h)} m${b.hs === "estimated" ? " (estimated)" : ""}`;
       }
       this.setHover(what.building);
     } else this.setHover(-2);
@@ -695,7 +721,8 @@ export class Twin {
       if (!b) return;
       this.buildings.uniforms.uSelected.value = what.building;
       const osm = /^[wr]\d+$/.test(b.id) ? Number(b.id.slice(1)) : null;
-      this.cb.onSelect({ kind: "building", osmId: osm, name: b.n ?? KIND_LABEL[b.k], isFocus: false });
+      const twin = twinFor(b);
+      this.cb.onSelect({ kind: "building", osmId: osm, name: b.n ?? KIND_LABEL[b.k], isFocus: false, ...(twin ? { twinId: twin.id } : {}) });
     } else {
       if (this.buildings) this.buildings.uniforms.uSelected.value = -1;
       this.cb.onSelect(null);
@@ -723,6 +750,10 @@ export class Twin {
   private loop = () => {
     if (this.disposed) return;
     this.raf = requestAnimationFrame(this.loop);
+    if (this.paused) {
+      this.clock.getDelta(); // no jump when it comes back
+      return;
+    }
     const dt = Math.min(0.1, this.clock.getDelta());
     const t = this.clock.elapsedTime;
     this.stepFly(dt);

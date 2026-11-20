@@ -1,5 +1,7 @@
 # حَدَق Hadaq
 
+> **Start here:** [HANDOVER.md](HANDOVER.md) has the current state, known issues and next steps for each of us. Update it at the end of every session.
+
 **A digital eye that detects the finest details.**
 **عين رقمية تكتشف أدق التفاصيل**
 
@@ -22,7 +24,7 @@ flowchart LR
   SIMENG[Simulation, risk, monitoring<br/>Basma]
   VIS[Vision worker RF-DETR-Seg<br/>Abdurhmn]
   AG[Agents: Orchestrator +<br/>Simulation and Advisory<br/>Omar]
-  WEB[Web: Cesium map, twin,<br/>panel, chat<br/>Turky + Omar]
+  WEB[Web: 3D twin of Diriyah,<br/>panel, chat<br/>Turky + Omar]
 
   ESP --> MQTT
   SIM --> MQTT
@@ -48,7 +50,7 @@ flowchart LR
 | `services/vision/` | RF-DETR-Seg, camera simulator, vision worker | Abdurhmn | [docs/team/abdurhmn.md](docs/team/abdurhmn.md) |
 | `services/agents/` | LangGraph agents, verifier, chat API | Omar | [docs/team/omar.md](docs/team/omar.md) |
 | `devices/` | ESP32 brick node, sensor simulator | Saleh | [docs/team/saleh.md](docs/team/saleh.md) |
-| `apps/web/` | React + CesiumJS app | Turky (shell), Omar (twin, chat), Saleh (scenario panel) | |
+| `apps/web/` | React + three.js app (3D twin of Diriyah) | Turky (shell), Omar (twin, chat), Saleh (scenario panel) | |
 | `docs/` | Team guides, 3D scan guide, demo script | All | |
 
 ## Quick start
@@ -72,7 +74,7 @@ make vision       # vision worker (mock detector until the model is trained)
 make camera       # camera simulator (needs photos in assets/camera/B01-CAM01/)
 ```
 
-Web app config: put a free Cesium ion token in `apps/web/.env.local` (`VITE_CESIUM_ION_TOKEN`). Without it the map has no terrain or buildings.
+Web app: the 3D map needs no keys. It is baked from open data (OpenStreetMap, Microsoft footprints, Esri imagery, AWS terrain) into `apps/web/public/site/`, which is in the repo. To refresh it, see [tools/site_data/README.md](tools/site_data/README.md).
 
 Check everything: `make test` and `cd apps/web && npm run build`.
 

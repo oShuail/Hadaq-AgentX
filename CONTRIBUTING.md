@@ -7,6 +7,7 @@
 3. Small commits with clear messages (below). Run `make test` before pushing.
 4. Open a pull request to `main`. Omar reviews merges that touch `contracts/` or more than one slice; anything inside your own folder can be merged by you once CI is green.
 5. Never force-push to `main`.
+6. Before you finish a session, update `HANDOVER.md` (current state, next steps, one session log entry).
 
 ## Commit messages
 

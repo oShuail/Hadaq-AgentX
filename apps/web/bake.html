@@ -1,0 +1,32 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Hadaq site data bake</title>
+    <style>
+      body { margin: 0; padding: 24px; background: #1c1712; color: #f1e9de; font: 14px/1.5 "Segoe UI", system-ui, sans-serif; }
+      button { font: inherit; padding: 8px 16px; border-radius: 8px; border: 1px solid #c9a27e; background: #c9a27e; color: #1c1712; font-weight: 600; cursor: pointer; }
+      pre { background: #120e0a; border: 1px solid #3a3128; border-radius: 8px; padding: 12px; height: 70vh; overflow: auto; font-size: 12px; }
+      .muted { color: #a99a88; }
+    </style>
+  </head>
+  <body>
+    <h2>Hadaq site data bake</h2>
+    <p class="muted">Downloads open data for Diriyah (OSM, Microsoft footprints, Esri imagery, AWS terrain) and writes <code>apps/web/public/site/</code>. Dev server only. Takes a few minutes.</p>
+    <button id="go">Bake</button>
+    <pre id="log"></pre>
+    <script type="module">
+      import { bake } from "/src/bake/bake.ts";
+      const go = document.getElementById("go");
+      const run = () => {
+        go.disabled = true;
+        bake().catch((err) => {
+          document.getElementById("log").textContent += "\nFAILED: " + (err && err.stack ? err.stack : err) + "\n";
+          console.error(err);
+        }).finally(() => (go.disabled = false));
+      };
+      go.addEventListener("click", run);
+      if (new URLSearchParams(location.search).has("run")) run();
+    </script>
+  </body>
+</html>

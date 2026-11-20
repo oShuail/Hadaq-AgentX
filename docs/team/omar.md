@@ -11,7 +11,9 @@
 | `services/agents/hadaq_agents/prompts.py` | System prompts and rules |
 | `services/agents/hadaq_agents/verifier.py` | Checks every number in an answer against tool outputs |
 | `services/agents/hadaq_agents/server.py` | `POST /agents/chat`, `POST /agents/trigger`, mock mode |
-| `apps/web/src/twin/*` | Wall zones overlay, colors, focus model placement |
+| `apps/web/src/twin3d/*` | The 3D twin of Diriyah (three.js): terrain, buildings, palms, sun, focus model, wall zones |
+| `apps/web/src/twin/*` | Zone colors, attention rules, scan embed |
+| `apps/web/src/bake/bake.ts` | Bakes the open-data site pack in `apps/web/public/site/` (see `tools/site_data/README.md`) |
 | `apps/web/src/chat/AgentChat.tsx` | Chat UI with evidence chips |
 | `contracts/building_b01.json` | Building and wall coordinates (you fill them) |
 | `docs/demo-script.md` | The 2-minute storyline |
@@ -37,9 +39,10 @@ Read `contracts/README.md` top to bottom. Confirm: zone grid 4 rows x 8 cols, `R
 
 ### 2. Pick the focus building and measure its main wall
 
-1. `make web`, fly to At-Turaif, click candidate buildings. The panel shows the OSM id.
-2. Put the chosen id in `apps/web/.env.local` as `VITE_FOCUS_OSM_ID=...` and in `contracts/building_b01.json` as `building.osm_element_id`.
-3. Hold **Shift and click** the two bottom corners of the main facade. The app prints `lon, lat, height`. Standing in front of the facade, the **left** corner is `base_line.start` (column C1), the **right** corner is `base_line.end`.
+Done for Round 1: B01 is our citadel model at a placeholder spot in At-Turaif (`contracts/building_b01.json`). To move it:
+
+1. `make web`, open the At-Turaif view.
+2. Hold **Shift and click** the two bottom corners of where the main facade should stand. The app shows `lon, lat, height`. Standing in front of the facade, the **left** corner is `base_line.start` (column C1), the **right** corner is `base_line.end`. The model, the flattened ground under it and the zones all follow `base_line` and `azimuth_deg`.
 4. Compute the facade azimuth (the direction it faces) and put it in `walls[0].azimuth_deg`:
 
 ```python
@@ -103,19 +106,15 @@ Rules for tools: verb_noun names, a docstring the LLM can act on, return compact
 
 ### 6. Twin view
 
-- `apps/web/src/twin/WallZones.ts` draws 32 panels 0.4 m in front of the facade from `base_line`, `height_m`, `rows`, `cols`. If the panels look off, fix the coordinates in the registry, not the code.
+- `apps/web/src/twin3d/focus.ts` draws 32 panels 0.4 m in front of the facade from `base_line`, `height_m`, `rows`, `cols`, plus the attention boxes. If the panels look off, fix the coordinates in the registry, not the code.
 - Layers: Moisture (from the latest simulation, hour by hour) and Risk (ABC level). Colors in `twin/colors.ts`.
-- Clicking a panel opens the zone view in the side panel (moisture now, ABC breakdown, sensors in that zone).
+- Clicking a panel, or a reading card pinned next to it, opens the zone view in the Building twin panel (moisture now, ABC breakdown, sensors in that zone).
 
-### 7. Our own model of the building (if the scan is ready)
+### 7. Our own model of the building
 
-Export GLB (under 50 MB), put it in `apps/web/public/models/b01.glb`, then in `.env.local`:
+Done: `apps/web/public/models/b01_v3.glb` (the decimated citadel from `assets/turaif/`) is the default (`VITE_FOCUS_MODEL_URL`). It stands at the wall's midpoint, rotated by `azimuth_deg`; the ground under its outline (`b01_v3.footprint.json`) is flattened and the context buildings and palms there are removed.
 
-```bash
-VITE_FOCUS_MODEL_URL=/models/b01.glb
-```
-
-The OSM copy of that building is hidden automatically and the model is placed at the wall's midpoint, rotated by `azimuth_deg`. Adjust the heading in `SiteMap.tsx` (`placeFocusModel(..., headingDeg)`) if the model's front is not its +Y axis. See `docs/scan-guide.md`.
+To swap in a real scan: GLB under 50 MB with origin = middle of the main wall's base, +Y up, +X out of the facade, +Z towards `base_line.start`; save it next to a `<name>.footprint.json` and point `VITE_FOCUS_MODEL_URL` at it. See `docs/scan-guide.md`.
 
 ### 8. Integration runs
 

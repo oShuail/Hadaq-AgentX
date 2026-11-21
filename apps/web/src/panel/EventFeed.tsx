@@ -1,3 +1,4 @@
+import { DAMAGE_FAMILIES, damageReportOf, familyOf } from "../twin/damage";
 import type { HadaqEvent } from "../types/contracts";
 
 const LABELS: Record<string, string> = {
@@ -14,16 +15,6 @@ const LABELS: Record<string, string> = {
   agent_note: "Agent investigated",
 };
 
-// Damage report written by the Damage and Treatment agent (payload.kind === "damage_report").
-type ReportItem = { zone_id: string; name_en: string; severity: string | null; active: boolean; priority: string; step_en: string };
-type DamageReport = { items: ReportItem[]; first_steps_en: string[]; materials_en: string[]; tools_en: string[] };
-
-function damageReport(e: HadaqEvent): DamageReport | null {
-  if (e.type !== "recommendation_ready" || e.payload.kind !== "damage_report") return null;
-  const report = e.payload.report as DamageReport | undefined;
-  return report && Array.isArray(report.items) ? report : null;
-}
-
 // "Vision finished" with nothing new or grown is noise: the camera sends a frame every few seconds.
 function worthShowing(e: HadaqEvent): boolean {
   if (e.type === "new_photo") return false;
@@ -38,7 +29,8 @@ export default function EventFeed({ events }: { events: HadaqEvent[] }) {
       {shown.length === 0 && <p className="muted small">Nothing yet.</p>}
       <ul>
         {shown.map((e) => {
-          const report = damageReport(e);
+          const damage = damageReportOf(e);
+          const report = damage?.report;
           return (
             <li key={e.event_id} className={e.type}>
               <span className="time">{new Date(e.ts).toLocaleTimeString()}</span>{" "}
@@ -50,6 +42,7 @@ export default function EventFeed({ events }: { events: HadaqEvent[] }) {
                   <ul>
                     {report.items.map((item, i) => (
                       <li key={i}>
+                        <span className="num" style={{ ["--c" as string]: DAMAGE_FAMILIES[familyOf(item.damage_type)].color }}>{i + 1}</span>{" "}
                         <strong>{item.zone_id.split("-").pop()}</strong> {item.name_en}
                         {item.severity ? ` (${item.severity}${item.active ? ", growing" : ""})` : ""}: {item.step_en}
                       </li>

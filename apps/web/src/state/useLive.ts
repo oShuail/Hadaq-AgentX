@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 
 import { api, connectLive } from "../api/client";
 import { WS_URL } from "../config";
+import { type DamageReportEvent, damageReportOf } from "../twin/damage";
 import type { BuildingRegistry, Detection, HadaqEvent, Photo, RiskScore, SensorReading, SimulationResult } from "../types/contracts";
 
 export interface LiveState {
@@ -14,7 +15,11 @@ export interface LiveState {
   simulation: SimulationResult | null;
   simulationRunning: boolean;
   connected: boolean;
+  /** Latest damage report from the Damage and Treatment agent, kept even when the camera floods the event list. */
+  damageReport: DamageReportEvent | null;
 }
+
+const REPORT_LOOKBACK = 300; // events searched for the latest damage report on page load
 
 /** Loads the current state once, then keeps it fresh from the /ws/live stream. */
 export function useLive(buildingId: string): LiveState {
@@ -28,6 +33,7 @@ export function useLive(buildingId: string): LiveState {
     simulation: null,
     simulationRunning: false,
     connected: false,
+    damageReport: null,
   });
 
   useEffect(() => {
@@ -43,6 +49,10 @@ export function useLive(buildingId: string): LiveState {
       api.events(buildingId).then((events) => patch({ events })),
       api.latestPhotos(buildingId).then((photos) => patch({ photo: photos[0] ?? null })),
       api.latestSimulation(buildingId).then((simulation) => patch({ simulation })),
+      api.events(buildingId, REPORT_LOOKBACK).then((list) => {
+        const latest = list.map(damageReportOf).find((r) => r !== null) ?? null;
+        patch((s) => ({ damageReport: s.damageReport ?? latest }));
+      }),
     ]);
 
     const close = connectLive(
@@ -52,12 +62,15 @@ export function useLive(buildingId: string): LiveState {
           case "reading":
             patch((s) => ({ readings: { ...s.readings, [m.data.sensor_id]: m.data } }));
             break;
-          case "event":
+          case "event": {
+            const report = damageReportOf(m.data);
             patch((s) => ({
               events: [m.data, ...s.events].slice(0, 50),
               simulationRunning: m.data.type === "simulation_done" ? false : s.simulationRunning,
+              damageReport: report ?? (m.data.type === "demo_reset" ? null : s.damageReport),
             }));
             break;
+          }
           case "photo":
             patch({ photo: m.data, detections: [] });
             break;

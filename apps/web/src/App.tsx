@@ -5,6 +5,8 @@ import BuildingPage from "./building/BuildingPage";
 import AgentChat from "./chat/AgentChat";
 import { goldenHourToday } from "./clock";
 import ScenarioPanel from "./demo/ScenarioPanel";
+import SensorDemoPanel from "./demo/SensorDemoPanel";
+import { useSensorDemo } from "./demo/useSensorDemo";
 import SiteMap, { type FlyTarget, type Selection } from "./map/SiteMap";
 import BuildingPanel from "./panel/BuildingPanel";
 import EventFeed from "./panel/EventFeed";
@@ -34,6 +36,7 @@ const parseRoute = (path: string): Route => {
 
 export default function App() {
   const live = useLive(BUILDING_ID);
+  const demo = useSensorDemo(BUILDING_ID, live.readings);
   const [selection, setSelection] = useState<Selection | null>(null);
   const [fly, setFly] = useState<{ target: FlyTarget; nonce: number }>({ target: "turaif", nonce: 0 });
   const [view, setView] = useState<FlyTarget | null>("turaif");
@@ -123,6 +126,7 @@ export default function App() {
         <BuildingPage
           twin={pageTwin}
           live={live}
+          fallbackSensors={registry.sensors as SensorSpec[]}
           walls={pageTwin.registered && wall ? [wall] : []}
           zoneColors={pageTwin.registered ? zoneColors : {}}
           attention={pageTwin.registered ? attention : []}
@@ -179,8 +183,11 @@ export default function App() {
               {tab === "agent" && <AgentChat buildingId={live.building?.building.id ?? BUILDING_ID} />}
               {tab === "activity" && (
                 <div className="activity">
-                  <h3>Demo controls</h3>
-                  <ScenarioPanel buildingId={BUILDING_ID} compact />
+                  <SensorDemoPanel demo={demo} />
+                  {live.connected && !demo.active && <>
+                    <h3>Live controls</h3>
+                    <ScenarioPanel buildingId={BUILDING_ID} compact />
+                  </>}
                   <EventFeed events={live.events} />
                 </div>
               )}

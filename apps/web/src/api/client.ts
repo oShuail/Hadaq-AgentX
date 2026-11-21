@@ -24,6 +24,9 @@ async function postJson<T>(url: string, body: unknown): Promise<T> {
 }
 
 export const api = {
+  sensorRunStatus: (id: string) => getJson<{ available: boolean; running: boolean; elapsed: number; duration: number }>(`${API_URL}/buildings/${id}/demo/sensor-run`),
+  startSensorRun: (id: string) => postJson<{ available: boolean; running: boolean; elapsed: number; duration: number }>(`${API_URL}/buildings/${id}/demo/sensor-run`, {}),
+  stopSensorRun: (id: string) => postJson<{ available: boolean; running: boolean; elapsed: number; duration: number }>(`${API_URL}/buildings/${id}/demo/sensor-run/stop`, {}),
   building: (id: string) => getJson<BuildingRegistry>(`${API_URL}/buildings/${id}`),
   latestReadings: (id: string) => getJson<SensorReading[]>(`${API_URL}/buildings/${id}/readings/latest`),
   latestDetections: (id: string) => getJson<Detection[]>(`${API_URL}/buildings/${id}/detections/latest`),

@@ -25,6 +25,7 @@ from fastapi.responses import FileResponse
 from hadaq_api import db
 from hadaq_api.live import hub
 from hadaq_api.mqtt_bridge import MqttBridge
+from hadaq_api.sensor_run import SensorRun
 from hadaq_api.settings import settings
 from hadaq_schemas import (
     Detection,
@@ -156,6 +157,13 @@ def _run_simulation_job(run_id: str, request: SimulationRequest) -> None:
 
 
 bridge = MqttBridge(on_reading=handle_reading, on_event=lambda e: handle_event(e, publish_mqtt=False))
+sensor_run = SensorRun()
+
+
+def _emit_sensor_event(event_type: str) -> None:
+    payload = {"peak_rain_mm_h": 12, "wind_ms": 8, "wind_dir_deg": 270} if event_type == "storm_started" else {}
+    handle_event(Event(type=event_type, building_id="B01", source="scenario_panel",
+                       provenance=Provenance.SYNTHETIC, payload=payload), publish_mqtt=True)
 
 
 @asynccontextmanager
@@ -166,6 +174,7 @@ async def lifespan(app: FastAPI):
     if settings.mqtt_enabled:
         bridge.start()
     yield
+    await sensor_run.stop(_emit_sensor_event, reset=sensor_run.task is not None and not sensor_run.task.done())
     if settings.mqtt_enabled:
         bridge.stop()
 
@@ -179,6 +188,28 @@ app.add_middleware(CORSMiddleware, allow_origins=["*"], allow_methods=["*"], all
 @app.get("/health")
 def health() -> dict:
     return {"status": "ok", "mqtt": bridge.connected}
+
+
+@app.get("/buildings/{building_id}/demo/sensor-run")
+def sensor_run_status(building_id: str) -> dict:
+    _registry_for(building_id)
+    return sensor_run.status(bridge.connected and bridge.devices.get("sim-01") == "online")
+
+
+@app.post("/buildings/{building_id}/demo/sensor-run")
+async def start_sensor_run(building_id: str) -> dict:
+    _registry_for(building_id)
+    if not bridge.connected or bridge.devices.get("sim-01") != "online":
+        raise HTTPException(status_code=503, detail="Start the MQTT broker and sensor simulator first")
+    await sensor_run.start(_emit_sensor_event)
+    return sensor_run.status(True)
+
+
+@app.post("/buildings/{building_id}/demo/sensor-run/stop")
+async def stop_sensor_run(building_id: str) -> dict:
+    _registry_for(building_id)
+    await sensor_run.stop(_emit_sensor_event)
+    return sensor_run.status(bridge.connected and bridge.devices.get("sim-01") == "online")
 
 
 @app.get("/buildings/{building_id}")
@@ -278,8 +309,11 @@ async def post_detections(batch: DetectionBatch) -> dict:
         for d in batch.detections
         if d.change in ("new", "grown")
     ]
+    detection_provenance = (Provenance.SYNTHETIC if batch.model == "mock-detector" or
+                            (batch.detections and all(d.provenance == Provenance.SYNTHETIC for d in batch.detections))
+                            else Provenance.MODEL_OUTPUT)
     handle_event(
-        Event(type="detection_ready", building_id=batch.building_id, source="vision", provenance=Provenance.MODEL_OUTPUT,
+        Event(type="detection_ready", building_id=batch.building_id, source="vision", provenance=detection_provenance,
               payload={"photo_id": batch.photo_id, "count": len(batch.detections), "changed": changed, "model": batch.model}),
         publish_mqtt=True,
     )

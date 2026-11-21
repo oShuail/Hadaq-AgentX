@@ -78,9 +78,21 @@ def _crack_width(detection: dict, gauges: dict[str, dict]) -> tuple[float | None
     return None, None, None
 
 
+def _one_per_zone_and_class(detections: list[dict]) -> list[dict]:
+    """A photo analysed twice (worker restart, re-run) stores its detections twice: keep one per zone and class,
+    preferring a grown one, then the higher confidence. Order follows the wall: base row first, left to right."""
+    best: dict[tuple[str, str], dict] = {}
+    for d in detections:
+        key = (d["zone_id"], d["cls"])
+        rank = (d.get("change") == "grown", d.get("confidence") or 0)
+        if key not in best or rank > (best[key].get("change") == "grown", best[key].get("confidence") or 0):
+            best[key] = d
+    return sorted(best.values(), key=lambda d: (KB.zone_position(d["zone_id"]) or (99, 99), d["cls"]))
+
+
 def collect_findings(building_id: str) -> dict:
     """The latest photo's detections mapped onto the treatment table: damage type, position, severity, priority, evidence."""
-    detections = _get(f"/buildings/{building_id}/detections/latest")
+    detections = _one_per_zone_and_class(_get(f"/buildings/{building_id}/detections/latest"))
     if not detections:
         return {"building_id": building_id, "count": 0, "findings": [],
                 "note": "No analysed photo with defects yet. Upload a wall photo or start the camera."}
@@ -98,6 +110,7 @@ def collect_findings(building_id: str) -> dict:
             "position_en": f"row {position[0]} of {rows} from the base, column {position[1]} of {cols} from the left" if position else None,
             "position_ar": f"الصف {position[0]} من {rows} من القاعدة، العمود {position[1]} من {cols} من اليسار" if position else None,
             "detector_class": d["cls"],
+            "bbox_xyxy": d.get("bbox_xyxy"),
             "confidence": d.get("confidence"),
             "change": d.get("change"),
             "growth_pct": d.get("growth_pct"),
@@ -332,6 +345,7 @@ def propose_damage_report(building_id: str = "B01", items: list[ReportItem] | No
             "status": "pending_expert_approval",
             "report": {
                 "photo_id": found["photo_id"],
+                "photo_provenance": found["findings"][0].get("provenance") if found["findings"] else None,
                 "detector_model": found["detector_model"],
                 "items": report_items,
                 "first_steps_en": steps["en"],

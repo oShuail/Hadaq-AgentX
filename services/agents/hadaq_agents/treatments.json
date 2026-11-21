@@ -7,7 +7,7 @@
   "sources": {
     "heritage_authority": {
       "label_ar": "الهيئة",
-      "label_en": "Heritage authority guidance ('الهيئة' in the team table)",
+      "label_en": "Heritage authority guidance (الهيئة)",
       "status_ar": "إرشاد معتمد من المصدر",
       "status_en": "guidance from the source",
       "document": null

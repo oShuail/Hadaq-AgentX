@@ -155,6 +155,16 @@ def test_report_refuses_unknown_findings(api):
     assert "error" in out and out["valid_detection_ids"]
 
 
+def test_a_photo_analysed_twice_gives_one_finding_per_zone_and_class():
+    base = {"photo_id": "ph_x", "zone_id": "B01-W01-R2C5", "cls": "crack"}
+    kept = tools._one_per_zone_and_class([
+        {**base, "detection_id": "det_a", "confidence": 0.9, "change": "new"},
+        {**base, "detection_id": "det_b", "confidence": 0.8, "change": "grown"},
+        {**base, "detection_id": "det_c", "zone_id": "B01-W01-R1C2", "cls": "plaster_loss", "confidence": 0.7},
+    ])
+    assert [d["detection_id"] for d in kept] == ["det_c", "det_b"]  # base row first; the grown crack wins
+
+
 def test_mask_width_is_used_when_there_is_no_gauge():
     width, evidence, source = tools._crack_width(
         {"detection_id": "det_aaaaaaaaaaaa", "zone_id": "B01-W01-R3C1", "area_cm2": 6.0, "length_mm": 200.0}, gauges={})

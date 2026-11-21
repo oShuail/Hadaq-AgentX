@@ -168,6 +168,11 @@ def report_item(finding: dict[str, Any], damage_type: str, severity: str | None)
     item = {
         "detection_id": finding["detection_id"],
         "zone_id": finding["zone_id"],
+        "position_en": finding.get("position_en"),
+        "position_ar": finding.get("position_ar"),
+        "detector_class": finding.get("detector_class"),
+        "bbox_xyxy": finding.get("bbox_xyxy"),
+        "confidence": finding.get("confidence"),
         "damage_type": damage_type,
         "name_en": t["name_en"],
         "name_ar": t["name_ar"],

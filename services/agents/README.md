@@ -70,7 +70,26 @@ To change what the agent recommends, edit the JSON (not the code) and run the te
 }
 ```
 
-The web activity feed (`apps/web/src/panel/EventFeed.tsx`) shows it as a report card.
+The web shows it in two places: the **Damage map** on the building page (`apps/web/src/building/DamageMap.tsx`: the report drawn on its photo, numbered marks, colour key, treatment card) and the activity feed. The **Damage** layer colours the wall zones on the grid and in 3D with the same colours. Colours are per damage family (cracks and structure, material loss and decay, water damage, past repairs), checked for colour-blind readers; the type is always written next to the mark.
+
+A photo analysed twice stores its detections twice; the agent keeps one finding per zone and class (a grown one first).
+
+## The language model
+
+`HADAQ_LLM` picks the provider and model (`init_chat_model`); `mock` runs the fixed plans. Settings for the current models (`graph.py` `model_settings`):
+
+| Setting | Why |
+| --- | --- |
+| No `temperature` | Current models reject sampling parameters (a 400 error) |
+| `max_tokens` 16000 | Thinking is on by default; a small limit would cut answers |
+| `output_config.effort` = `HADAQ_LLM_EFFORT` (default `medium`) | Depth of thinking; medium suits multi-step tool use and keeps the demo quick |
+| Server-side fallback (`fallbacks: "default"`) | If the model declines a request, the API answers with a fallback model |
+| Cache breakpoint on the system prompt | Tools and system prompt repeat on every call |
+| Timeout `HADAQ_LLM_TIMEOUT_S` (90 s), 2 retries | No hanging demo |
+
+If the LLM call fails (network, key, rate limit), the chat and the triggers answer with the fixed plan, labelled "the language model is unavailable right now", so the demo keeps going. An empty answer after a refusal gets a clear message. `GET /health` shows `llm`, `llm_ready` (credentials present, never the key) and `effort`.
+
+`tests/test_llm_contract.py` runs the real client, graph, tools and verifier against a local stand-in for the Messages API (no key, no network). It checks every request (model, `max_tokens`, no sampling parameters, effort, fallback and its beta header, cache breakpoint, each agent's tools, thinking blocks passed back unchanged, parallel tool results in one message) and that responses with thinking, tool calls and text are parsed.
 
 ## Guardrails
 
@@ -96,4 +115,4 @@ curl -s localhost:8100/agents/chat -H 'content-type: application/json' \
 
 ## Tests
 
-`make test`. `tests/test_damage.py` covers the table, the detector rules, crack severity, the tools against the real API (in-process), the mock answers in both languages, the photo trigger with nobody typing, the per-track cooldown, and the LLM graph with a scripted chat model (real graph, tools, delegation and verifier, no network).
+`make test`. `tests/test_damage.py` covers the table, the detector rules, crack severity, duplicate detections, the tools against the real API (in-process), the mock answers in both languages, the photo trigger with nobody typing, the per-track cooldown, and the LLM graph with a scripted chat model. `tests/test_llm_contract.py` checks the real client against a stand-in Messages API and the fallback when the LLM fails.

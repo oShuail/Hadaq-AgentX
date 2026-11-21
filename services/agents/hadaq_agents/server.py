@@ -102,10 +102,31 @@ def run_llm(message: str, building_id: str, session_id: str) -> ChatResponse:
     new = out["messages"][start:]
     tool_outputs = [text_of(m) for m in new if isinstance(m, ToolMessage)]
     calls = [{"name": c["name"], "args": c["args"]} for m in new if isinstance(m, AIMessage) for c in (m.tool_calls or [])]
-    answer = text_of(out["messages"][-1])
+    last = out["messages"][-1]
+    answer = text_of(last).strip()
+    if not answer:
+        refused = getattr(last, "response_metadata", {}).get("stop_reason") == "refusal"
+        log.warning("Empty LLM answer (stop_reason=%s)", getattr(last, "response_metadata", {}).get("stop_reason"))
+        answer = ("The model declined this request. Ask about the wall's damage, its treatment, materials and tools, or the rain risk."
+                  if refused else "No answer came back from the model. Please ask again.")
     history.extend([HumanMessage(message), AIMessage(answer)])
     del history[:-12]  # keep the last 6 exchanges as plain text memory
     return _finish(answer, tool_outputs, calls)
+
+
+def _llm_unavailable(exc: Exception, message: str, building_id: str, **mock_args) -> ChatResponse:
+    """The LLM failed (network, key, rate limit): answer with the fixed plan, clearly labelled, so the demo keeps going."""
+    log.exception("LLM call failed (%s); answering with the fixed plan", type(exc).__name__)
+    response = run_mock(message, building_id, **mock_args)
+    response.answer = f"(The language model is unavailable right now: {type(exc).__name__}. Fixed-plan answer.)\n" + response.answer
+    return response
+
+
+def _llm_ready() -> bool:
+    """True when the configured provider has credentials (never returns the key itself)."""
+    provider = LLM.partition(":")[0]
+    keys = {"anthropic": ("ANTHROPIC_API_KEY", "ANTHROPIC_AUTH_TOKEN"), "openai": ("OPENAI_API_KEY",)}.get(provider, ())
+    return LLM != "mock" and (not keys or any(os.getenv(k) for k in keys))
 
 
 # ---------- mock agent: fixed plans with the real tools, for development without an LLM key ----------
@@ -345,14 +366,19 @@ def run_mock(message: str, building_id: str, trigger: bool = False, track: str |
 
 @app.get("/health")
 def health() -> dict:
-    return {"status": "ok", "llm": LLM}
+    from hadaq_agents.graph import LLM_EFFORT
+
+    return {"status": "ok", "llm": LLM, "llm_ready": _llm_ready(), "effort": None if LLM == "mock" else LLM_EFFORT}
 
 
 @app.post("/agents/chat")
 def chat(request: ChatRequest) -> ChatResponse:
     if LLM == "mock":
         return run_mock(request.message, request.building_id)
-    return run_llm(request.message, request.building_id, request.session_id)
+    try:
+        return run_llm(request.message, request.building_id, request.session_id)
+    except Exception as exc:  # noqa: BLE001 - any LLM failure falls back to the labelled fixed plan
+        return _llm_unavailable(exc, request.message, request.building_id)
 
 
 def _track(event_type: str) -> str:
@@ -368,7 +394,10 @@ def _investigate(event: Event) -> None:
         if LLM == "mock":
             response = run_mock(prompt, event.building_id, trigger=True, track=track)
         else:
-            response = run_llm(prompt, event.building_id, session_id=f"trigger-{event.building_id}-{track}")
+            try:
+                response = run_llm(prompt, event.building_id, session_id=f"trigger-{event.building_id}-{track}")
+            except Exception as exc:  # noqa: BLE001 - the investigation still runs, on the fixed plan
+                response = _llm_unavailable(exc, prompt, event.building_id, trigger=True, track=track)
         T._post("/events", {
             "type": "agent_note",
             "building_id": event.building_id,

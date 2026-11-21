@@ -93,10 +93,19 @@ def run_mock(message: str, building_id: str, trigger: bool = False) -> ChatRespo
     lines = ["[mock agent: no LLM configured, fixed plan]"]
 
     status = call(T.get_building_status, building_id=building_id)
-    moisture = [r for r in status["readings"] if r["kind"] == "moisture"]
+    moisture = [r for r in status["readings"] if r["kind"] == "moisture" and r["status"] == "ok"]
     if moisture:
         m = max(moisture, key=lambda r: r["value"])
         lines.append(f"Highest moisture reading: {m['value']} {m['unit']} at {m['zone_id']} ({m['provenance']}) [{m['evidence_id']}].")
+    sensors = call(T.get_sensor_overview, building_id=building_id)
+    rising = [s for s in sensors if s["status"] == "ok" and s.get("trend") == "rising" and s["kind"] == "moisture"]
+    if rising:
+        r = max(rising, key=lambda s: s["change"])
+        lines.append(f"Fastest rising: {r['sensor_id']} at {r['zone_id']}, {r['first']} to {r['latest']} {r['unit']} "
+                     f"[{r['first_evidence_id']}] [{r['latest_evidence_id']}].")
+    distrust = [s for s in sensors if s["status"] not in ("ok", "no_data")]
+    if distrust:
+        lines.append("Not used (sensor health): " + "; ".join(f"{s['sensor_id']} {s['status']} ({', '.join(s['reasons'])})" for s in distrust) + ".")
     if wants_compare:
         cmp_ = call(T.compare_scenarios, building_id=building_id)
         hours = cmp_.get("base_row_hours_above_threshold", {})

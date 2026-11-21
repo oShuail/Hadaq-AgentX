@@ -52,14 +52,64 @@ def _top_zones(result: dict, n: int = 6) -> list[dict]:
 
 @tool
 def get_building_status(building_id: str = "B01") -> str:
-    """Latest sensor readings, latest defect detections and the current top risks for a building. Call this first."""
-    readings = _get(f"/buildings/{building_id}/readings/latest")
+    """Latest sensor readings (with each sensor's health status), latest defect detections and the current top risks
+    for a building. Call this first. Do not rely on a reading whose status is not "ok"."""
+    sensors = _get(f"/buildings/{building_id}/sensors", window=30)
     detections = _get(f"/buildings/{building_id}/detections/latest")
     risk = _get(f"/buildings/{building_id}/risk")[:5]
+    readings = [
+        {"sensor_id": s["sensor_id"], "zone_id": s["zone_id"], "kind": s["kind"], "unit": s["unit"], "status": s["status"],
+         **{k: s["latest"].get(k) for k in ("value", "ts", "quality", "provenance", "evidence_id")}}
+        for s in sensors if s.get("latest")
+    ]
     return json.dumps({
-        "readings": [{k: r.get(k) for k in ("sensor_id", "zone_id", "kind", "value", "unit", "ts", "provenance", "evidence_id")} for r in readings],
+        "readings": readings,
         "detections": [{k: d.get(k) for k in ("detection_id", "zone_id", "cls", "confidence", "change", "growth_pct", "provenance")} for d in detections],
         "top_risk": [{k: s.get(k) for k in ("risk_id", "zone_id", "level", "magnitude", "A", "B", "C")} for s in risk],
+    })
+
+
+def _sensor_brief(s: dict) -> dict:
+    latest = s.get("latest") or {}
+    window = s.get("window") or {}
+    brief = {
+        "sensor_id": s["sensor_id"], "label": s.get("label"), "kind": s["kind"], "unit": s["unit"], "zone_id": s["zone_id"],
+        "status": s["status"], "reasons": s.get("reasons", []),
+        "latest": latest.get("value"), "latest_evidence_id": latest.get("evidence_id"), "provenance": latest.get("provenance"),
+    }
+    if window:
+        brief.update({k: window.get(k) for k in ("trend", "first", "min", "max", "change", "rate_per_min", "readings",
+                                                 "from_ts", "to_ts", "first_evidence_id", "max_evidence_id")})
+    return brief
+
+
+@tool
+def get_sensor_overview(building_id: str = "B01", window: int = 60) -> str:
+    """Every sensor on the building with its health (ok, suspect, fault, stale, no_data and why), the latest value and
+    the trend over the last `window` readings (rising, falling or steady, change, min, max, rate per minute), each
+    with evidence IDs. Use it to see what is changing on the wall right now and which sensors to distrust."""
+    return json.dumps([_sensor_brief(s) for s in _get(f"/buildings/{building_id}/sensors", window=window)])
+
+
+@tool
+def get_sensor_history(building_id: str, sensor_id: str, window: int = 120, points: int = 20) -> str:
+    """One sensor's readings over the last `window` readings, downsampled to `points` values (oldest first), plus its
+    health and trend. Use it to describe how a value developed (for example before and after a storm)."""
+    detail = _get(f"/buildings/{building_id}/sensors/{sensor_id}", window=window, points=points)
+    return json.dumps({**_sensor_brief(detail), "history": detail.get("history", [])})
+
+
+@tool
+def get_zone_detail(building_id: str, zone_id: str) -> str:
+    """Everything about one wall zone (e.g. B01-W01-R1C3): its sensors with health and trend, the latest camera
+    detections there, its risk score and its result in the latest simulation. Use it before explaining one zone."""
+    zone = _get(f"/buildings/{building_id}/zones/{zone_id}")
+    return json.dumps({
+        **{k: zone.get(k) for k in ("zone_id", "row", "col", "position", "simulation")},
+        "sensors": [_sensor_brief(s) for s in zone.get("sensors", [])],
+        "detections": [{k: d.get(k) for k in ("detection_id", "cls", "confidence", "change", "growth_pct", "provenance")}
+                       for d in zone.get("detections", [])],
+        "risk": {k: zone["risk"].get(k) for k in ("risk_id", "level", "magnitude", "A", "B", "C")} if zone.get("risk") else None,
     })
 
 
@@ -160,5 +210,6 @@ def propose_recommendation(
     return json.dumps({"event_id": posted["event_id"], "status": "pending_expert_approval"})
 
 
-ORCHESTRATOR_TOOLS = [get_building_status, get_recent_events, get_risk]
-ADVISOR_TOOLS = [get_building_status, run_rain_simulation, compare_scenarios, get_risk, propose_recommendation]
+ORCHESTRATOR_TOOLS = [get_building_status, get_sensor_overview, get_sensor_history, get_zone_detail, get_recent_events, get_risk]
+ADVISOR_TOOLS = [get_building_status, get_sensor_overview, get_zone_detail, run_rain_simulation, compare_scenarios, get_risk,
+                 propose_recommendation]

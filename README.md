@@ -1,11 +1,11 @@
 # حَدَق Hadaq
 
-> **Start here:** [HANDOVER.md](HANDOVER.md) has the current state, known issues and next steps for each of us. Update it at the end of every session.
+> **Start here:** [HANDOVER.md](HANDOVER.md) has the current state, known issues and next steps for each of us. Update it at the end of every session. The challenge requirements, gaps and plan are in [docs/challenge-plan.md](docs/challenge-plan.md) (Arabic).
 
 **A digital eye that detects the finest details.**
 **عين رقمية تكتشف أدق التفاصيل**
 
-Hadaq is an AI multi-agent digital twin for the mud-brick heritage of At-Turaif, Diriyah (agentX hackathon, Culture and Heritage track). It shows Diriyah as a 3D map; click the focus building and you get its live sensors, camera feed, simulated rain impact on each wall zone, risk scores, and agents that investigate on their own and propose actions for a conservation expert to approve.
+Hadaq is an AI multi-agent digital twin for the mud-brick heritage of At-Turaif, Diriyah (agentX hackathon, Culture and Heritage track). It shows Diriyah as a 3D map; click the focus building and you get its live sensors, camera feed, simulated rain impact on each wall zone, risk scores, and agents that investigate on their own: they map the damage seen in photos to a treatment with its materials and tools, and propose actions for a conservation expert to approve.
 
 > Round 1 runs on simulated sensors, edited photos and an uncalibrated moisture model, all labeled as such. One sensor node in a mud brick we made is real. See "Honesty" below.
 
@@ -23,7 +23,7 @@ flowchart LR
   API[API + DB + live socket<br/>Turky]
   SIMENG[Simulation, risk, monitoring<br/>Basma]
   VIS[Vision worker RF-DETR-Seg<br/>Abdurhmn]
-  AG[Agents: Orchestrator +<br/>Simulation and Advisory<br/>Omar]
+  AG[Agents: Orchestrator +<br/>Damage and Treatment +<br/>Simulation and Advisory<br/>Omar]
   WEB[Web: 3D twin of Diriyah,<br/>panel, chat<br/>Turky + Omar]
 
   ESP --> MQTT
@@ -48,7 +48,7 @@ flowchart LR
 | `services/api/` | FastAPI gateway, MQTT bridge, SQLite/Postgres, websocket | Turky | [docs/team/turky.md](docs/team/turky.md) |
 | `services/simulation/` | Weather, moisture model, ABC risk, monitoring rule | Basma | [docs/team/basma.md](docs/team/basma.md) |
 | `services/vision/` | RF-DETR-Seg, camera simulator, vision worker | Abdurhmn | [docs/team/abdurhmn.md](docs/team/abdurhmn.md) |
-| `services/agents/` | LangGraph agents, verifier, chat API | Omar | [docs/team/omar.md](docs/team/omar.md) |
+| `services/agents/` | LangGraph agents (damage and treatment, simulation), treatment table, verifier, chat API | Omar | [services/agents/README.md](services/agents/README.md) |
 | `devices/` | ESP32 brick node, sensor simulator | Saleh | [docs/team/saleh.md](docs/team/saleh.md) |
 | `apps/web/` | React + three.js app (3D twin of Diriyah) | Turky (shell), Omar (twin, chat), Saleh (scenario panel) | |
 | `docs/` | Team guides, 3D scan guide, demo script | All | |

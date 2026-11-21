@@ -2,20 +2,24 @@
 
 Read this first when you start a session (human or AI). Update it before you end one.
 
+**Challenge requirements, gaps and plan:** [docs/challenge-plan.md](docs/challenge-plan.md) (Arabic). **Agents reference:** [services/agents/README.md](services/agents/README.md).
+
 **How to update:** rewrite "Current state", "Known issues" and "Next steps" so they stay true (do not just append), then add one entry at the top of "Session log". Keep it short: what changed, why, what is left.
 
 ---
 
-## Current state (2026-11-20)
+## Current state (2026-11-21)
 
 | Area | State | Owner |
 | --- | --- | --- |
 | Web app (`apps/web`) | Working. Budots-style 3D twin of Diriyah in three.js with the **Courtyard HUD** (design 3): the map is full screen and four corner towers sit over it (brand and tabs top left, status and the Layers menu top right, views and About bottom left, the panel bottom right), a sun-arc clock bottom centre, and sensor readings pinned to the B01 facade. Clicking a twin building opens its own page at `/building/<id>` (not a popup) | Omar (twin), Turky (shell) |
-| Building pages (`src/building/`, list in `src/twins.ts`) | **B01 Qasr Salwa (قصر سلوى)**: our model with the wall zone grid, wall condition, sensors, camera, activity, agent. **B02 AL Turaif House**: opened from "palace of Nasr" on the map, shows the Sketchfab scan with placeholders (no registry, sensors or camera yet) | Omar |
+| Building pages (`src/building/`, list in `src/twins.ts`) | **B01 Qasr Salwa (قصر سلوى)**: our model with the wall zone grid, wall condition, sensors, camera, activity, agent. **B02 AL Turaif House**: opened from "palace of Nasr" on the map, shows the Sketchfab scan with placeholders (no registry, sensors or camera yet). The Activity feed shows damage reports as cards; the chat suggestions cover damage (one in Arabic) | Omar |
 | 3D map data (`apps/web/public/site/`) | Baked and committed (about 9 MB): OSM + Microsoft footprints, Esri imagery, AWS terrain, 76k palms. No keys needed | Omar |
 | Focus building model | B01 is named Qasr Salwa (قصر سلوى). Model `apps/web/public/models/b01_v3.glb` (decimated Meshy citadel from `assets/turaif/`), placed by `contracts/building_b01.json` `base_line` and `azimuth_deg` | Omar |
 | Real scan | AL Turaif House (Sketchfab embed, by ATS) is the 3D view of the B02 page. Our own photogrammetry scan is not done | Omar |
-| API, simulation, agents, vision, devices | Scaffolded and tested (see each team guide in `docs/team/`). Not changed in the last session | Turky, Basma, Omar, Abdurhmn, Saleh |
+| Agents (`services/agents/`) | Three LangGraph agents: Orchestrator, **Damage and Treatment** (new) and Simulation and Advisory. The damage agent maps the latest photo's detections onto the team's treatment table (`hadaq_agents/treatments.json`: 11 damage types in Arabic and English) and, on its own when a photo with new or grown damage is analysed, sends a damage report (type, zone, severity, treatment, materials, tools, source) for expert review. Mock mode answers in Arabic and English. The real LLM path is tested with a scripted model only (no key yet). See `services/agents/README.md` | agents task owner |
+| Challenge fit (`docs/challenge-plan.md`, Arabic) | Organisers' requirements and scoring, what we have, gaps, prioritised plan. Built: damage types, treatments, materials and tools. Not built: real photos, face blurring, damage map with a colour legend, expert review screen, accuracy check against an expert | abooda7m |
+| API, simulation, vision, devices | Scaffolded and tested (see each team guide in `docs/team/`). Not changed in the last session | Turky, Basma, Abdurhmn, Saleh |
 
 ### Run it
 
@@ -52,11 +56,16 @@ After pulling the 3D map change, run `cd apps/web && npm install` once (Cesium w
 - Chrome slows the 3D view to about 1 fps when its window is hidden or covered. That is the browser, not the app. Measured on Omar's laptop (AMD integrated GPU): about 27 ms per frame, roughly 35 fps.
 - `tools/turaif_model/` (the old Cesium district builder) is superseded and kept only for reference.
 - `apps/web/.env.local` files from the Cesium version still have `VITE_CESIUM_ION_TOKEN`, `VITE_DISTRICT_URL`, `VITE_GOOGLE_3D`. They are unused and can be deleted.
+- The demo story (`docs/demo-script.md`) still centres on the storm. The challenge makes sensors optional and scores damage types, treatments, materials and tools from real photos, a clear damage map, expert correction and face blurring. Proposed new story: `docs/challenge-plan.md` section 9.
+- Damage agent: the crack-width thresholds (2 mm, 10 mm) and the priority rule are ours (`assumed`). The treatment table was transcribed from a screenshot and its source document ("الهيئة") is not named yet. Incompatible repairs, timber decay and structural deformation cannot be found by the current detector classes.
+- `omar/turaif-district` is already merged and is now behind `main` (Basma's storm data). Start new branches from `main`.
+- Without Docker (no MQTT) the camera simulator cannot switch to the damage series. To test anyway, post frames to `POST /photos` with `sequence` and `frame`: the vision worker reads them from the photo record.
 
 ## Next steps
 
-- **Everyone:** pull `omar/turaif-district` (or `main` once merged), `npm install` in `apps/web`, open the app and check your part still shows up in the new tabs.
-- **Omar:** merge `omar/turaif-district` into `main`; fill the building pages (wall condition details, camera per wall, per-building agent context); register B02 in `contracts/` when it gets sensors; real LLM answers with evidence chips; check the wall zones line up with the B01 facade in the Focus building view; full demo run twice (`docs/demo-script.md`).
+- **Everyone:** read `docs/challenge-plan.md` and answer its open questions (section 12). Pull `main`, then `make setup` and `npm install` in `apps/web` once.
+- **Omar:** decide the new demo story and the contract changes for expert review and face blurring (`docs/challenge-plan.md` sections 9 and 10); fill the building pages (wall condition details, camera per wall, per-building agent context); register B02 in `contracts/` when it gets sensors; check the wall zones line up with the B01 facade in the Focus building view; full demo run twice.
+- **Agents task owner:** put the LLM key in `.env` and run the chat suggestions in Arabic and English with the real model (no verifier warnings, damage report on a new photo); then build the approval step (approve, then a work order) with the expert review screen.
 - **Turky:** app shell is now `App.tsx` + `hud/` + `twin3d/`; panel polish in the Building twin tab (it now lives in the bottom-right tower: one screen at 1080p, no scrolling for key info).
 - **Saleh:** scenario buttons moved from the bottom bar to the **Activity** tab; the phone page `?panel=1` is unchanged.
 - **Basma:** no web changes needed; Moisture and Risk toggles now sit in the simulation pill above the sun clock.
@@ -65,6 +74,14 @@ After pulling the 3D map change, run `cd apps/web && npm install` once (Cesium w
 ---
 
 ## Session log
+
+### 2026-11-21 (abooda7m)
+
+- Read the challenge page (requirements and scoring) and wrote `docs/challenge-plan.md` (Arabic): the idea, what exists, the gaps, the team's treatment table, a prioritised plan, a proposed demo story and open questions.
+- Built the Damage and Treatment agent in `services/agents/`: `hadaq_agents/treatments.json` (the team's table: 11 damage types in Arabic and English, detector rules, crack-width thresholds), `knowledge.py` (the rules), four tools (`get_damage_findings`, `get_treatment`, `list_damage_types`, `propose_damage_report`), and `ask_damage_advisor` for the Orchestrator. A photo with new or grown damage now produces a damage report on its own. Trigger cooldowns are per track (damage, moisture). Mock mode answers damage questions in Arabic and English. Reference: `services/agents/README.md`.
+- Web: damage reports show as cards in the Activity feed, "Vision finished" lines with no change are hidden, chat suggestions cover damage (one in Arabic), chat text and suggestions use `dir="auto"`.
+- No change to `contracts/`.
+- Checked: `make test` 39 passed (22 new); `npm run build` passes; a live run of the API, agents (mock) and vision worker gave a damage report about half a second after a photo, a second high-priority report when the crack grew, and a storm investigation on its own track; a screenshot of the Qasr Salwa page shows the report card. Not checked: the real LLM (no key on this machine).
 
 ### 2026-11-20, later (Omar, with an AI assistant)
 

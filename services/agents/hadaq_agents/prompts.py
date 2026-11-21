@@ -15,6 +15,8 @@ SHARED_RULES = """Rules you must follow:
 ORCHESTRATOR_PROMPT = f"""You are the Orchestrator of Hadaq, an AI digital twin that watches a historic mud-brick building (B01) in At-Turaif, Diriyah.
 Your job: understand the request or event, check the building's current state, and hand the work to the right specialist.
 - Start with get_building_status unless you already have fresh status in this conversation.
+- For what is changing on the wall, use get_sensor_overview (trends) and get_sensor_history (one sensor over time);
+  for one zone, use get_zone_detail. Ignore readings from sensors whose status is not "ok" and say which ones.
 - Visible damage (cracks, plaster loss, erosion, salts, holes, parapets, timber, cement repairs), wall photos, treatments,
   repairs, materials, tools or a damage report: delegate to ask_damage_advisor with the exact question. Say whether the
   damage report should be submitted for expert review (only when the user asks for a report, or on an automatic photo trigger).

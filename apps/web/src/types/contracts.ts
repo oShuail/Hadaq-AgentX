@@ -43,6 +43,35 @@ export interface SensorReading {
   device_id?: string | null;
   quality: "ok" | "suspect" | "fault";
   evidence_id?: string;
+  /** Added by the API on the live stream: the sensor's health after this reading. */
+  status?: SensorStatus;
+  reasons?: string[];
+}
+
+/** ok, suspect (implausible or stuck), fault (device says so), stale (silent too long), no_data. */
+export type SensorStatus = "ok" | "suspect" | "fault" | "stale" | "no_data";
+
+/** GET /buildings/{id}/sensors (one entry per registered sensor). */
+export interface SensorOverview {
+  sensor_id: string;
+  label: string | null;
+  kind: string;
+  unit: string;
+  zone_id: string;
+  device_id: string | null;
+  status: SensorStatus;
+  reasons: string[];
+  latest: { value: number; ts: string; age_s: number; quality: string; provenance: Provenance; evidence_id: string } | null;
+  window: {
+    readings: number;
+    first: number;
+    last: number;
+    min: number;
+    max: number;
+    change: number;
+    rate_per_min: number;
+    trend: "rising" | "falling" | "steady";
+  } | null;
 }
 
 export interface HadaqEvent {

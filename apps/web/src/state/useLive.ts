@@ -3,11 +3,34 @@ import { useEffect, useState } from "react";
 import { api, connectLive } from "../api/client";
 import { WS_URL } from "../config";
 import { type DamageReportEvent, damageReportOf } from "../twin/damage";
-import type { BuildingRegistry, Detection, HadaqEvent, Photo, RiskScore, SensorReading, SimulationResult } from "../types/contracts";
+import type {
+  BuildingRegistry,
+  Detection,
+  HadaqEvent,
+  Photo,
+  RiskScore,
+  SensorReading,
+  SensorStatus,
+  SimulationResult,
+} from "../types/contracts";
+
+const TREND_POINTS = 40;
+const STALE_MS = 30_000; // same rule as the API (SENSOR_STALE_S)
+
+export interface SensorHealth {
+  status: SensorStatus;
+  reasons: string[];
+}
 
 export interface LiveState {
   building: BuildingRegistry | null;
   readings: Record<string, SensorReading>;
+  /** Last good values per sensor, oldest first (for the sparklines). */
+  trends: Record<string, number[]>;
+  /** Health per sensor from the API (ok, suspect, fault, stale, no_data). */
+  health: Record<string, SensorHealth>;
+  /** Ticks every few seconds so "stale" shows up even when nothing new arrives. */
+  now: number;
   detections: Detection[];
   risk: RiskScore[];
   events: HadaqEvent[];
@@ -26,6 +49,9 @@ export function useLive(buildingId: string): LiveState {
   const [state, setState] = useState<LiveState>({
     building: null,
     readings: {},
+    trends: {},
+    health: {},
+    now: Date.now(),
     detections: [],
     risk: [],
     events: [],
@@ -44,6 +70,13 @@ export function useLive(buildingId: string): LiveState {
     Promise.allSettled([
       api.building(buildingId).then((building) => patch({ building })),
       api.latestReadings(buildingId).then((list) => patch({ readings: Object.fromEntries(list.map((r) => [r.sensor_id, r])) })),
+      api.readings(buildingId, 600).then((list) => {
+        const trends: Record<string, number[]> = {};
+        for (const r of [...list].reverse()) if (r.quality === "ok") (trends[r.sensor_id] ??= []).push(r.value);
+        for (const k of Object.keys(trends)) trends[k] = trends[k].slice(-TREND_POINTS);
+        patch({ trends });
+      }),
+      api.sensors(buildingId).then((list) => patch({ health: Object.fromEntries(list.map((s) => [s.sensor_id, { status: s.status, reasons: s.reasons }])) })),
       api.latestDetections(buildingId).then((detections) => patch({ detections })),
       api.risk(buildingId).then((risk) => patch({ risk })),
       api.events(buildingId).then((events) => patch({ events })),
@@ -59,9 +92,16 @@ export function useLive(buildingId: string): LiveState {
       WS_URL,
       (m) => {
         switch (m.channel) {
-          case "reading":
-            patch((s) => ({ readings: { ...s.readings, [m.data.sensor_id]: m.data } }));
+          case "reading": {
+            const r = m.data;
+            const good = (r.status ?? (r.quality === "ok" ? "ok" : r.quality)) === "ok";
+            patch((s) => ({
+              readings: { ...s.readings, [r.sensor_id]: r },
+              trends: good ? { ...s.trends, [r.sensor_id]: [...(s.trends[r.sensor_id] ?? []), r.value].slice(-TREND_POINTS) } : s.trends,
+              health: r.status ? { ...s.health, [r.sensor_id]: { status: r.status, reasons: r.reasons ?? [] } } : s.health,
+            }));
             break;
+          }
           case "event": {
             const report = damageReportOf(m.data);
             patch((s) => ({
@@ -88,11 +128,22 @@ export function useLive(buildingId: string): LiveState {
       },
       (up) => patch({ connected: up }),
     );
+    const tick = window.setInterval(() => patch({ now: Date.now() }), 5000);
     return () => {
       alive = false;
+      window.clearInterval(tick);
       close();
     };
   }, [buildingId]);
 
   return state;
+}
+
+/** A sensor's health right now: the API's verdict, turned "stale" when nothing has arrived for a while. */
+export function sensorHealth(live: Pick<LiveState, "readings" | "health" | "now">, sensorId: string): SensorHealth {
+  const r = live.readings[sensorId];
+  if (!r) return { status: "no_data", reasons: ["no reading yet"] };
+  const age = live.now - Date.parse(r.ts);
+  if (age > STALE_MS) return { status: "stale", reasons: [`no reading for ${Math.round(age / 1000)} s`] };
+  return live.health[sensorId] ?? { status: r.quality === "ok" ? "ok" : r.quality, reasons: [] };
 }

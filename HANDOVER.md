@@ -8,7 +8,7 @@ Read this first when you start a session (human or AI). Update it before you end
 
 ---
 
-## Current state (2026-11-21)
+## Current state (2026-11-21, after the integration of all branches)
 
 | Area | State | Owner |
 | --- | --- | --- |
@@ -21,6 +21,7 @@ Read this first when you start a session (human or AI). Update it before you end
 | Photo privacy (`services/api/hadaq_api/privacy.py`) | Faces are hidden (pixelated and blurred) before an uploaded photo is stored; YuNet face detector from the OpenCV Zoo (`models/`, MIT licence alongside). The count goes into the `new_photo` event payload (`privacy`). `PRIVACY_BLUR=false` turns it off. Needs `opencv-python-headless` (run `make setup` again) | agents task owner (review: Turky) |
 | Challenge fit (`docs/challenge-plan.md`, Arabic) | Organisers' requirements and scoring, what we have, gaps, prioritised plan. Built: damage types, treatments, materials and tools, damage map with a colour key, face hiding. Not built: real photos, expert review screen, accuracy check against an expert, a run with the real LLM key | abooda7m |
 | Simulation, vision, devices | Scaffolded and tested (see each team guide in `docs/team/`). Saleh: the camera simulator generates a fixed synthetic wall series locally when no photos are present; API and vision recognise the growing R2C5 crack with synthetic provenance | Basma, Abdurhmn, Saleh |
+| Sensors (B01) | **Working end to end, together with Saleh's two-minute run.** 9 sensors (S01 to S09: base, mid and upper moisture, temperature, humidity, crack gauge, tilt) from `devices/sensor-sim/` over MQTT, or HTTP when there is no broker. The API gives each sensor a health status (ok, suspect, fault, stale, no_data) and a trend (`GET /buildings/B01/sensors`, `/sensors/{id}`, `/zones/{zone_id}`, `/devices`); the agents read them through `get_sensor_overview`, `get_sensor_history`, `get_zone_detail`; the web shows a trend line and the status per sensor. The brick node (S01 to S03) is still simulated with `--include-real` | Saleh, Turky |
 | Simulation site data (`contracts/building_b01.json` `site.*`) | Set from Open-Meteo ERA5 by Basma (PR #3): `heavy_rain_days_per_year` 1.91 (2015 to 2025, ASSUMED 10 mm/day threshold), `demo_storm_date` 2023-01-05. Only used by `mode: "replay"` runs, which nothing sends yet (see Known issues) | Basma |
 
 ### Run it
@@ -29,7 +30,11 @@ Read this first when you start a session (human or AI). Update it before you end
 make up && make api      # API on :8000
 make agents              # agents on :8100 (HADAQ_LLM=mock works without a key)
 make web                 # http://localhost:5173
+make sensors             # sensor simulator (MQTT, or HTTP by itself when there is no broker)
+make camera && make vision   # camera frames and the mock detector (damage reports)
 ```
+
+On Windows without Docker or make: double-click `tools\windows\start-hadaq.bat` (creates `.venv` if needed, starts API, agents, sensors over HTTP and the web app, opens the browser).
 
 After pulling the 3D map change, run `cd apps/web && npm install` once (Cesium was replaced by three.js).
 
@@ -50,7 +55,8 @@ After pulling the 3D map change, run `cd apps/web && npm install` once (Cesium w
 ## Known issues and honesty notes
 
 - The B01-CAM01 photo folders are empty in git by design. Without an actual wall photo, `make camera` generates illustrative synthetic artwork at 1600 x 1200 with wall bounds `[80, 80, 1520, 1120]`. Replace both folders and remeasure the bounds when the real fixed-camera series is available; no photos have been shared to Drive.
-- Activity's sensor run requires the API, MQTT broker and `make sensors`; it is unavailable on the static web preview unless a reachable API and simulator are deployed. The API times the scenario events, the device simulator publishes the six readings on the normal MQTT topics, and the site renders the persisted WebSocket feed. Camera frames and crack detection additionally require `make camera` and `make vision`.
+- Activity's sensor run needs the API and `make sensors` (MQTT or HTTP; the API checks that `sim-01` is online in `GET /buildings/B01/devices`). It is unavailable on a static web preview. The API times the scenario events, the simulator sends the nine readings, and the site renders the persisted WebSocket feed.
+- In the two-minute run the agent investigates once at the start (`storm_started`, when the wall is still dry); the `moisture_anomaly` about 30 s later falls inside the moisture track's cooldown, so it does not start a second investigation. Ask the agent in the chat after the anomaly for a wet-wall answer. Camera frames and crack detection additionally require `make camera` and `make vision`.
 - This Windows/WSL host stops its Docker MQTT broker when WSL becomes idle. Keeping WSL alive enabled two fresh end-to-end sensor cycles and a complete timed sensor scenario including fault recovery. Camera upload, worker comparison and the synthetic provenance event passed twice through the API. The web shows sensor values, the photo detection boxes and the R2C5 attention box on the 3D wall; two mock agent drainage answers returned. This is an illustrative demo, not real photos or a calibrated model.
 - Map layers switched off for now (built but hidden, kept in code): car parks and cars, lanterns, street lights, visitors, helipads. Turn one back on by removing it from `DISABLED_LAYERS` in `apps/web/src/twin3d/Twin.ts`.
 - B01 is called Qasr Salwa but stands at a placeholder spot west of the real Salwa Palace; the real palace is not a separate outline in our OSM data. Say "placeholder location" if asked, or move it with `base_line`.
@@ -61,6 +67,9 @@ After pulling the 3D map change, run `cd apps/web && npm install` once (Cesium w
 - Chrome slows the 3D view to about 1 fps when its window is hidden or covered. That is the browser, not the app. Measured on Omar's laptop (AMD integrated GPU): about 27 ms per frame, roughly 35 fps.
 - The real storm (`demo_storm_date`) is not used in the demo yet: the web client (`apps/web/src/api/client.ts` `runSimulation`) and the agent tools (`run_rain_simulation`, `compare_scenarios`) all send `mode: "synthetic_storm"`. The API only fills `demo_storm_date` for `mode: "replay"` with no date.
 - A replay run needs the internet or a filled weather cache (`data/weather_cache/`). Offline with no cache, the simulation job fails; there is no fallback to the synthetic storm yet.
+- Sensor readings carry real timestamps, but the simulator compresses a day into two minutes (`--speed 720`). Rates "per minute" therefore look fast, and the anomaly rate rule (it needs 15 real minutes of history) never fires in a short demo; the absolute 60 %rel rule does.
+- A stuck sensor is only caught while another sensor of the same kind is moving, so press **Stuck sensor** during a storm. A wall that is calm everywhere is never flagged (on purpose: the real brick node can sit at one value for minutes).
+- `contracts/building_b01.json` gained S07 (base moisture R1C1), S08 (mid-wall moisture R2C3) and S09 (tilt R4C5, unit `deg`). The building page and the facade cards show them; when the panel is open only the zones that need attention get a card.
 - `tools/turaif_model/` (the old Cesium district builder) is superseded and kept only for reference.
 - `apps/web/.env.local` files from the Cesium version still have `VITE_CESIUM_ION_TOKEN`, `VITE_DISTRICT_URL`, `VITE_GOOGLE_3D`. They are unused and can be deleted.
 - The demo story (`docs/demo-script.md`) still centres on the storm. The challenge makes sensors optional and scores damage types, treatments, materials and tools from real photos, a clear damage map, expert correction and face blurring. Proposed new story: `docs/challenge-plan.md` section 9.
@@ -74,19 +83,35 @@ After pulling the 3D map change, run `cd apps/web && npm install` once (Cesium w
 
 ## Next steps
 
-- **Everyone:** read `docs/challenge-plan.md` and answer its open questions (section 12). Pull `main`, then `make setup` and `npm install` in `apps/web` once.
+- **Everyone:** read `docs/challenge-plan.md` and answer its open questions (section 12). Pull `main` once the integration PR (`omar/integration`) is merged, then `make setup` and `npm install` in `apps/web` once. Your old branches are all inside it; start new work from `main`.
 - **Omar:** decide the new demo story and the contract changes for expert review and face blurring (`docs/challenge-plan.md` sections 9 and 10); fill the building pages (wall condition details, camera per wall, per-building agent context); register B02 in `contracts/` when it gets sensors; check the wall zones line up with the B01 facade in the Focus building view; full demo run twice.
 - **Agents task owner:** put the LLM key in `.env` (`HADAQ_LLM=anthropic:claude-sonnet-5-5`) and run the chat suggestions in Arabic and English with the real model (no verifier warnings, damage report on a new photo); then build the approval step (approve, then a work order) with the expert review screen once Omar approves the contract changes.
 - **Turky:** review `privacy.py` and the upload change in `services/api/hadaq_api/main.py`. App shell is now `App.tsx` + `hud/` + `twin3d/`; panel polish in the Building twin tab (it now lives in the bottom-right tower: one screen at 1080p, no scrolling for key info).
+- **Saleh:** your old `World` class in `sensor_sim.py` was replaced by `wall_model.py` during the integration; your two-minute timing is kept as `devices/sensor-sim/tests/test_demo_run.py`, your fault values (3, 96, 8, 91) and the 3 mm crack cap are in the model. With `make api` and `make sensors` running, use Activity → Play sensor run (Replay restarts, Reset demo restores the baseline). Left: build the brick node and run the simulator without `--include-real` once it streams; film the water-pour shot; tune `K_RAIN` if the run looks too fast or slow on the demo laptop (keep `test_demo_run.py` passing).
+- **Whoever does the agents:** the sensor tools are in `tools.py` and both agents have them; with a real LLM, check it skips sensors that are not `ok` and cites the `rd_` evidence IDs from the trends.
 - **Basma:** share the `hadaq_sim.cli storms` row for 2023-01-05 (total mm and peak mm/h) for the slide; run a replay once on the demo laptop to fill `data/weather_cache/`. Moisture and Risk toggles now sit in the simulation pill above the sun clock.
 - **Omar or Turky:** switch the web client and the agent tools to `mode: "replay"` so the demo uses the real storm, and make the API fall back to the synthetic storm if the weather fetch fails offline.
 - **Abdurhmn:** try face hiding on real At-Turaif photos with visitors (far and side views) and report any missed face. Demo video shots changed again (HUD layout, views bottom left, readings pinned on the facade in the Qasr Salwa view), see `docs/demo-script.md`.
 - **Saleh and Abdurhmn:** rehearse the complete two-minute shot sequence on the demo laptop with all services running, and share the photo series to the team Drive if needed. Replace the illustrative series with a real straight-on source photo and remeasure `wall_bbox_px` when available.
-- **Saleh:** with `make up`, `make api` and `make sensors` running, use Activity → Play sensor run for the live two-minute feed. Replay restarts it; Reset demo restores baseline. The phone page `?panel=1` is unchanged.
 
 ---
 
 ## Session log
+
+### 2026-11-21, integration (Omar, with an AI assistant)
+
+- Put all open work together on `omar/integration`: `abooda7m/agents` (damage and treatment agent, face hiding, damage map), `saleh/data-feeds` (two-minute sensor run, synthetic camera frames, synthetic provenance for mock detections) and `omar/sensors` (sensor health, wall model, sensor tools). Basma's and the older `omar/*` branches were already in `main`.
+- Decisions while merging: Saleh's simulator tuning moved into `wall_model.py` (fault values, crack cap) and his timing test became `test_demo_run.py`; `K_RAIN` 0.38 to 0.5 and the run's storm 12 to 25 mm/h so the base passes 60 %rel at about 30 s as in his run; the run works over HTTP too (available when `sim-01` is online by MQTT status or fresh readings); the damage agent uses the crack gauge only when its status is `ok`; the mock agent's sensor lines exist in Arabic too; the run's drying label now says the base stays wet (it does: ponding).
+- Checked: 63 Python tests pass (`make test` paths), `npm run build` passes; live runs in the container: MQTT run (storm, anomalies on S07 and S04 at 27 s and 35 s, S04 fault 60 to 105 s and back to `ok`, crack 1.20 to 1.55 mm), HTTP run with `--include-real` (nine sensors, devices online), the mock chat in English (fastest rising sensor, faulty S04 left out) and Arabic, and camera + vision + damage report citing the crack gauge reading. Not checked: the real LLM, the web app in a browser on the merged branch (checked on Omar's laptop after the pull).
+
+### 2026-11-21 (Omar, with an AI assistant)
+
+- Built the sensor part end to end so the agents can read it. New `devices/sensor-sim/wall_model.py`: rain wets the base most, water ponds at the wall foot and keeps the base wet after the rain, base dries slower, daily temperature and humidity, crack and tilt; fault modes spike, stuck and dropout. `sensor_sim.py` now talks MQTT or falls back to HTTP (no Docker needed).
+- Added S07, S08, S09 to the registry (base north corner, mid-wall, tilt).
+- API: `services/api/hadaq_api/sensors.py` (health and trend per sensor), new routes `/buildings/{b}/sensors`, `/sensors/{id}`, `/zones/{zone_id}`, `/devices`; device online/offline from the MQTT last will; the live `reading` message now carries `status` and `reasons`; faulty, implausible or stuck sensors no longer raise moisture anomalies.
+- Agents: `get_sensor_overview`, `get_sensor_history`, `get_zone_detail`; `get_building_status` includes each sensor's status; the mock plan reports the fastest rising sensor and lists the sensors it did not use. One prompt line added.
+- Web: trend line and status (fault, check, stale) per sensor in the Building twin panel and the building page (`panel/SensorList.tsx`); facade cards update in place instead of being rebuilt on every reading (they used to flicker and could miss clicks); a **Stuck sensor** button in the demo controls.
+- Checked: all tests pass (28, with new ones for the wall model, sensor health and the sensor tools); `npm run build` passes; ran Mosquitto + API + agents (mock) + simulator together: storm, anomaly, automatic investigation citing the sensor trend, spike, stuck, dropout, reset, and the HTTP fallback with no broker.
 
 ### 2026-11-21, site run uses live feed (Saleh data feeds)
 

@@ -40,7 +40,7 @@ agents: ## Omar, http://localhost:8100/docs
 web: ## http://localhost:5173 (phone panel: http://<laptop-ip>:5173/?panel=1)
 	cd apps/web && npm run dev
 
-sensors: ## Saleh: sim sensors (drop --include-real once the brick node is live)
+sensors: ## Saleh: sim sensors over MQTT, or HTTP if no broker (drop --include-real once the brick node is live)
 	$(LOAD_ENV) $(BIN)/python devices/sensor-sim/sensor_sim.py --include-real
 
 camera: ## Abdurhmn: fake fixed camera
@@ -53,4 +53,4 @@ sim: ## Basma: one scenario from the command line
 	$(LOAD_ENV) $(BIN)/python -m hadaq_sim.cli run --scenario storm_replay
 
 test:
-	$(BIN)/pytest -q packages/hadaq_schemas/tests services/simulation/tests services/api/tests services/agents/tests services/vision/tests devices/sensor-sim/test_sensor_sim.py
+	$(BIN)/pytest -q packages/hadaq_schemas/tests services/simulation/tests services/api/tests services/agents/tests services/vision/tests devices/sensor-sim/tests

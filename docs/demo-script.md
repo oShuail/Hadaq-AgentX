@@ -12,7 +12,7 @@ make vision       # terminal 5
 make camera       # terminal 6
 ```
 
-Open the **Activity** tab and press **Reset demo**. Fill the weather cache once (`make sim`). Then press **Play sensor run** to drive the two-minute MQTT feed; Replay starts again from baseline. Browser full screen, 1080p, notifications off. The clock starts at 16:45 (golden hour); keep it there for the shots.
+Open the **Activity** tab and press **Reset demo**. Fill the weather cache once (`make sim`). Then press **Play sensor run** to drive the two-minute sensor feed (MQTT, or HTTP when there is no broker); Replay starts again from baseline. Browser full screen, 1080p, notifications off. The clock starts at 16:45 (golden hour); keep it there for the shots.
 
 ## Shots
 

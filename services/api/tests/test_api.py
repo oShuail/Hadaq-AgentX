@@ -76,3 +76,12 @@ def test_photo_and_detections(client):
     assert client.get("/buildings/B01/detections/latest").json()[0]["cls"] == "crack"
     event = next(e for e in client.get("/buildings/B01/events").json() if e["type"] == "detection_ready")
     assert event["provenance"] == "synthetic"
+
+
+def test_sensor_run_available_when_the_simulator_posts_over_http(client):
+    from datetime import datetime, timezone
+
+    reading = {"sensor_id": "B01-S04", "building_id": "B01", "zone_id": "B01-W01-R1C6", "kind": "moisture",
+               "value": 18.0, "unit": "%rel", "ts": datetime.now(timezone.utc).isoformat(), "provenance": "synthetic"}
+    client.post("/readings", json=reading)
+    assert client.get("/buildings/B01/demo/sensor-run").json()["available"]

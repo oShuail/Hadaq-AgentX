@@ -170,7 +170,7 @@ def latest_readings(building_id: str, sensor_ids: list[str]) -> list[dict]:
     out = []
     with Session(engine) as s:
         for sensor_id in sensor_ids:
-            row = s.exec(select(ReadingRow).where(ReadingRow.sensor_id == sensor_id).order_by(ReadingRow.ts.desc()).limit(1)).first()
+            row = s.exec(select(ReadingRow).where(ReadingRow.sensor_id == sensor_id).order_by(ReadingRow.ts.desc(), ReadingRow.id.desc()).limit(1)).first()
             if row:
                 out.append({**row.data, "evidence_id": f"rd_{row.id}"})
     return out
@@ -181,7 +181,7 @@ def reading_history(building_id: str, sensor_id: str | None, limit: int) -> list
         q = select(ReadingRow).where(ReadingRow.building_id == building_id)
         if sensor_id:
             q = q.where(ReadingRow.sensor_id == sensor_id)
-        rows = s.exec(q.order_by(ReadingRow.ts.desc()).limit(limit)).all()
+        rows = s.exec(q.order_by(ReadingRow.ts.desc(), ReadingRow.id.desc()).limit(limit)).all()
         return [{**r.data, "evidence_id": f"rd_{r.id}"} for r in rows]
 
 

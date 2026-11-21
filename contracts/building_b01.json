@@ -102,6 +102,33 @@
       "device_id": "sim-01",
       "source": "sim",
       "label": "Crack gauge"
+    },
+    {
+      "id": "B01-S07",
+      "kind": "moisture",
+      "unit": "%rel",
+      "zone_id": "B01-W01-R1C1",
+      "device_id": "sim-01",
+      "source": "sim",
+      "label": "Base moisture, north corner"
+    },
+    {
+      "id": "B01-S08",
+      "kind": "moisture",
+      "unit": "%rel",
+      "zone_id": "B01-W01-R2C3",
+      "device_id": "sim-01",
+      "source": "sim",
+      "label": "Mid-wall moisture"
+    },
+    {
+      "id": "B01-S09",
+      "kind": "tilt",
+      "unit": "deg",
+      "zone_id": "B01-W01-R4C5",
+      "device_id": "sim-01",
+      "source": "sim",
+      "label": "Wall tilt (inclinometer)"
     }
   ],
   "cameras": [

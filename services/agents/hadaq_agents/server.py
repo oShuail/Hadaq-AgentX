@@ -315,11 +315,23 @@ def run_mock(message: str, building_id: str, trigger: bool = False, track: str |
 
     if wants_sim or general:
         status = call(T.get_building_status, building_id=building_id)
-        moisture = [r for r in status["readings"] if r["kind"] == "moisture"]
+        moisture = [r for r in status["readings"] if r["kind"] == "moisture" and r.get("status", "ok") == "ok"]
         if moisture:
             m = max(moisture, key=lambda r: r["value"])
             lines.append(f"أعلى قراءة رطوبة: {m['value']} {m['unit']} في {m['zone_id']} ({m['provenance']}) [{m['evidence_id']}]." if ar
                          else f"Highest moisture reading: {m['value']} {m['unit']} at {m['zone_id']} ({m['provenance']}) [{m['evidence_id']}].")
+        sensors = call(T.get_sensor_overview, building_id=building_id)
+        rising = [s for s in sensors if s["status"] == "ok" and s.get("trend") == "rising" and s["kind"] == "moisture"]
+        if rising:
+            r = max(rising, key=lambda s: s["change"])
+            lines.append(f"أسرع ارتفاع: {r['sensor_id']} في {r['zone_id']}، من {r['first']} إلى {r['latest']} {r['unit']} "
+                         f"[{r['first_evidence_id']}] [{r['latest_evidence_id']}]." if ar
+                         else f"Fastest rising: {r['sensor_id']} at {r['zone_id']}, {r['first']} to {r['latest']} {r['unit']} "
+                              f"[{r['first_evidence_id']}] [{r['latest_evidence_id']}].")
+        distrust = [s for s in sensors if s["status"] not in ("ok", "no_data")]
+        if distrust:
+            listed = "; ".join(f"{s['sensor_id']} {s['status']} ({', '.join(s['reasons'])})" for s in distrust)
+            lines.append(f"قراءات ما اعتمدنا عليها (حالة الحساس): {listed}." if ar else f"Not used (sensor health): {listed}.")
         if wants_compare:
             cmp_ = call(T.compare_scenarios, building_id=building_id)
             hours = cmp_.get("base_row_hours_above_threshold", {})

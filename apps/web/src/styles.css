@@ -116,8 +116,15 @@ button.icon { width: 38px; height: 38px; display: grid; place-items: center; pad
 .tabs { display: flex; gap: 6px; margin: 8px 0; }
 .zone-facts { font-size: 13px; display: grid; gap: 4px; }
 .sensors { list-style: none; padding: 0; margin: 0; display: grid; gap: 4px; }
-.sensors li { display: grid; grid-template-columns: 1fr auto 44px; gap: 8px; font-size: 13px; padding: 5px 0; border-bottom: 1px dashed var(--line); }
-.sensors li.fault .value { color: var(--rose); }
+.sensors li { display: grid; grid-template-columns: 1fr 56px auto 40px; align-items: center; gap: 8px; font-size: 13px; padding: 5px 0; border-bottom: 1px dashed var(--line); }
+.sensors li .label { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.sensors li.bad .value { color: var(--rose); }
+.sensors li.stale .value { color: var(--muted); }
+.sensors .spark polyline { stroke: var(--muted); }
+.sensors .spark.up polyline { stroke: var(--gold); }
+.sensors li.bad .spark polyline { stroke: var(--rose); }
+.sensors .health { margin-left: 6px; padding: 0 5px; border-radius: 4px; font-size: 10.5px; font-weight: 600; background: rgba(192, 122, 122, 0.2); color: var(--rose); }
+.sensors .health.stale { background: rgba(255, 255, 255, 0.08); color: var(--muted); }
 .sensors .value { font-variant-numeric: tabular-nums; }
 .tag { font-size: 11px; color: var(--muted); text-align: right; }
 .tag.real { color: var(--sage); font-weight: 700; }
@@ -361,14 +368,14 @@ button.back { display: inline-flex; align-items: center; gap: 6px; padding: 8px 
 .twin-callout { position: relative; width: 0; height: 0; }
 .twin-callout .dot { position: absolute; left: -4px; top: -4px; width: 8px; height: 8px; border-radius: 50%; background: #efe0c8; box-shadow: 0 0 0 3px rgba(26, 18, 12, 0.6); }
 .twin-callout .leader { position: absolute; left: 0; top: 0; height: 0; border-top: 1.3px dashed rgba(239, 224, 200, 0.85); transform-origin: 0 0; }
-.twin-callout .card { position: absolute; transform: translateY(-50%); pointer-events: auto; cursor: pointer; display: grid; gap: 3px; min-width: 170px; max-width: 230px; padding: 7px 10px; text-align: left; border-radius: 10px; background: rgba(26, 18, 12, 0.92); border: 1px solid rgba(239, 224, 200, 0.35); color: #f4e8d6; font: inherit; }
+.twin-callout .card { position: absolute; transform: translateY(-50%); pointer-events: auto; cursor: pointer; display: grid; gap: 3px; min-width: 170px; max-width: 260px; padding: 7px 10px; text-align: left; border-radius: 10px; background: rgba(26, 18, 12, 0.92); border: 1px solid rgba(239, 224, 200, 0.35); color: #f4e8d6; font: inherit; }
 .twin-callout .card:hover { border-color: #c9a24d; }
 .twin-callout.alert .card { border-color: #c07a7a; }
 .twin-callout.alert .dot { background: #c07a7a; }
 .twin-callout .head { font-size: 11px; color: #e3d2b8; white-space: nowrap; }
 .twin-callout.alert .head { color: #e8a0a0; }
-.twin-callout .row { display: flex; align-items: baseline; gap: 5px; font-size: 12px; white-space: nowrap; }
-.twin-callout .row .label { flex: 1; overflow: hidden; text-overflow: ellipsis; }
+.twin-callout .row { display: flex; align-items: baseline; gap: 5px; min-width: 0; font-size: 12px; white-space: nowrap; }
+.twin-callout .row .label { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; }
 .twin-callout .row b { font-family: var(--display); font-size: 16px; font-weight: 600; font-variant-numeric: tabular-nums; }
 .twin-callout .row small { font-size: 10.5px; color: #e3d2b8; }
 .twin-callout .row.fault b { color: #e8a0a0; }

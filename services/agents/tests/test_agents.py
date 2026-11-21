@@ -33,3 +33,34 @@ def test_mock_agent_runs_real_tools_end_to_end():
     assert any(e.startswith("sim_") for e in response.evidence_ids)
     assert response.unverified_numbers == []
     assert response.needs_approval
+
+
+def _post_reading(client, sensor_id, zone_id, value, quality="ok", kind="moisture", unit="%rel"):
+    from datetime import datetime, timezone
+
+    client.post("/readings", json={"sensor_id": sensor_id, "building_id": "B01", "zone_id": zone_id, "kind": kind,
+                                   "value": value, "unit": unit, "ts": datetime.now(timezone.utc).isoformat(),
+                                   "provenance": "synthetic", "device_id": "sim-01", "quality": quality})
+
+
+def test_sensor_tools_and_mock_agent_skip_faulty_sensors():
+    import json
+
+    with TestClient(api_app) as client:
+        tools.set_client(client)
+        for value in (18.0, 28.0, 38.0, 48.0):
+            _post_reading(client, "B01-S05", "B01-W01-R3C4", value)
+        _post_reading(client, "B01-S04", "B01-W01-R1C6", 100.0, quality="fault")
+
+        overview = {s["sensor_id"]: s for s in json.loads(tools.get_sensor_overview.invoke({"building_id": "B01"}))}
+        assert overview["B01-S05"]["trend"] == "rising" and overview["B01-S04"]["status"] == "fault"
+        args = {"building_id": "B01", "sensor_id": "B01-S05", "window": 4, "points": 4}
+        history = json.loads(tools.get_sensor_history.invoke(args))
+        assert [p["value"] for p in history["history"]] == [18.0, 28.0, 38.0, 48.0]
+        zone = json.loads(tools.get_zone_detail.invoke({"building_id": "B01", "zone_id": "B01-W01-R3C4"}))
+        assert zone["position"] == "middle" and zone["sensors"][0]["sensor_id"] == "B01-S05"
+
+        response = run_mock("What is happening to this wall?", "B01")
+    assert "Fastest rising: B01-S05" in response.answer
+    assert "B01-S04 fault" in response.answer and "100.0" not in response.answer.split("Not used")[0]
+    assert response.unverified_numbers == []

@@ -16,7 +16,7 @@ import LayersMenu from "./hud/LayersMenu";
 import ViewsTower from "./hud/ViewsTower";
 import TimeBar from "./TimeBar";
 import { BUILDING_ID } from "./config";
-import { useLive } from "./state/useLive";
+import { sensorHealth, useLive } from "./state/useLive";
 import { attentionItems } from "./twin/attention";
 import { FOCUS_TWIN, twinById } from "./twins";
 import { LAYERS, type LayerId, type TwinStats } from "./twin3d/Twin";
@@ -109,8 +109,11 @@ export default function App() {
 
   // Sensor readings pinned to the facade next to their zones.
   const callouts = useMemo(
-    () => sensorCallouts(live.building?.sensors ?? (registry.sensors as SensorSpec[]), live.readings, attention, wall?.cols ?? 8, tab !== "explore"),
-    [live.building, live.readings, attention, wall?.cols, tab],
+    () =>
+      sensorCallouts(live.building?.sensors ?? (registry.sensors as SensorSpec[]), live.readings, attention, wall?.cols ?? 8, tab !== "explore", (id) =>
+        sensorHealth(live, id).status,
+      ),
+    [live, attention, wall?.cols, tab],
   );
 
   const go = (target: FlyTarget) => {

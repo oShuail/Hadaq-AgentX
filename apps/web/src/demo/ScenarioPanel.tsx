@@ -8,7 +8,9 @@ const ACTIONS: { type: string; label: string; payload?: Record<string, unknown> 
   { type: "storm_started", label: "Start storm", payload: { peak_rain_mm_h: 12, wind_ms: 8, wind_dir_deg: 270 } },
   { type: "storm_ended", label: "Stop storm" },
   { type: "new_crack", label: "New crack" },
-  { type: "sensor_fault", label: "Sensor fault" },
+  { type: "sensor_fault", label: "Sensor fault", payload: { sensor_id: "B01-S04", mode: "spike", duration_s: 45 } },
+  // A stuck sensor still says "ok": the API spots the flat line and marks it suspect (agents then ignore it).
+  { type: "sensor_fault", label: "Stuck sensor", payload: { sensor_id: "B01-S05", mode: "stuck", duration_s: 60 } },
   { type: "demo_reset", label: "Reset demo" },
 ];
 
@@ -37,7 +39,7 @@ export default function ScenarioPanel({ buildingId, compact = false }: { buildin
     <div className={compact ? "scenario compact" : "scenario"}>
       {!compact && <h2>Hadaq demo controls</h2>}
       {ACTIONS.map((a) => (
-        <button key={a.type} className={a.type === "storm_started" ? "warn" : ""} onClick={() => fire(a.type, a.payload)}>
+        <button key={a.label} className={a.type === "storm_started" ? "warn" : ""} onClick={() => fire(a.type, a.payload)}>
           {a.label}
         </button>
       ))}

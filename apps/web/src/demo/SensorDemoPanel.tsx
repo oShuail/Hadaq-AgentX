@@ -3,7 +3,7 @@ import type { useSensorDemo } from "./useSensorDemo";
 
 const PHASE_LABELS = {
   storm: "Storm: base moisture rising",
-  drying: "Storm stopped: wall drying",
+  drying: "Storm stopped: upper wall drying, base still wet",
   fault: "S04 sensor fault",
   crack: "New crack: S06 stepped up",
   recovery: "S04 recovered; wall drying",
@@ -30,7 +30,7 @@ export default function SensorDemoPanel({ demo }: { demo: ReturnType<typeof useS
         <button className="primary" onClick={demo.start} disabled={!demo.available}>{demo.elapsed > 0 ? "Replay" : "Play sensor run"}</button>
         {demo.elapsed > 0 && <button onClick={demo.reset}>Reset demo</button>}
       </div>
-      {!demo.available && <p className="muted small">Start the API, MQTT broker and sensor simulator to run the live feed.</p>}
+      {!demo.available && <p className="muted small">Start the API and the sensor simulator (make sensors, or tools\windows\start-hadaq.bat) to run the live feed.</p>}
       {demo.error && <p className="muted small" role="alert">{demo.error}</p>}
       <div className="sensor-demo-track" role="progressbar" aria-valuemin={0} aria-valuemax={DEMO_DURATION} aria-valuenow={demo.elapsed} aria-label="Sensor run progress">
         <i style={{ width: `${demo.elapsed / DEMO_DURATION * 100}%` }} />
@@ -49,7 +49,7 @@ export default function SensorDemoPanel({ demo }: { demo: ReturnType<typeof useS
         <span>Humidity <b>{reading("B01-S03")} %RH</b></span>
         <span>Temperature <b>{reading("B01-S02")} °C</b></span>
         <span>Crack S06 <b>{reading("B01-S06", 3)} mm</b></span>
-        <span>S04 quality <b>{demo.readings?.["B01-S04"].quality ?? "ok"}</b></span>
+        <span>S04 status <b>{demo.readings["B01-S04"]?.status ?? demo.readings["B01-S04"]?.quality ?? "—"}</b></span>
       </div>
     </section>
   );

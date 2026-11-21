@@ -4,7 +4,7 @@ import { useState } from "react";
 import AgentChat from "../chat/AgentChat";
 import type { Selection } from "../map/SiteMap";
 import type { LiveState } from "../state/useLive";
-import { RISK_COLORS } from "../twin/colors";
+import { RISK_COLORS, peakMoisture } from "../twin/colors";
 import { FOCUS_TWIN, twinById, twinTitle } from "../twins";
 import type { RiskLevel, SensorSpec } from "../types/contracts";
 import registry from "../../../../contracts/building_b01.json";
@@ -15,7 +15,6 @@ import SensorList from "./SensorList";
 interface Props {
   selection: Selection | null;
   live: LiveState;
-  hour: number;
   onFlyToFocus: () => void;
   onOpenPage: (twinId: string) => void;
 }
@@ -31,7 +30,7 @@ function Badge({ level }: { level: RiskLevel | null }) {
   );
 }
 
-export default function BuildingPanel({ selection, live, hour, onFlyToFocus, onOpenPage }: Props) {
+export default function BuildingPanel({ selection, live, onFlyToFocus, onOpenPage }: Props) {
   const [tab, setTab] = useState<"live" | "agent">("live");
 
   if (!selection) {
@@ -71,7 +70,7 @@ export default function BuildingPanel({ selection, live, hour, onFlyToFocus, onO
   const sensors = live.building?.sensors ?? (registry.sensors as SensorSpec[]);
   const zoneId = selection.kind === "zone" ? selection.zoneId : null;
   const zoneRisk = zoneId ? live.risk.find((r) => r.zone_id === zoneId) : undefined;
-  const zoneMoisture = zoneId && live.simulation ? live.simulation.zones[zoneId]?.[hour] : undefined;
+  const zoneMoisture = zoneId && live.simulation ? peakMoisture(live.simulation, zoneId) : undefined;
 
   return (
     <aside className="panel">
@@ -81,7 +80,7 @@ export default function BuildingPanel({ selection, live, hour, onFlyToFocus, onO
       </div>
       {zoneId && (
         <div className="zone-facts">
-          <div>Simulated moisture now: {zoneMoisture !== undefined ? zoneMoisture.toFixed(2) : "run a simulation"}</div>
+          <div>Peak simulated moisture: {zoneMoisture !== undefined ? zoneMoisture.toFixed(2) : "run a simulation"}</div>
           {zoneRisk && (
             <div>
               ABC: A {zoneRisk.A} + B {zoneRisk.B} + C {zoneRisk.C} = {zoneRisk.magnitude} <span className="evidence">{zoneRisk.risk_id}</span>

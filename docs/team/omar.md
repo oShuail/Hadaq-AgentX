@@ -118,7 +118,7 @@ Readings from sensors whose status is not `ok` (fault, suspect, stale) must not 
 ### 6. Twin view
 
 - `apps/web/src/twin3d/focus.ts` draws 32 panels 0.4 m in front of the facade from `base_line`, `height_m`, `rows`, `cols`, plus the attention boxes. If the panels look off, fix the coordinates in the registry, not the code.
-- Layers: Moisture (from the latest simulation, hour by hour) and Risk (ABC level). Colors in `twin/colors.ts`.
+- Layers (pill above the sun clock): Damage (default, from the latest damage report), Moisture (each zone's peak in the latest simulation) and Risk (ABC level). Colors in `twin/colors.ts`.
 - Clicking a panel, or a reading card pinned next to it, opens the zone view in the Building twin panel (moisture now, ABC breakdown, sensors in that zone).
 
 ### 7. Our own model of the building

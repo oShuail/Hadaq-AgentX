@@ -11,6 +11,7 @@ assets/camera/B01-CAM01/damage/frame_001.jpg, frame_002.jpg, ...     same view, 
 If no photos are present, `make camera` creates a deterministic synthetic wall
 series locally (4 baseline and 8 progressive damage frames, 1600 x 1200). Its
 wall face is `[80, 80, 1520, 1120]` in `contracts/building_b01.json`.
+The generated wall also shows older damage in every frame (holes R3C2, rain gullies R3C6, salt R1C7, a broken parapet R4C7, an eroded base R1C4), and the mock detector reports it, so the damage map shows low and medium priorities before the crack grows (high). A `.demo_frames_version` file marks a generated series; when the artwork changes, `make camera` regenerates it by itself. A series without that file (real photos, or one generated before 21 Nov) is never touched: delete the two folders once to get the new artwork.
 This is demo artwork, not an inspection photo. Replace both folders with a real
 fixed-camera series and remeasure `wall_bbox_px` before using actual photos.
 

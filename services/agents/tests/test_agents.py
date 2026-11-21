@@ -61,6 +61,7 @@ def test_sensor_tools_and_mock_agent_skip_faulty_sensors():
         assert zone["position"] == "middle" and zone["sensors"][0]["sensor_id"] == "B01-S05"
 
         response = run_mock("What is happening to this wall?", "B01")
-    assert "Fastest rising: B01-S05" in response.answer
-    assert "B01-S04 fault" in response.answer and "100.0" not in response.answer.split("Not used")[0]
+    assert "**Fastest rising:** B01-S05" in response.answer
+    assert "B01-S04 (Base moisture, east side) fault" in response.answer
+    assert "100.0" not in response.answer.split("Left out")[0]
     assert response.unverified_numbers == []

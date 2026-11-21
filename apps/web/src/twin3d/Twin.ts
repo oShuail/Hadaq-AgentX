@@ -686,7 +686,7 @@ export class Twin {
       this.setHover(-1);
     } else if (what.focus) {
       title = FOCUS_TWIN.ar ? `${FOCUS_TWIN.name} (${FOCUS_TWIN.ar})` : FOCUS_TWIN.name;
-      sub = "Live twin · click to open its page";
+      sub = "Live twin · click for its readings, again for its page";
       this.setHover(-1);
     } else if (what.building !== undefined) {
       const info = this.buildings.infos[what.building];

@@ -143,62 +143,74 @@ def _mentioned_types(text: str) -> list[str]:
     return [damage_type for damage_type, words in TYPE_WORDS.items() if _has(text, words)]
 
 
+def _short_zone(zone_id: str) -> str:
+    """B01-W01-R2C5 -> R2C5 (the full ID stays in the evidence records)."""
+    return zone_id.split("-")[-1]
+
+
 def _treatment_lines(t: dict, ar: bool, whole_row: bool = False) -> list[str]:
-    """Treatment, flags, materials, tools and source of one table row, word for word from get_treatment."""
+    """Treatment, flags, materials, tools and source of one table row, word for word from get_treatment, as bullets."""
     lang = "ar" if ar else "en"
     sep = "، " if ar else ", "
     action = t[f"treatment_{lang}"] if whole_row else KB.step(t, lang)
     lines = []
-    if t.get(f"first_step_{lang}") and not whole_row:
-        lines.append(f"   {'أولاً' if ar else 'First'}: {t[f'first_step_{lang}']}")
-    lines.append(f"   {'المعالجة' if ar else 'Treatment'}: {action}")
     if t["fix_moisture_source_first"]:
-        lines.append("   يُعالج مصدر الرطوبة أولاً." if ar else "   Treat the moisture source first.")
+        lines.append("- يُعالج مصدر الرطوبة أولاً." if ar else "- Treat the moisture source first.")
+    if t.get(f"first_step_{lang}") and not whole_row:
+        lines.append(f"- **{'أولاً' if ar else 'First'}:** {t[f'first_step_{lang}']}")
+    lines.append(f"- **{'المعالجة' if ar else 'Treatment'}:** {action}")
     if t["test_on_small_area_first"]:
-        lines.append("   تُجرَّب أي كمادات أو مواد كيميائية على منطقة صغيرة أولاً." if ar
-                     else "   Test any poultice or chemical on a small area first.")
+        lines.append("- تُجرَّب أي كمادات أو مواد كيميائية على منطقة صغيرة أولاً." if ar
+                     else "- Test any poultice or chemical on a small area first.")
     if t.get(f"avoid_{lang}"):
-        lines.append(f"   {'يُتجنب' if ar else 'Avoid'}: {sep.join(t[f'avoid_{lang}'])}")
-    lines.append(f"   {'المواد' if ar else 'Materials'}: {sep.join(t[f'materials_{lang}'])}")
-    lines.append(f"   {'الأدوات' if ar else 'Tools'}: {sep.join(t[f'tools_{lang}'])}")
+        lines.append(f"- **{'يُتجنب' if ar else 'Avoid'}:** {sep.join(t[f'avoid_{lang}'])}")
+    lines.append(f"- **{'المواد' if ar else 'Materials'}:** {sep.join(t[f'materials_{lang}'])}")
+    lines.append(f"- **{'الأدوات' if ar else 'Tools'}:** {sep.join(t[f'tools_{lang}'])}")
     source = t[f"source_label_{lang}"]
     if t["source"] == "team_proposal":
         source += f" ({t[f'source_status_{lang}']})"
-    lines.append(f"   {'المصدر' if ar else 'Source'}: {source}")
+    lines.append(f"- **{'المصدر' if ar else 'Source'}:** {source}")
     return lines
 
 
 def _finding_lines(n: int, f: dict, t: dict, ar: bool) -> list[str]:
+    """One finding: a bold title line, where it is, the measured facts, then the treatment bullets."""
     severity = f.get("severity")
+    zone = _short_zone(f["zone_id"])
     if ar:
-        head = f"{n}. {t['name_ar']} في {f['zone_id']} ({f['position_ar']}) [{f['detection_id']}]، ثقة الكاشف {f['confidence']}"
+        lines = [f"**{n}. {t['name_ar']} في {zone}** [{f['detection_id']}]", f"{f['position_ar']}."]
         if f.get("crack_width_mm") is not None:
-            head += f"، العرض {f['crack_width_mm']} مم [{f['crack_width_evidence_id']}]"
-        if severity:
-            head += f"، الشدة: {KB.SEVERITY_AR[severity]}"
+            width = f"- **العرض:** {f['crack_width_mm']} مم [{f['crack_width_evidence_id']}]"
+            lines.append(width + (f"، الشدة: {KB.SEVERITY_AR[severity]}" if severity else ""))
+        elif severity:
+            lines.append(f"- **الشدة:** {KB.SEVERITY_AR[severity]}")
         if f.get("growing"):
-            head += f"، ويكبر ({f['growth_pct']}%)" if f.get("growth_pct") is not None else "، ويكبر"
+            lines.append(f"- **يكبر:** {f['growth_pct']}%" if f.get("growth_pct") is not None else "- **يكبر**")
+        lines.append(f"- **الأولوية:** {KB.PRIORITY_AR[f['priority']]}")
+        lines.append(f"- **ثقة الكاشف:** {f['confidence']}")
         if f.get("needs_review") and f.get("alternatives"):
             alternatives = "، ".join(KB.types()[a]["name_ar"] for a in f["alternatives"])
-            head += f". النوع يحتاج تأكيد المختص (البديل: {alternatives})"
+            lines.append(f"- النوع يحتاج تأكيد المختص (البديل: {alternatives}).")
     else:
-        head = f"{n}. {t['name_en']} at {f['zone_id']} ({f['position_en']}) [{f['detection_id']}], detector confidence {f['confidence']}"
+        lines = [f"**{n}. {t['name_en']} at {zone}** [{f['detection_id']}]", f"{f['position_en'][0].upper()}{f['position_en'][1:]}."]
         if f.get("crack_width_mm") is not None:
-            head += f", width {f['crack_width_mm']} mm [{f['crack_width_evidence_id']}]"
-        if severity:
-            head += f", severity: {severity}"
+            width = f"- **Width:** {f['crack_width_mm']} mm [{f['crack_width_evidence_id']}]"
+            lines.append(width + (f", {severity}" if severity else ""))
+        elif severity:
+            lines.append(f"- **Severity:** {severity}")
         if f.get("growing"):
-            head += f", growing ({f['growth_pct']}%)" if f.get("growth_pct") is not None else ", growing"
+            lines.append(f"- **Growing:** {f['growth_pct']}%" if f.get("growth_pct") is not None else "- **Growing**")
+        lines.append(f"- **Priority:** {f['priority']}")
+        lines.append(f"- **Detector confidence:** {f['confidence']}")
         if f.get("needs_review") and f.get("alternatives"):
             alternatives = ", ".join(KB.types()[a]["name_en"] for a in f["alternatives"])
-            head += f". The type needs the expert's confirmation (alternative: {alternatives})"
-    lines = [head + "."]
+            lines.append(f"- The type needs the expert's confirmation (alternative: {alternatives}).")
     lines.extend(_treatment_lines(t, ar))
     if f.get("active"):
-        lines.append("   الشق يكبر: مهندس إنشائي يفحصه قبل أي حقن أو تعبئة." if ar
-                     else "   The crack is growing: a structural engineer should check it before any filling.")
+        lines.append("- الشق يكبر: مهندس إنشائي يفحصه قبل أي حقن أو تعبئة." if ar
+                     else "- The crack is growing: a structural engineer should check it before any filling.")
     elif severity == "structural" or t["refer_to_engineer"]:
-        lines.append("   يُحال لمهندس إنشائي." if ar else "   Refer it to a structural engineer.")
+        lines.append("- يُحال لمهندس إنشائي." if ar else "- Refer it to a structural engineer.")
     return lines
 
 
@@ -210,10 +222,9 @@ def _brief_line(n: int, f: dict, t: dict, ar: bool) -> str:
     if f.get("growing"):
         grow = f" {f['growth_pct']}%" if f.get("growth_pct") is not None else ""
         tags.append(f"يكبر{grow}" if ar else f"growing{grow}")
-    zone = f["zone_id"].split("-")[-1]
     name = t["name_ar" if ar else "name_en"]
     tag_text = f" ({('، ' if ar else ', ').join(tags)})" if tags else ""
-    return f"{n}. {name} {zone}{tag_text} [{f['detection_id']}]: {KB.step(t, 'ar' if ar else 'en')}"
+    return f"- **{name} {_short_zone(f['zone_id'])}**{tag_text} [{f['detection_id']}]: {KB.step(t, 'ar' if ar else 'en')}"
 
 
 def _mock_damage(call: Callable, lines: list[str], building_id: str, text: str, ar: bool, submit: bool,
@@ -222,19 +233,27 @@ def _mock_damage(call: Callable, lines: list[str], building_id: str, text: str, 
     findings = found.get("findings", [])
     wanted = _mentioned_types(text)
     shown = [f for f in findings if not wanted or f["damage_type"] in wanted]
+    # Most urgent first; the wall order (base row first, left to right) breaks ties.
+    shown.sort(key=lambda f: -KB.PRIORITY_ORDER.get(f.get("priority", "medium"), 1))
     if not findings:
         lines.append("ما فيه صورة محللة فيها تلف بعد: ارفع صورة للجدار أو شغّل الكاميرا." if ar
                      else "No analysed photo with damage yet: upload a wall photo or start the camera.")
     elif shown:
         provenance = findings[0].get("provenance") or ""
-        lines.append(f"آخر صورة [{found['photo_id']}] (الكاشف {found['detector_model']}، {KB.PROVENANCE_AR.get(provenance, provenance)}): {KB.count_ar(len(shown))}." if ar
-                     else f"Latest photo [{found['photo_id']}] (detector {found['detector_model']}, {provenance}): "
-                          f"{len(shown)} finding{'' if len(shown) == 1 else 's'}.")
+        simulated = provenance == "synthetic"
+        counts = {p: sum(1 for f in shown if f.get("priority") == p) for p in ("high", "medium", "low")}
+        split_ar = "، ".join(f"{n} {KB.PRIORITY_AR[p]}" for p, n in counts.items() if n)
+        split_en = ", ".join(f"{n} {p}" for p, n in counts.items() if n)
+        lines.append(f"**آخر صورة للجدار{' (محاكاة)' if simulated else ''}:** {KB.count_ar(len(shown))} ({split_ar}) [{found['photo_id']}]" if ar
+                     else f"**Latest wall photo{' (simulated)' if simulated else ''}:** "
+                          f"{len(shown)} finding{'' if len(shown) == 1 else 's'} ({split_en} priority)"
+                          f"{', most urgent first' if len(shown) > 1 else ''} [{found['photo_id']}]")
     treatments: dict[tuple[str, str], dict] = {}
     for n, f in enumerate(shown, 1):
         if not f["damage_type"]:
-            lines.append(f"{n}. {f['detector_class']} في {f['zone_id']} [{f['detection_id']}]: ما له نوع في الجدول، المختص يصنفه." if ar
-                         else f"{n}. {f['detector_class']} at {f['zone_id']} [{f['detection_id']}]: no table row for it, the expert classifies it.")
+            lines.append("")
+            lines.append(f"**{n}. {f['detector_class']} في {_short_zone(f['zone_id'])}** [{f['detection_id']}]: ما له نوع في الجدول، المختص يصنفه." if ar
+                         else f"**{n}. {f['detector_class']} at {_short_zone(f['zone_id'])}** [{f['detection_id']}]: no table row for it, the expert classifies it.")
             continue
         key = (f["damage_type"], f.get("severity") or "")
         if key not in treatments:
@@ -242,12 +261,14 @@ def _mock_damage(call: Callable, lines: list[str], building_id: str, text: str, 
         if brief:
             lines.append(_brief_line(n, f, treatments[key], ar))
         else:
+            lines.append("")
             lines.extend(_finding_lines(n, f, treatments[key], ar))
     for damage_type in wanted:
         if not any(f["damage_type"] == damage_type for f in findings):
             t = call(T.get_treatment, damage_type=damage_type, severity="")
-            lines.append(f"{t['name_ar']}: ما ظهر في آخر صورة. من جدول المعالجات:" if ar
-                         else f"{t['name_en']}: not seen in the latest photo. From the treatment table:")
+            lines.append("")
+            lines.append(f"**{t['name_ar']}:** ما ظهر في آخر صورة. من جدول المعالجات:" if ar
+                         else f"**{t['name_en']}:** not seen in the latest photo. From the treatment table:")
             lines.extend(_treatment_lines(t, ar, whole_row=True))
     if not findings:
         return
@@ -259,17 +280,20 @@ def _mock_damage(call: Callable, lines: list[str], building_id: str, text: str, 
         if report.get("event_id"):
             before = report.get("first_steps_ar" if ar else "first_steps_en", [])
             if before:
-                lines.append("قبل أي ترميم:" if ar else "Before any repair:")
+                lines.append("")
+                lines.append("**قبل أي ترميم:**" if ar else "**Before any repair:**")
                 lines.extend(f"- {step}." for step in before)
-            lines.append(f"أُرسل تقرير التلف لمراجعة المختص [{report['event_id']}]، الأولوية العامة: {KB.PRIORITY_AR[report['priority']]}. "
+            lines.append("")
+            lines.append(f"**أُرسل تقرير التلف لمراجعة المختص** [{report['event_id']}]. الأولوية العامة: {KB.PRIORITY_AR[report['priority']]}. "
                          "بانتظار اعتماد المختص." if ar else
-                         f"Damage report sent for expert review [{report['event_id']}], overall priority {report['priority']}. "
+                         f"**Damage report sent for expert review** [{report['event_id']}]. Overall priority: {report['priority']}. "
                          "Waiting for expert approval.")
         else:
             lines.append(f"Report not sent: {report.get('error')}")
     elif shown:
-        lines.append("اطلب \"تقرير التلف\" عشان يُرسل لمراجعة المختص واعتماده." if ar
-                     else "Ask for the damage report to send it to the expert for review and approval.")
+        lines.append("")
+        lines.append("اطلب \"تقرير التلف\" عشان يوصل للمختص للمراجعة والاعتماد." if ar
+                     else "Want it sent to the conservation expert? Ask for the damage report and it goes to them for review and approval.")
 
 
 def _mock_damage_summary(call: Callable, lines: list[str], building_id: str, ar: bool) -> None:
@@ -284,11 +308,14 @@ def _mock_damage_summary(call: Callable, lines: list[str], building_id: str, ar:
             tags.append(KB.SEVERITY_AR[f["severity"]] if ar else f["severity"])
         if f.get("growing"):
             tags.append("يكبر" if ar else "growing")
-        zone = f["zone_id"].split("-")[-1]
-        part = f"{f['name_ar']} في {zone}" if ar else f"{f['name_en']} at {zone}"
+        zone = _short_zone(f["zone_id"])
+        part = f"- {f['name_ar']} في {zone}" if ar else f"- {f['name_en']} at {zone}"
         parts.append(part + (f" ({'، '.join(tags) if ar else ', '.join(tags)})" if tags else ""))
-    lines.append(f"التلف الظاهر في آخر صورة [{found['photo_id']}]: {'، '.join(parts)}. اسأل عن المعالجة عشان تعرف المواد والأدوات." if ar
-                 else f"Visible damage in the latest photo [{found['photo_id']}]: {', '.join(parts)}. Ask how to treat it for the treatment, materials and tools.")
+    lines.append("")
+    lines.append(f"**التلف الظاهر في آخر صورة** [{found['photo_id']}]" if ar else f"**Visible damage in the latest photo** [{found['photo_id']}]")
+    lines.extend(parts)
+    lines.append("اسأل عن المعالجة عشان تعرف المواد والأدوات." if ar
+                 else f"Ask how to treat {'it' if len(parts) == 1 else 'them'} to see the treatment, materials and tools.")
 
 
 def run_mock(message: str, building_id: str, trigger: bool = False, track: str | None = None) -> ChatResponse:
@@ -311,61 +338,83 @@ def run_mock(message: str, building_id: str, trigger: bool = False, track: str |
     wants_damage = damage_trigger or (not trigger and (_has(text, DAMAGE_WORDS) or bool(_mentioned_types(text))))
     general = not (wants_sim or wants_damage)
     submit = damage_trigger or (wants_damage and _has(text, REPORT_WORDS))
-    lines = ["[وكيل تجريبي بدون نموذج لغوي: خطة ثابتة]" if ar else "[mock agent: no LLM configured, fixed plan]"]
+    lines: list[str] = []  # no label on top: mock mode is visible in GET /health ("llm": "mock")
 
     if wants_sim or general:
         status = call(T.get_building_status, building_id=building_id)
+        sensors = call(T.get_sensor_overview, building_id=building_id)
+        label = {x["sensor_id"]: x.get("label") for x in sensors}
+
+        def name(sensor_id: str) -> str:  # "B01-S05 (Upper wall moisture)"; Arabic keeps the ID only (labels are English)
+            return sensor_id if ar or not label.get(sensor_id) else f"{sensor_id} ({label[sensor_id]})"
+
+        simulated = any(x.get("provenance") == "synthetic" for x in sensors)
+        lines.append(f"**الحساسات الحين**{' (محاكاة)' if simulated else ''}" if ar else f"**Sensors right now**{' (simulated)' if simulated else ''}")
         moisture = [r for r in status["readings"] if r["kind"] == "moisture" and r.get("status", "ok") == "ok"]
         if moisture:
             m = max(moisture, key=lambda r: r["value"])
-            lines.append(f"أعلى قراءة رطوبة: {m['value']} {m['unit']} في {m['zone_id']} ({m['provenance']}) [{m['evidence_id']}]." if ar
-                         else f"Highest moisture reading: {m['value']} {m['unit']} at {m['zone_id']} ({m['provenance']}) [{m['evidence_id']}].")
-        sensors = call(T.get_sensor_overview, building_id=building_id)
-        rising = [s for s in sensors if s["status"] == "ok" and s.get("trend") == "rising" and s["kind"] == "moisture"]
+            lines.append(f"- **أعلى رطوبة:** {m['value']} {m['unit']} في {_short_zone(m['zone_id'])}، {name(m['sensor_id'])} [{m['evidence_id']}]" if ar
+                         else f"- **Highest moisture:** {m['value']} {m['unit']} at {_short_zone(m['zone_id'])}, {name(m['sensor_id'])} [{m['evidence_id']}]")
+        rising = [x for x in sensors if x["status"] == "ok" and x.get("trend") == "rising" and x["kind"] == "moisture"]
         if rising:
-            r = max(rising, key=lambda s: s["change"])
-            lines.append(f"أسرع ارتفاع: {r['sensor_id']} في {r['zone_id']}، من {r['first']} إلى {r['latest']} {r['unit']} "
-                         f"[{r['first_evidence_id']}] [{r['latest_evidence_id']}]." if ar
-                         else f"Fastest rising: {r['sensor_id']} at {r['zone_id']}, {r['first']} to {r['latest']} {r['unit']} "
-                              f"[{r['first_evidence_id']}] [{r['latest_evidence_id']}].")
-        distrust = [s for s in sensors if s["status"] not in ("ok", "no_data")]
+            r = max(rising, key=lambda x: x["change"])
+            lines.append(f"- **أسرع ارتفاع:** {name(r['sensor_id'])} في {_short_zone(r['zone_id'])}، من {r['first']} إلى {r['latest']} {r['unit']} "
+                         f"[{r['first_evidence_id']}] [{r['latest_evidence_id']}]" if ar
+                         else f"- **Fastest rising:** {name(r['sensor_id'])} at {_short_zone(r['zone_id'])}, {r['first']} to {r['latest']} {r['unit']} "
+                              f"[{r['first_evidence_id']}] [{r['latest_evidence_id']}]")
+        distrust = [x for x in sensors if x["status"] not in ("ok", "no_data")]
+        reporting = [x for x in sensors if x["status"] != "no_data"]
         if distrust:
-            listed = "; ".join(f"{s['sensor_id']} {s['status']} ({', '.join(s['reasons'])})" for s in distrust)
-            lines.append(f"قراءات ما اعتمدنا عليها (حالة الحساس): {listed}." if ar else f"Not used (sensor health): {listed}.")
+            listed = "; ".join(f"{name(x['sensor_id'])} {x['status']} ({', '.join(x['reasons'])})" for x in distrust)
+            lines.append(f"- **ما اعتمدنا عليها:** {listed}" if ar else f"- **Left out (sensor health):** {listed}")
+        elif reporting:
+            lines.append(f"- **الصحة:** كل الحساسات ({len(reporting)}) تقرأ طبيعي، ولا فيها عطل ولا قراءة عالقة" if ar
+                         else f"- **Health:** all {len(reporting)} sensors report normally (no faults, nothing stuck or stale)")
+
+        if wants_compare or wants_sim:
+            lines.append("")
+            lines.append("**سيناريو المطر** (نموذج غير معاير، للاسترشاد فقط)" if ar else "**Rain scenario** (uncalibrated model, indicative only)")
         if wants_compare:
             cmp_ = call(T.compare_scenarios, building_id=building_id)
             hours = cmp_.get("base_row_hours_above_threshold", {})
             ids = cmp_.get("run_ids", {})
-            if ar:
-                lines.append("ساعات صف القاعدة فوق الحد: " + "، ".join(f"{k} {v} [{ids.get(k)}]" for k, v in hours.items())
-                             + " (مخرجات نموذج غير معاير، للاسترشاد فقط).")
-            else:
-                lines.append("Base row hours above threshold: " + ", ".join(f"{k} {v} [{ids.get(k)}]" for k, v in hours.items())
-                             + " (uncalibrated model output, indicative only).")
+            names_ar = {"storm_replay": "العاصفة كما هي", "drainage_fixed": "بعد إصلاح التصريف", "rain_x2": "ضعف المطر", "baseline": "بدون عاصفة"}
+            for k, v in hours.items():
+                pretty = k.replace("_", " ")
+                lines.append(f"- **{names_ar.get(k, pretty)}:** {v} ساعة رطوبة عالية في صف القاعدة (مجموع مناطقه) [{ids.get(k)}]" if ar
+                             else f"- **{pretty.capitalize()}:** {v} wet hours in the base row (all its zones added up) [{ids.get(k)}]")
+            if "storm_replay" in hours and "drainage_fixed" in hours:
+                lines.append(f"- **الخلاصة:** إصلاح التصريف ينزّلها من {hours['storm_replay']} إلى {hours['drainage_fixed']} ساعة." if ar
+                             else f"- **Takeaway:** fixing the drainage cuts them from {hours['storm_replay']} to {hours['drainage_fixed']} h.")
         if wants_sim:
             sim = call(T.run_rain_simulation, building_id=building_id, scenario="storm_replay")
             if sim.get("wettest_zones"):
                 z = sim["wettest_zones"][0]
-                lines.append(f"المحاكاة: أرطب منطقة {z['zone_id']}، أعلى رطوبة {z['peak_moisture']}، {z['hours_above_threshold']} ساعة فوق {sim['threshold']} [{sim['run_id']}] (نموذج غير معاير)." if ar
-                             else f"Simulation: wettest zone {z['zone_id']}, peak moisture {z['peak_moisture']}, "
-                                  f"{z['hours_above_threshold']} h above {sim['threshold']} [{sim['run_id']}] (uncalibrated model).")
+                peak, limit = round(z["peak_moisture"] * 100), round(sim["threshold"] * 100)
+                lines.append(f"- **أرطب منطقة:** {_short_zone(z['zone_id'])}، امتلأت {peak}% وبقيت {z['hours_above_threshold']} ساعة فوق {limit}% [{sim['run_id']}]" if ar
+                             else f"- **Wettest zone:** {_short_zone(z['zone_id'])}, {peak}% full at its peak, "
+                                  f"{z['hours_above_threshold']} h above {limit}% [{sim['run_id']}]")
+
         risk = call(T.get_risk, building_id=building_id, top=5)
+        lines.append("")
+        lines.append("**خطر المطر**" if ar else "**Rain risk**")
         if risk:
             top = risk[0]
-            lines.append(f"أعلى خطر مطر: {top['zone_id']} مستواه {RISK_LEVEL_AR.get(top['level'], top['level'])} (الشدة {top['magnitude']}) [{top['risk_id']}]." if ar
-                         else f"Top risk: {top['zone_id']} is {top['level']} (magnitude {top['magnitude']}) [{top['risk_id']}].")
+            lines.append(f"- **الأعلى:** {_short_zone(top['zone_id'])}، {RISK_LEVEL_AR.get(top['level'], top['level'])} (الشدة {top['magnitude']} من 15) [{top['risk_id']}]" if ar
+                         else f"- **Highest:** {_short_zone(top['zone_id'])}, {top['level'].replace('_', ' ')} (magnitude {top['magnitude']} of 15) [{top['risk_id']}]")
             high = [r for r in risk if r["level"] in ("high", "very_high")]
             if high:
                 evidence = list(dict.fromkeys(e for r in high[:3] for e in [r["risk_id"], *r.get("evidence_ids", [])[:1]]))
                 zones = [r["zone_id"] for r in high[:3]]
+                short = [_short_zone(z) for z in zones]
                 rec = call(T.propose_recommendation, building_id=building_id,
                            action="Inspect the base render and ground drainage at the wall foot; check for pooling after rain",
                            zone_ids=zones, priority="high", evidence_ids=evidence,
                            rationale="High rain risk on base zones in the simulation")
-                lines.append(f"اقتراح لمراجعة المختص: فحص لياسة القاعدة والتصريف عند {'، '.join(zones)} [{rec['event_id']}]. بانتظار الاعتماد." if ar
-                             else f"Proposed for expert review: inspect base render and drainage at {', '.join(zones)} [{rec['event_id']}]. Waiting for approval.")
+                lines.append(f"- **اقتراح للمختص:** فحص لياسة القاعدة والتصريف عند {'، '.join(short)} [{rec['event_id']}]. بانتظار الاعتماد." if ar
+                             else f"- **Proposed to the expert:** inspect the base render and drainage at {', '.join(short)} [{rec['event_id']}]. Waiting for approval.")
         else:
-            lines.append("ما فيه درجات خطر مطر بعد: شغّل محاكاة أولاً." if ar else "No risk scores yet: run a simulation first.")
+            lines.append("- ما فيه درجات خطر بعد: شغّل محاكاة أولاً." if ar else "- No risk scores yet: run a simulation first.")
 
     if wants_damage:
         _mock_damage(call, lines, building_id, "" if trigger else text, ar, submit, brief=trigger)

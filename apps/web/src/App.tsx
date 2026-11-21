@@ -18,11 +18,11 @@ import TimeBar from "./TimeBar";
 import { BUILDING_ID } from "./config";
 import { sensorHealth, useLive } from "./state/useLive";
 import { attentionItems } from "./twin/attention";
-import { FOCUS_TWIN, twinById } from "./twins";
+import { twinById } from "./twins";
 import { LAYERS, type LayerId, type TwinStats } from "./twin3d/Twin";
 import type { SensorSpec, WallSpec } from "./types/contracts";
 import registry from "../../../contracts/building_b01.json";
-import { RISK_COLORS, type WallLayer, moistureColor } from "./twin/colors";
+import { RISK_COLORS, type WallLayer, moistureColor, peakMoisture } from "./twin/colors";
 import { damageZoneColors } from "./twin/damage";
 
 // Where the wall face sits in the fixed camera's photo (registry camera entry), for the zone grid on the damage map.
@@ -44,10 +44,7 @@ export default function App() {
   const [selection, setSelection] = useState<Selection | null>(null);
   const [fly, setFly] = useState<{ target: FlyTarget; nonce: number }>({ target: "turaif", nonce: 0 });
   const [view, setView] = useState<FlyTarget | null>("turaif");
-  const [zonesVisible, setZonesVisible] = useState(false);
-  const [hour, setHour] = useState(0);
-  const [simPlaying, setSimPlaying] = useState(false);
-  const [layer, setLayer] = useState<WallLayer>("moisture");
+  const [layer, setLayer] = useState<WallLayer>("damage");
   const [coordinate, setCoordinate] = useState<string | null>(null);
   const [route, setRoute] = useState<Route>(() => parseRoute(window.location.pathname));
   const [tab, setTab] = useState<Tab>("explore");
@@ -70,60 +67,49 @@ export default function App() {
   };
   const openPage = (twinId: string) => navigate(`/building/${encodeURIComponent(twinId)}`);
 
-  // Clicking a building that has a twin page (Qasr Salwa, AL Turaif House) opens that page.
+  // Qasr Salwa (or one of its wall zones) is selected: its wall grid, risk labels and reading cards show on the map.
+  const focusSelected = selection?.kind === "zone" || (selection?.kind === "building" && selection.isFocus);
+
+  // Clicking a building that has a twin page opens that page. Qasr Salwa takes two clicks: the first selects it and
+  // shows its readings on the map, the second (while it is selected) opens its page.
   const select = (s: Selection | null) => {
+    const again = s?.kind === "building" && s.isFocus && focusSelected;
     setSelection(s);
     if (!s) return;
     setTab("twin");
-    if (s.kind === "building" && s.twinId) openPage(s.twinId);
+    if (s.kind === "building" && s.twinId && (!s.isFocus || again)) openPage(s.twinId);
   };
 
   // The wall comes from the API; with the API off ("Offline") the map still uses the registry file directly.
   const wall: WallSpec | null = live.building?.walls[0] ?? (registry.walls[0] as WallSpec);
   const sim = live.simulation;
-  const safeHour = sim ? Math.min(hour, sim.times.length - 1) : 0;
-
-  // A new simulation (from the agent or the panel) starts playing on the wall automatically.
-  useEffect(() => {
-    if (!sim) return;
-    setHour(0);
-    setZonesVisible(true);
-    setSimPlaying(true);
-  }, [sim?.run_id]); // eslint-disable-line react-hooks/exhaustive-deps
-
-  // While a simulation plays, the sun follows the simulated hour.
-  useEffect(() => {
-    const iso = sim?.times[safeHour];
-    if (iso) setTime(new Date(iso));
-  }, [sim, safeHour]);
+  // The simulation runs in the background: there is no player on the map, and the Moisture layer shows each zone's
+  // peak in the latest run.
 
   const zoneColors = useMemo(() => {
     if (layer === "damage") return damageZoneColors(live.damageReport?.report ?? null);
     if (layer === "risk") return Object.fromEntries(live.risk.map((r) => [r.zone_id, RISK_COLORS[r.level]]));
     if (!sim) return {};
-    return Object.fromEntries(Object.entries(sim.zones).map(([zone, values]) => [zone, moistureColor(values[safeHour] ?? 0)]));
-  }, [layer, live.risk, live.damageReport, sim, safeHour]);
+    return Object.fromEntries(Object.keys(sim.zones).map((zone) => [zone, moistureColor(peakMoisture(sim, zone) ?? 0)]));
+  }, [layer, live.risk, live.damageReport, sim]);
 
   // Boxes around the wall areas that need attention: high risk, new or grown defects, moisture alerts.
   const attention = useMemo(() => attentionItems(live.risk, live.detections, live.events), [live.risk, live.detections, live.events]);
 
-  // Sensor readings pinned to the facade next to their zones.
+  // Sensor readings pinned to the facade next to their zones, only once Qasr Salwa is selected.
   const callouts = useMemo(
     () =>
-      sensorCallouts(live.building?.sensors ?? (registry.sensors as SensorSpec[]), live.readings, attention, wall?.cols ?? 8, tab !== "explore", (id) =>
-        sensorHealth(live, id).status,
-      ),
-    [live, attention, wall?.cols, tab],
+      focusSelected
+        ? sensorCallouts(live.building?.sensors ?? (registry.sensors as SensorSpec[]), live.readings, attention, wall?.cols ?? 8, tab !== "explore", (id) =>
+            sensorHealth(live, id).status,
+          )
+        : [],
+    [live, attention, wall?.cols, tab, focusSelected],
   );
 
   const go = (target: FlyTarget) => {
     setView(target);
     setFly((f) => ({ target, nonce: f.nonce + 1 }));
-    if (target === "focus") {
-      setZonesVisible(true);
-      // The Qasr Salwa view also makes it the building the twin panel talks about.
-      setSelection((s) => s ?? { kind: "building", osmId: null, name: FOCUS_TWIN.name, isFocus: true, focusLocked: true, twinId: FOCUS_TWIN.id });
-    }
   };
 
   const pageTwin = route.page === "building" ? twinById(route.id) : null;
@@ -140,7 +126,6 @@ export default function App() {
           attention={pageTwin.registered ? attention : []}
           layer={layer}
           setLayer={setLayer}
-          hour={safeHour}
           cameraWallBox={CAMERA_WALL_BOX}
           onBack={() => (window.history.state?.from === "app" ? window.history.back() : navigate("/"))}
         />
@@ -152,9 +137,9 @@ export default function App() {
           buildingId={BUILDING_ID}
           wall={wall}
           zoneColors={zoneColors}
-          attention={attention}
+          attention={focusSelected ? attention : []}
           callouts={callouts}
-          zonesVisible={zonesVisible}
+          zonesVisible={focusSelected}
           selectedZone={selection?.kind === "zone" ? selection.zoneId : null}
           fly={fly}
           time={time}
@@ -187,7 +172,7 @@ export default function App() {
             </div>
             <div className="tower-panel-body">
               {tab === "twin" && (
-                <BuildingPanel selection={selection} live={live} hour={safeHour} onFlyToFocus={() => go("focus")} onOpenPage={openPage} />
+                <BuildingPanel selection={selection} live={live} onFlyToFocus={() => go("focus")} onOpenPage={openPage} />
               )}
               {tab === "agent" && <AgentChat buildingId={live.building?.building.id ?? BUILDING_ID} />}
               {tab === "activity" && (
@@ -208,21 +193,9 @@ export default function App() {
           time={time}
           setTime={setTime}
           playing={playing}
-          setPlaying={(p) => {
-            setPlaying(p);
-            if (p) setSimPlaying(false);
-          }}
+          setPlaying={setPlaying}
           speed={speed}
           setSpeed={setSpeed}
-          simulation={sim}
-          running={live.simulationRunning}
-          hour={safeHour}
-          setHour={setHour}
-          simPlaying={simPlaying}
-          setSimPlaying={(p) => {
-            setSimPlaying(p);
-            if (p) setPlaying(false);
-          }}
           layer={layer}
           setLayer={setLayer}
         />

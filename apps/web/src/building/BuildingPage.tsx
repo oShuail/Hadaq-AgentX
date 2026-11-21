@@ -10,7 +10,7 @@ import EventFeed from "../panel/EventFeed";
 import SensorList from "../panel/SensorList";
 import type { LiveState } from "../state/useLive";
 import { ATTENTION_COLORS, type AttentionItem } from "../twin/WallZones";
-import { RISK_COLORS, type WallLayer, moistureColor } from "../twin/colors";
+import { RISK_COLORS, type WallLayer, moistureColor, peakMoisture } from "../twin/colors";
 import { DAMAGE_FAMILIES, FAMILY_ORDER, familyOf } from "../twin/damage";
 import { type TwinDef, twinTitle } from "../twins";
 import type { RiskLevel, SensorSpec, WallSpec } from "../types/contracts";
@@ -26,14 +26,13 @@ interface Props {
   attention: AttentionItem[];
   layer: WallLayer;
   setLayer: (l: WallLayer) => void;
-  hour: number;
   cameraWallBox: number[] | null;
   onBack: () => void;
 }
 
 const LEVELS: RiskLevel[] = ["low", "medium", "high", "very_high"];
 
-export default function BuildingPage({ twin, live, fallbackSensors, walls, zoneColors, attention, layer, setLayer, hour, cameraWallBox, onBack }: Props) {
+export default function BuildingPage({ twin, live, fallbackSensors, walls, zoneColors, attention, layer, setLayer, cameraWallBox, onBack }: Props) {
   const [zone, setZone] = useState<string | null>(null);
   const reg = twin.registered;
   const sensors = reg ? live.building?.sensors ?? fallbackSensors : [];
@@ -41,7 +40,7 @@ export default function BuildingPage({ twin, live, fallbackSensors, walls, zoneC
     ? live.risk.reduce<RiskLevel | null>((acc, r) => (acc === null || LEVELS.indexOf(r.level) > LEVELS.indexOf(acc) ? r.level : acc), null)
     : null;
   const zoneRisk = zone ? live.risk.find((r) => r.zone_id === zone) : undefined;
-  const zoneMoisture = zone && live.simulation ? live.simulation.zones[zone]?.[hour] : undefined;
+  const zoneMoisture = zone && live.simulation ? peakMoisture(live.simulation, zone) : undefined;
   const zoneSensors = zone ? sensors.filter((s) => s.zone_id === zone) : [];
   const flagged = new Map(attention.map((a) => [a.zoneId, a]));
   const damageItems = reg ? live.damageReport?.report.items ?? [] : [];
@@ -188,7 +187,7 @@ export default function BuildingPage({ twin, live, fallbackSensors, walls, zoneC
             {zone && (
               <div className="zone-facts">
                 <strong>{zone}</strong>
-                <div>Simulated moisture now: {zoneMoisture !== undefined ? zoneMoisture.toFixed(2) : "run a simulation"}</div>
+                <div>Peak simulated moisture: {zoneMoisture !== undefined ? zoneMoisture.toFixed(2) : "run a simulation"}</div>
                 <div>
                   Risk: {zoneRisk ? `${zoneRisk.level.replace("_", " ")} (A ${zoneRisk.A} + B ${zoneRisk.B} + C ${zoneRisk.C} = ${zoneRisk.magnitude})` : "not scored yet"}
                 </div>

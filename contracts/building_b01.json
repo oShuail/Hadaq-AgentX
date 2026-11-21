@@ -45,8 +45,26 @@
     "id_format": "{building_id}-{wall_id}-R{row}C{col}",
     "rows_counted_from": "bottom (R1 = wall base)",
     "cols_counted_from": "left, standing in front of the facade",
-    "value_weight_default": 3,
-    "value_weight_overrides": {}
+    "value_weight_default": 1,
+    "value_weight_overrides": {
+      "B01-W01-R1C1": 0.1,
+      "B01-W01-R1C4": 1.5,
+      "B01-W01-R1C5": 1.5,
+      "B01-W01-R1C8": 0.1,
+      "B01-W01-R2C1": 0.1,
+      "B01-W01-R2C2": 0.1,
+      "B01-W01-R2C5": 4,
+      "B01-W01-R2C8": 0.1,
+      "B01-W01-R3C1": 0.1,
+      "B01-W01-R3C7": 0.1,
+      "B01-W01-R3C8": 0.1,
+      "B01-W01-R4C1": 0.1,
+      "B01-W01-R4C2": 0.1,
+      "B01-W01-R4C4": 4,
+      "B01-W01-R4C5": 4,
+      "B01-W01-R4C8": 0.1
+    },
+    "value_weight_notes": "ABC C score: relative heritage value of each zone (default 1). ASSUMED for the demo, not a survey: the parapet centre R4C4-R4C5 and the cracked mid-wall R2C5 (4) and the original wall foot R1C4-R1C5 (1.5) count most; zones we treat as later repairs (corners and edges, 0.1) count least. Replace with the conservator's value assessment."
   },
   "sensors": [
     {

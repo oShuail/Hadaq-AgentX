@@ -10,6 +10,7 @@ import type { RiskLevel, SensorSpec } from "../types/contracts";
 import registry from "../../../../contracts/building_b01.json";
 import CameraFeed from "./CameraFeed";
 import EventFeed from "./EventFeed";
+import SensorList from "./SensorList";
 
 interface Props {
   selection: Selection | null;
@@ -97,21 +98,7 @@ export default function BuildingPanel({ selection, live, hour, onFlyToFocus, onO
       {tab === "live" ? (
         <>
           <h3>Live sensors</h3>
-          <ul className="sensors">
-            {sensors
-              .filter((s) => !zoneId || s.zone_id === zoneId)
-              .map((s) => {
-                const r = live.readings[s.id];
-                const real = r?.provenance === "measured";
-                return (
-                  <li key={s.id} className={r?.quality === "fault" ? "fault" : ""}>
-                    <span>{s.label}</span>
-                    <span className="value">{r ? `${r.value} ${r.unit}` : "no data"}</span>
-                    <span className={`tag ${real ? "real" : ""}`}>{r ? (real ? "REAL" : "SIM") : ""}</span>
-                  </li>
-                );
-              })}
-          </ul>
+          <SensorList sensors={sensors.filter((s) => !zoneId || s.zone_id === zoneId)} live={live} />
           <CameraFeed photo={live.photo} detections={live.detections} />
           <EventFeed events={live.events} />
           <button className="primary" onClick={() => onOpenPage(FOCUS_TWIN.id)}>Open building page</button>

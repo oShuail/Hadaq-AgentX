@@ -7,6 +7,7 @@ import Brand from "../Brand";
 import AgentChat from "../chat/AgentChat";
 import CameraFeed from "../panel/CameraFeed";
 import EventFeed from "../panel/EventFeed";
+import SensorList from "../panel/SensorList";
 import type { LiveState } from "../state/useLive";
 import { ATTENTION_COLORS, type AttentionItem } from "../twin/WallZones";
 import { RISK_COLORS, moistureColor } from "../twin/colors";
@@ -191,21 +192,7 @@ export default function BuildingPage({ twin, live, walls, zoneColors, attention,
           <section className="bsec">
             <h3>Live sensors</h3>
             {sensors.length ? (
-              <ul className="sensors">
-                {sensors.map((s) => {
-                  const r = live.readings[s.id];
-                  const real = r?.provenance === "measured";
-                  return (
-                    <li key={s.id} className={r?.quality === "fault" ? "fault" : ""}>
-                      <span>
-                        {s.label} <span className="muted small">{s.zone_id.split("-").slice(-1)[0]}</span>
-                      </span>
-                      <span className="value">{r ? `${r.value} ${r.unit}` : "no data"}</span>
-                      <span className={`tag ${real ? "real" : ""}`}>{r ? (real ? "REAL" : "SIM") : ""}</span>
-                    </li>
-                  );
-                })}
-              </ul>
+              <SensorList sensors={sensors} live={live} showZone />
             ) : (
               <p className="placeholder">{reg ? "No sensors reporting. Start the API and the sensor simulator (make api, make sensors)." : "No sensors installed on this building yet."}</p>
             )}

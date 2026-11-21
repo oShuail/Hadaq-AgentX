@@ -165,62 +165,91 @@ export class WallOverlay {
 
   /** Replace the pinned reading cards. Each sits on its zone's centre, its card offset by (dx, dy) screen px. */
   setCallouts(items: Callout[], onPick: (zoneId: string) => void) {
-    for (const child of [...this.callouts.children]) {
-      this.callouts.remove(child);
-      if (child instanceof CSS2DObject) child.element.remove();
+    // Readings arrive several times a second: update the cards in place, rebuild one only when its layout changes,
+    // so a card never disappears under the pointer.
+    this.onPickCallout = onPick;
+    const wanted = new Set(items.map((i) => i.zoneId));
+    for (const [zoneId, entry] of this.calloutCache) {
+      if (!wanted.has(zoneId)) this.dropCallout(zoneId, entry.obj);
     }
-    const [ox, oy] = this.place.out;
     for (const item of items) {
       const zone = this.zones.get(item.zoneId);
       if (!zone) continue;
-      const root = document.createElement("div");
-      root.className = `twin-callout ${item.side}${item.tone ? ` ${item.tone}` : ""}`;
-      const dot = document.createElement("i");
-      dot.className = "dot";
-      const leader = document.createElement("span");
-      leader.className = "leader";
-      const sx = item.side === "left" ? -item.dx : item.dx;
-      leader.style.width = `${Math.hypot(sx, item.dy)}px`;
-      leader.style.transform = `rotate(${Math.atan2(item.dy, sx)}rad)`;
-      const card = document.createElement("button");
-      card.type = "button";
-      card.className = "card";
-      card.style.top = `${item.dy}px`;
-      card.style[item.side === "left" ? "right" : "left"] = `${item.dx}px`;
-      card.title = "Open this zone";
-      const head = document.createElement("span");
-      head.className = "head";
-      head.textContent = item.title;
-      card.appendChild(head);
-      for (const r of item.rows) {
-        const row = document.createElement("span");
-        row.className = `row${r.fault ? " fault" : ""}`;
-        const label = document.createElement("span");
-        label.className = "label";
-        label.textContent = r.label;
-        const value = document.createElement("b");
-        value.textContent = r.value;
-        const unit = document.createElement("small");
-        unit.textContent = r.unit;
-        row.append(label, value, unit);
-        if (r.tag) {
-          const tag = document.createElement("em");
-          tag.className = `tag ${r.tag === "REAL" ? "real" : ""}`;
-          tag.textContent = r.tag;
-          row.appendChild(tag);
-        }
-        card.appendChild(row);
+      const sig = JSON.stringify([item.side, item.dx, item.dy, item.tone, item.title, item.rows.map((r) => [r.label, r.tag])]);
+      let entry = this.calloutCache.get(item.zoneId);
+      if (entry && entry.sig !== sig) {
+        this.dropCallout(item.zoneId, entry.obj);
+        entry = undefined;
       }
-      card.addEventListener("click", (e) => {
-        e.stopPropagation();
-        onPick(item.zoneId);
+      if (!entry) entry = this.buildCallout(item, zone, sig);
+      item.rows.forEach((r, i) => {
+        const el = entry.rows[i];
+        el.row.className = `row${r.fault ? " fault" : ""}`;
+        if (el.value.textContent !== r.value) el.value.textContent = r.value;
+        if (el.unit.textContent !== r.unit) el.unit.textContent = r.unit;
       });
-      root.append(leader, dot, card);
-      const obj = new CSS2DObject(root);
-      obj.position.set(zone.position.x + ox * 0.2, zone.position.y, zone.position.z - oy * 0.2);
-      obj.center.set(0, 0);
-      this.callouts.add(obj);
     }
+  }
+
+  private onPickCallout: (zoneId: string) => void = () => {};
+  private calloutCache = new Map<string, { obj: CSS2DObject; sig: string; rows: { row: HTMLElement; value: HTMLElement; unit: HTMLElement }[] }>();
+
+  private dropCallout(zoneId: string, obj: CSS2DObject) {
+    this.callouts.remove(obj);
+    obj.element.remove();
+    this.calloutCache.delete(zoneId);
+  }
+
+  private buildCallout(item: Callout, zone: THREE.Mesh, sig: string) {
+    const [ox, oy] = this.place.out;
+    const root = document.createElement("div");
+    root.className = `twin-callout ${item.side}${item.tone ? ` ${item.tone}` : ""}`;
+    const dot = document.createElement("i");
+    dot.className = "dot";
+    const leader = document.createElement("span");
+    leader.className = "leader";
+    const sx = item.side === "left" ? -item.dx : item.dx;
+    leader.style.width = `${Math.hypot(sx, item.dy)}px`;
+    leader.style.transform = `rotate(${Math.atan2(item.dy, sx)}rad)`;
+    const card = document.createElement("button");
+    card.type = "button";
+    card.className = "card";
+    card.style.top = `${item.dy}px`;
+    card.style[item.side === "left" ? "right" : "left"] = `${item.dx}px`;
+    card.title = "Open this zone";
+    const head = document.createElement("span");
+    head.className = "head";
+    head.textContent = item.title;
+    card.appendChild(head);
+    const rows = item.rows.map((r) => {
+      const row = document.createElement("span");
+      const label = document.createElement("span");
+      label.className = "label";
+      label.textContent = r.label;
+      const value = document.createElement("b");
+      const unit = document.createElement("small");
+      row.append(label, value, unit);
+      if (r.tag) {
+        const tag = document.createElement("em");
+        tag.className = `tag ${r.tag === "REAL" ? "real" : ""}`;
+        tag.textContent = r.tag;
+        row.appendChild(tag);
+      }
+      card.appendChild(row);
+      return { row, value, unit };
+    });
+    card.addEventListener("click", (e) => {
+      e.stopPropagation();
+      this.onPickCallout(item.zoneId);
+    });
+    root.append(leader, dot, card);
+    const obj = new CSS2DObject(root);
+    obj.position.set(zone.position.x + ox * 0.2, zone.position.y, zone.position.z - oy * 0.2);
+    obj.center.set(0, 0);
+    this.callouts.add(obj);
+    const entry = { obj, sig, rows };
+    this.calloutCache.set(item.zoneId, entry);
+    return entry;
   }
 
   setAttention(items: AttentionItem[]) {

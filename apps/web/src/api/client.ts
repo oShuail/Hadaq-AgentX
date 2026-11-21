@@ -7,6 +7,7 @@ import type {
   LiveMessage,
   Photo,
   RiskScore,
+  SensorOverview,
   SensorReading,
   SimulationResult,
 } from "../types/contracts";
@@ -26,6 +27,8 @@ async function postJson<T>(url: string, body: unknown): Promise<T> {
 export const api = {
   building: (id: string) => getJson<BuildingRegistry>(`${API_URL}/buildings/${id}`),
   latestReadings: (id: string) => getJson<SensorReading[]>(`${API_URL}/buildings/${id}/readings/latest`),
+  readings: (id: string, limit = 400) => getJson<SensorReading[]>(`${API_URL}/buildings/${id}/readings?limit=${limit}`),
+  sensors: (id: string, window = 60) => getJson<SensorOverview[]>(`${API_URL}/buildings/${id}/sensors?window=${window}`),
   latestDetections: (id: string) => getJson<Detection[]>(`${API_URL}/buildings/${id}/detections/latest`),
   risk: (id: string) => getJson<RiskScore[]>(`${API_URL}/buildings/${id}/risk`),
   events: (id: string, limit = 20) => getJson<HadaqEvent[]>(`${API_URL}/buildings/${id}/events?limit=${limit}`),

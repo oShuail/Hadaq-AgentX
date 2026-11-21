@@ -10,7 +10,7 @@ Read this first when you start a session (human or AI). Update it before you end
 
 | Area | State | Owner |
 | --- | --- | --- |
-| Web app (`apps/web`) | Working. Budots-style 3D twin of Diriyah in three.js with the **Courtyard HUD** (design 3): the map is full screen and four corner towers sit over it (brand and tabs top left, status and the Layers menu top right, views and About bottom left, the panel bottom right), a sun-arc clock bottom centre, and sensor readings pinned to the B01 facade. Clicking a twin building opens its own page at `/building/<id>` (not a popup). The Activity tab has a two-minute B01 sensor playback that works without the API and updates the map, twin panel and building page | Omar (twin), Turky (shell), Saleh (sensor playback) |
+| Web app (`apps/web`) | Working. Budots-style 3D twin of Diriyah in three.js with the **Courtyard HUD** (design 3): the map is full screen and four corner towers sit over it (brand and tabs top left, status and the Layers menu top right, views and About bottom left, the panel bottom right), a sun-arc clock bottom centre, and sensor readings pinned to the B01 facade. Clicking a twin building opens its own page at `/building/<id>` (not a popup). Activity's two-minute B01 run now controls the MQTT sensor simulator through the API; the map, twin panel and building page display the live WebSocket readings | Omar (twin), Turky (shell), Saleh (sensor run) |
 | Building pages (`src/building/`, list in `src/twins.ts`) | **B01 Qasr Salwa (قصر سلوى)**: our model with the wall zone grid, wall condition, sensors, camera, activity, agent. **B02 AL Turaif House**: opened from "palace of Nasr" on the map, shows the Sketchfab scan with placeholders (no registry, sensors or camera yet) | Omar |
 | 3D map data (`apps/web/public/site/`) | Baked and committed (about 9 MB): OSM + Microsoft footprints, Esri imagery, AWS terrain, 76k palms. No keys needed | Omar |
 | Focus building model | B01 is named Qasr Salwa (قصر سلوى). Model `apps/web/public/models/b01_v3.glb` (decimated Meshy citadel from `assets/turaif/`), placed by `contracts/building_b01.json` `base_line` and `azimuth_deg` | Omar |
@@ -44,7 +44,7 @@ After pulling the 3D map change, run `cd apps/web && npm install` once (Cesium w
 ## Known issues and honesty notes
 
 - The B01-CAM01 photo folders are empty in git by design. Without an actual wall photo, `make camera` generates illustrative synthetic artwork at 1600 x 1200 with wall bounds `[80, 80, 1520, 1120]`. Replace both folders and remeasure the bounds when the real fixed-camera series is available; no photos have been shared to Drive.
-- The Activity tab's browser sensor playback is local and does not publish MQTT events or persist API readings. With the backend connected, the existing live scenario controls are available whenever playback is cleared. Camera frames and crack detection still require the API, camera and vision services.
+- Activity's sensor run requires the API, MQTT broker and `make sensors`; it is unavailable on the static web preview unless a reachable API and simulator are deployed. The API times the scenario events, the device simulator publishes the six readings on the normal MQTT topics, and the site renders the persisted WebSocket feed. Camera frames and crack detection additionally require `make camera` and `make vision`.
 - This Windows/WSL host stops its Docker MQTT broker when WSL becomes idle. Keeping WSL alive enabled two fresh end-to-end sensor cycles and a complete timed sensor scenario including fault recovery. Camera upload, worker comparison and the synthetic provenance event passed twice through the API. The web shows sensor values, the photo detection boxes and the R2C5 attention box on the 3D wall; two mock agent drainage answers returned. This is an illustrative demo, not real photos or a calibrated model.
 - Map layers switched off for now (built but hidden, kept in code): car parks and cars, lanterns, street lights, visitors, helipads. Turn one back on by removing it from `DISABLED_LAYERS` in `apps/web/src/twin3d/Twin.ts`.
 - B01 is called Qasr Salwa but stands at a placeholder spot west of the real Salwa Palace; the real palace is not a separate outline in our OSM data. Say "placeholder location" if asked, or move it with `base_line`.
@@ -62,13 +62,17 @@ After pulling the 3D map change, run `cd apps/web && npm install` once (Cesium w
 - **Everyone:** pull `omar/turaif-district` (or `main` once merged), `npm install` in `apps/web`, open the app and check your part still shows up in the new tabs.
 - **Omar:** merge `omar/turaif-district` into `main`; fill the building pages (wall condition details, camera per wall, per-building agent context); register B02 in `contracts/` when it gets sensors; real LLM answers with evidence chips; check the wall zones line up with the B01 facade in the Focus building view; full demo run twice (`docs/demo-script.md`).
 - **Turky:** app shell is now `App.tsx` + `hud/` + `twin3d/`; panel polish in the Building twin tab (it now lives in the bottom-right tower: one screen at 1080p, no scrolling for key info).
-- **Saleh:** use Activity → Play sensor run for the standalone two-minute sensor playback. Clear it to return to live API readings and the scenario buttons. The phone page `?panel=1` is unchanged.
+- **Saleh:** with `make up`, `make api` and `make sensors` running, use Activity → Play sensor run for the live two-minute feed. Replay restarts it; Reset demo restores baseline. The phone page `?panel=1` is unchanged.
 - **Basma:** no web changes needed; Moisture and Risk toggles now sit in the simulation pill above the sun clock.
 - **Abdurhmn:** demo video shots changed again (HUD layout, views bottom left, readings pinned on the facade in the Qasr Salwa view), see `docs/demo-script.md`.
 
 ---
 
 ## Session log
+
+### 2026-11-21, site run uses live feed (Saleh data feeds)
+
+- Replaced the browser-generated sensor overlay with API-timed scenario events. Play resets and starts the storm, stops it at 35 seconds, faults S04 at 60 seconds and steps S06 at 75 seconds. The device simulator publishes readings over MQTT, the API persists and broadcasts them, and the site plots those actual readings. Replay and reset control the same simulator. Added broker/device availability checks and a scheduler test; web build and 20 Python tests passed.
 
 ### 2026-11-21, site sensor playback (Saleh data feeds)
 

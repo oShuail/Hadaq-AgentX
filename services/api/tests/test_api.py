@@ -29,6 +29,12 @@ def test_health_and_building(client):
     assert client.get("/buildings/B99").status_code == 404
 
 
+def test_live_sensor_run_requires_mqtt_device(client):
+    status = client.get("/buildings/B01/demo/sensor-run").json()
+    assert not status["available"]
+    assert client.post("/buildings/B01/demo/sensor-run").status_code == 503
+
+
 def test_readings_and_anomaly(client):
     reading = {"sensor_id": "B01-S04", "building_id": "B01", "zone_id": "B01-W01-R1C6", "kind": "moisture",
                "value": 72.0, "unit": "%rel", "ts": "2026-11-20T10:00:00+03:00", "provenance": "synthetic"}

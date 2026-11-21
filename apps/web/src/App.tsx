@@ -36,8 +36,7 @@ const parseRoute = (path: string): Route => {
 
 export default function App() {
   const live = useLive(BUILDING_ID);
-  const demo = useSensorDemo(registry.sensors as SensorSpec[]);
-  const visibleLive = demo.readings ? { ...live, readings: demo.readings } : live;
+  const demo = useSensorDemo(BUILDING_ID, live.readings);
   const [selection, setSelection] = useState<Selection | null>(null);
   const [fly, setFly] = useState<{ target: FlyTarget; nonce: number }>({ target: "turaif", nonce: 0 });
   const [view, setView] = useState<FlyTarget | null>("turaif");
@@ -105,8 +104,8 @@ export default function App() {
 
   // Sensor readings pinned to the facade next to their zones.
   const callouts = useMemo(
-    () => sensorCallouts(live.building?.sensors ?? (registry.sensors as SensorSpec[]), visibleLive.readings, attention, wall?.cols ?? 8, tab !== "explore"),
-    [live.building, visibleLive.readings, attention, wall?.cols, tab],
+    () => sensorCallouts(live.building?.sensors ?? (registry.sensors as SensorSpec[]), live.readings, attention, wall?.cols ?? 8, tab !== "explore"),
+    [live.building, live.readings, attention, wall?.cols, tab],
   );
 
   const go = (target: FlyTarget) => {
@@ -126,7 +125,7 @@ export default function App() {
       {pageTwin && (
         <BuildingPage
           twin={pageTwin}
-          live={visibleLive}
+          live={live}
           fallbackSensors={registry.sensors as SensorSpec[]}
           walls={pageTwin.registered && wall ? [wall] : []}
           zoneColors={pageTwin.registered ? zoneColors : {}}
@@ -179,7 +178,7 @@ export default function App() {
             </div>
             <div className="tower-panel-body">
               {tab === "twin" && (
-                <BuildingPanel selection={selection} live={visibleLive} hour={safeHour} onFlyToFocus={() => go("focus")} onOpenPage={openPage} />
+                <BuildingPanel selection={selection} live={live} hour={safeHour} onFlyToFocus={() => go("focus")} onOpenPage={openPage} />
               )}
               {tab === "agent" && <AgentChat buildingId={live.building?.building.id ?? BUILDING_ID} />}
               {tab === "activity" && (

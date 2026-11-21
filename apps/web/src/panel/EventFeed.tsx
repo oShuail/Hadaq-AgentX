@@ -1,3 +1,4 @@
+import AnswerText from "../chat/AnswerText";
 import { DAMAGE_FAMILIES, damageReportOf, familyOf } from "../twin/damage";
 import type { HadaqEvent } from "../types/contracts";
 
@@ -35,7 +36,7 @@ export default function EventFeed({ events }: { events: HadaqEvent[] }) {
             <li key={e.event_id} className={e.type}>
               <span className="time">{new Date(e.ts).toLocaleTimeString()}</span>{" "}
               {report ? "Damage report, waiting for expert approval" : LABELS[e.type] ?? e.type}
-              {e.type === "agent_note" && typeof e.payload.answer === "string" && <div className="note" dir="auto">{e.payload.answer}</div>}
+              {e.type === "agent_note" && typeof e.payload.answer === "string" && <div className="note"><AnswerText text={e.payload.answer} /></div>}
               {e.type === "recommendation_ready" && !report && typeof e.payload.action === "string" && <div className="note">{e.payload.action}</div>}
               {report && (
                 <div className="report">

@@ -3,6 +3,7 @@ import { useState } from "react";
 
 import { api } from "../api/client";
 import type { ChatResponse } from "../types/contracts";
+import AnswerText from "./AnswerText";
 
 type Message = { role: "user" | "agent"; text: string; response?: ChatResponse };
 
@@ -54,7 +55,7 @@ export default function AgentChat({ buildingId }: { buildingId: string }) {
         )}
         {messages.map((m, i) => (
           <div key={i} className={`msg ${m.role}`}>
-            <div className="text" dir="auto">{m.text}</div>
+            {m.role === "agent" ? <AnswerText text={m.text} onEvidence={openEvidence} /> : <div className="text" dir="auto">{m.text}</div>}
             {m.response && (
               <div className="meta">
                 {m.response.needs_approval && <span className="badge warn">Waiting for expert approval</span>}

@@ -152,6 +152,15 @@ button.icon { width: 38px; height: 38px; display: grid; place-items: center; pad
 .chat .msg { padding: 8px 10px; border-radius: 10px; font-size: 13px; white-space: pre-wrap; }
 .chat .msg.user { background: rgba(195, 138, 90, 0.22); justify-self: end; max-width: 85%; }
 .chat .msg.agent { background: rgba(255, 240, 220, 0.04); border: 1px solid var(--line); }
+.answer { white-space: normal; line-height: 1.5; }
+.answer p { margin: 0 0 8px; }
+.answer ul { margin: 0 0 8px; padding-inline-start: 18px; }
+.answer li { margin: 2px 0; }
+.answer > :last-child { margin-bottom: 0; }
+.answer strong { color: var(--copper-hi); font-weight: 600; }
+.ev-chip { display: inline-block; margin-inline-start: 4px; padding: 0 5px; font: 10.5px/1.6 ui-monospace, monospace; color: var(--gold); border: 1px solid #5a4a35; border-radius: 4px; background: transparent; vertical-align: 1px; opacity: 0.8; }
+button.ev-chip { cursor: pointer; }
+button.ev-chip:hover { opacity: 1; }
 .chat .meta { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 6px; }
 .chat .suggestions { display: grid; gap: 6px; }
 .chat .suggestions button { text-align: start; }

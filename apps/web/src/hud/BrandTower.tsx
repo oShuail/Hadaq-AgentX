@@ -20,11 +20,6 @@ export default function BrandTower({ tab, onTab }: { tab: Tab; onTab: (t: Tab) =
             <span>At-Turaif digital twin</span>
           </div>
         </div>
-        <p className="hud-note">
-          agentX prototype · <span dir="rtl" lang="ar">نموذج تجريبي</span>
-          <br />
-          Not affiliated with Diriyah Company
-        </p>
         <div className="hud-tabs" role="tablist" aria-label="Panels">
           {TABS.map((t) => (
             <button key={t.id} role="tab" aria-selected={tab === t.id} className={tab === t.id ? "on" : ""} onClick={() => onTab(t.id)}>

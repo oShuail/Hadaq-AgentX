@@ -21,6 +21,7 @@ Read this first when you start a session (human or AI). Update it before you end
 | Photo privacy (`services/api/hadaq_api/privacy.py`) | Faces are hidden (pixelated and blurred) before an uploaded photo is stored; YuNet face detector from the OpenCV Zoo (`models/`, MIT licence alongside). The count goes into the `new_photo` event payload (`privacy`). `PRIVACY_BLUR=false` turns it off. Needs `opencv-python-headless` (run `make setup` again) | agents task owner (review: Turky) |
 | Challenge fit (`docs/challenge-plan.md`, Arabic) | Organisers' requirements and scoring, what we have, gaps, prioritised plan. Built: damage types, treatments, materials and tools, damage map with a colour key, face hiding. Not built: real photos, expert review screen, accuracy check against an expert, a run with the real LLM key | abooda7m |
 | Simulation, vision, devices | Scaffolded and tested (see each team guide in `docs/team/`). Not changed in the last session | Basma, Abdurhmn, Saleh |
+| Simulation site data (`contracts/building_b01.json` `site.*`) | Set from Open-Meteo ERA5 by Basma (PR #3): `heavy_rain_days_per_year` 1.91 (2015 to 2025, ASSUMED 10 mm/day threshold), `demo_storm_date` 2023-01-05. Only used by `mode: "replay"` runs, which nothing sends yet (see Known issues) | Basma |
 
 ### Run it
 
@@ -55,11 +56,13 @@ After pulling the 3D map change, run `cd apps/web && npm install` once (Cesium w
 - B01 is an AI-generated model at a placeholder spot, not a survey of a real building.
 - Esri imagery is fine for a non-commercial demo with the attribution kept (Explore, About).
 - Chrome slows the 3D view to about 1 fps when its window is hidden or covered. That is the browser, not the app. Measured on Omar's laptop (AMD integrated GPU): about 27 ms per frame, roughly 35 fps.
+- The real storm (`demo_storm_date`) is not used in the demo yet: the web client (`apps/web/src/api/client.ts` `runSimulation`) and the agent tools (`run_rain_simulation`, `compare_scenarios`) all send `mode: "synthetic_storm"`. The API only fills `demo_storm_date` for `mode: "replay"` with no date.
+- A replay run needs the internet or a filled weather cache (`data/weather_cache/`). Offline with no cache, the simulation job fails; there is no fallback to the synthetic storm yet.
 - `tools/turaif_model/` (the old Cesium district builder) is superseded and kept only for reference.
 - `apps/web/.env.local` files from the Cesium version still have `VITE_CESIUM_ION_TOKEN`, `VITE_DISTRICT_URL`, `VITE_GOOGLE_3D`. They are unused and can be deleted.
 - The demo story (`docs/demo-script.md`) still centres on the storm. The challenge makes sensors optional and scores damage types, treatments, materials and tools from real photos, a clear damage map, expert correction and face blurring. Proposed new story: `docs/challenge-plan.md` section 9.
 - Damage agent: the crack-width thresholds (2 mm, 10 mm) and the priority rule are ours (`assumed`). The treatment table was transcribed from a screenshot and its source document ("الهيئة") is not named yet. Incompatible repairs, timber decay and structural deformation cannot be found by the current detector classes.
-- `omar/turaif-district` is already merged and is now behind `main` (Basma's storm data). Start new branches from `main`.
+- Start new branches from `main` (`omar/turaif-district` is merged into it).
 - Without Docker (no MQTT) the camera simulator cannot switch to the damage series. To test anyway, post frames to `POST /photos` with `sequence` and `frame`: the vision worker reads them from the photo record.
 - After pulling: run `make setup` (or `pip install -e services/api`) once. The API now needs OpenCV for face hiding; without it the API still starts but stores photos unchecked and logs an error.
 - Face hiding is checked in tests with a fixed face box and on wall texture (no false faces), but not yet on real photos with visitors. An upload that is not a decodable image is stored as is with `privacy.checked = false`.
@@ -71,12 +74,11 @@ After pulling the 3D map change, run `cd apps/web && npm install` once (Cesium w
 - **Everyone:** read `docs/challenge-plan.md` and answer its open questions (section 12). Pull `main`, then `make setup` and `npm install` in `apps/web` once.
 - **Omar:** decide the new demo story and the contract changes for expert review and face blurring (`docs/challenge-plan.md` sections 9 and 10); fill the building pages (wall condition details, camera per wall, per-building agent context); register B02 in `contracts/` when it gets sensors; check the wall zones line up with the B01 facade in the Focus building view; full demo run twice.
 - **Agents task owner:** put the LLM key in `.env` (`HADAQ_LLM=anthropic:claude-sonnet-5-5`) and run the chat suggestions in Arabic and English with the real model (no verifier warnings, damage report on a new photo); then build the approval step (approve, then a work order) with the expert review screen once Omar approves the contract changes.
-- **Turky:** review `privacy.py` and the upload change in `services/api/hadaq_api/main.py`.
-- **Abdurhmn:** try face hiding on real At-Turaif photos with visitors (far and side views) and report any missed face.
-- **Turky:** app shell is now `App.tsx` + `hud/` + `twin3d/`; panel polish in the Building twin tab (it now lives in the bottom-right tower: one screen at 1080p, no scrolling for key info).
+- **Turky:** review `privacy.py` and the upload change in `services/api/hadaq_api/main.py`. App shell is now `App.tsx` + `hud/` + `twin3d/`; panel polish in the Building twin tab (it now lives in the bottom-right tower: one screen at 1080p, no scrolling for key info).
 - **Saleh:** scenario buttons moved from the bottom bar to the **Activity** tab; the phone page `?panel=1` is unchanged.
-- **Basma:** no web changes needed; Moisture and Risk toggles now sit in the simulation pill above the sun clock.
-- **Abdurhmn:** demo video shots changed again (HUD layout, views bottom left, readings pinned on the facade in the Qasr Salwa view), see `docs/demo-script.md`.
+- **Basma:** share the `hadaq_sim.cli storms` row for 2023-01-05 (total mm and peak mm/h) for the slide; run a replay once on the demo laptop to fill `data/weather_cache/`. Moisture and Risk toggles now sit in the simulation pill above the sun clock.
+- **Omar or Turky:** switch the web client and the agent tools to `mode: "replay"` so the demo uses the real storm, and make the API fall back to the synthetic storm if the weather fetch fails offline.
+- **Abdurhmn:** try face hiding on real At-Turaif photos with visitors (far and side views) and report any missed face. Demo video shots changed again (HUD layout, views bottom left, readings pinned on the facade in the Qasr Salwa view), see `docs/demo-script.md`.
 
 ---
 
@@ -90,6 +92,12 @@ After pulling the 3D map change, run `cd apps/web && npm install` once (Cesium w
 - Later the same day: the **Damage map** on the building page and the **Damage** layer (grid and 3D); **face hiding** before photos are stored (`privacy.py`, YuNet model with its MIT licence in `services/api/hadaq_api/models/`, `opencv-python-headless` added to the API); LLM settings fixed for the current models (the old `temperature=0` is rejected by them with a 400), fallback to the labelled fixed plan when the LLM fails, `llm_ready` in `/health`; one finding per zone and class when a photo was analysed twice.
 - No change to `contracts/` (new details only inside event payloads).
 - Checked: `make test` 47 passed (30 new, including a contract test of the real LLM client against a stand-in Messages API); `npm run build` passes; live runs of the API, agents (mock), vision worker and web app: a damage report about half a second after a photo, a second high-priority report when the crack grew, a storm investigation on its own track; Chrome screenshots of the damage map, the Damage layer on the grid and the 3D wall, the privacy badge and an Arabic chat answer. Not checked: the real LLM (no key on this machine), face hiding on real photos of people.
+- Merged the latest `main` (PR #4 and #6) into `abooda7m/agents`.
+
+### 2026-11-20, evening (Omar, with an AI assistant)
+
+- Reviewed and merged Basma's PR #3 (`basma/storm-data`): `contracts/building_b01.json` now has `heavy_rain_days_per_year` 1.91 and `demo_storm_date` 2023-01-05 from Open-Meteo ERA5. JSON valid, merged clean; the change in the A score is small.
+- Found that nothing runs a replay yet, so the real storm is not used in the demo; added it to Known issues and Next steps. The numbers were not re-checked independently (Open-Meteo was not reachable from the review session).
 
 ### 2026-11-20, later (Omar, with an AI assistant)
 

@@ -113,7 +113,7 @@ After pulling the 3D map change, run `cd apps/web && npm install` once (Cesium w
 - Removed the Windows start and stop scripts (`tools/windows/`): the team runs each part in its own terminal. The PowerShell commands are under "Run it".
 - Phase 1 focus on damage: hid the simulation player (play, scenario, hour slider) from the map; the Damage / Moisture / Risk buttons stay in a small pill with Damage as the default; the sun clock no longer jumps to the simulated hour; Moisture shows each zone's peak in the latest run. Simulation backend and the agent's drainage question untouched.
 - Removed the "[mock agent ...]" label from the start of mock answers.
-- Map: the reading cards on the Qasr Salwa facade show only once the building (or one of its wall zones) is clicked. The first click on Qasr Salwa selects it and shows the cards; a second click opens its page. Other twin buildings still open their page on the first click. The Qasr Salwa view button no longer selects the building.
+- Map: the wall zone grid, the risk labels ("R1C1 · risk high") and the reading cards on the Qasr Salwa facade show only once the building (or one of its wall zones) is clicked; clicking elsewhere hides them again. The building page still shows everything. The first click on Qasr Salwa selects it and shows the cards; a second click opens its page. Other twin buildings still open their page on the first click. The Qasr Salwa view button only flies there; it no longer selects the building or turns the grid on.
 
 ### 2026-11-21, integration (Omar, with an AI assistant)
 

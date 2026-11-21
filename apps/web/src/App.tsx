@@ -44,7 +44,6 @@ export default function App() {
   const [selection, setSelection] = useState<Selection | null>(null);
   const [fly, setFly] = useState<{ target: FlyTarget; nonce: number }>({ target: "turaif", nonce: 0 });
   const [view, setView] = useState<FlyTarget | null>("turaif");
-  const [zonesVisible, setZonesVisible] = useState(false);
   const [layer, setLayer] = useState<WallLayer>("damage");
   const [coordinate, setCoordinate] = useState<string | null>(null);
   const [route, setRoute] = useState<Route>(() => parseRoute(window.location.pathname));
@@ -68,7 +67,7 @@ export default function App() {
   };
   const openPage = (twinId: string) => navigate(`/building/${encodeURIComponent(twinId)}`);
 
-  // Qasr Salwa (or one of its wall zones) is selected: its reading cards show on the map.
+  // Qasr Salwa (or one of its wall zones) is selected: its wall grid, risk labels and reading cards show on the map.
   const focusSelected = selection?.kind === "zone" || (selection?.kind === "building" && selection.isFocus);
 
   // Clicking a building that has a twin page opens that page. Qasr Salwa takes two clicks: the first selects it and
@@ -84,12 +83,8 @@ export default function App() {
   // The wall comes from the API; with the API off ("Offline") the map still uses the registry file directly.
   const wall: WallSpec | null = live.building?.walls[0] ?? (registry.walls[0] as WallSpec);
   const sim = live.simulation;
-
-  // A new simulation (from the agent or the panel) shows the wall zones. It runs in the background: there is no
-  // player on the map, and the Moisture layer shows each zone's peak in the latest run.
-  useEffect(() => {
-    if (sim) setZonesVisible(true);
-  }, [sim?.run_id]); // eslint-disable-line react-hooks/exhaustive-deps
+  // The simulation runs in the background: there is no player on the map, and the Moisture layer shows each zone's
+  // peak in the latest run.
 
   const zoneColors = useMemo(() => {
     if (layer === "damage") return damageZoneColors(live.damageReport?.report ?? null);
@@ -115,8 +110,6 @@ export default function App() {
   const go = (target: FlyTarget) => {
     setView(target);
     setFly((f) => ({ target, nonce: f.nonce + 1 }));
-    // The Qasr Salwa view shows the wall zones; its readings appear once the building itself is clicked.
-    if (target === "focus") setZonesVisible(true);
   };
 
   const pageTwin = route.page === "building" ? twinById(route.id) : null;
@@ -144,9 +137,9 @@ export default function App() {
           buildingId={BUILDING_ID}
           wall={wall}
           zoneColors={zoneColors}
-          attention={attention}
+          attention={focusSelected ? attention : []}
           callouts={callouts}
-          zonesVisible={zonesVisible}
+          zonesVisible={focusSelected}
           selectedZone={selection?.kind === "zone" ? selection.zoneId : null}
           fly={fly}
           time={time}

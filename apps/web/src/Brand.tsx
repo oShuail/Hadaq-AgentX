@@ -1,5 +1,5 @@
 // Hadaq logo and title block, shared by the map and the building pages.
-export default function Brand({ title, subtitle }: { title: string; subtitle: string }) {
+export default function Brand({ title, subtitle }: { title: string; subtitle?: string }) {
   return (
     <div className="brand">
       <div className="mark">
@@ -8,10 +8,7 @@ export default function Brand({ title, subtitle }: { title: string; subtitle: st
       </div>
       <div className="titles">
         <h1>{title}</h1>
-        <p>{subtitle}</p>
-        <p className="note">
-          agentX prototype · not affiliated with Diriyah Company · <span dir="rtl">نموذج تجريبي</span>
-        </p>
+        {subtitle && <p>{subtitle}</p>}
       </div>
     </div>
   );

@@ -49,7 +49,7 @@ export default function BuildingPage({ twin, live, walls, zoneColors, attention,
           </svg>
           Map
         </button>
-        <Brand title={twinTitle(twin)} subtitle={`Building twin ${twin.id}${twin.mapLabel ? ` · "${twin.mapLabel}" on the map` : ""}`} />
+        <Brand title={twinTitle(twin)} />
         <div className="top-right">
           {reg && (
             <span className={`conn ${live.connected ? "up" : ""}`}>

@@ -6,6 +6,7 @@ Folder layout (photos are not committed to git; share them on Drive):
 
 Plays 'baseline' in a loop. On a new_crack event it switches to 'damage' and advances one frame per interval.
 On demo_reset it goes back to 'baseline'. Uploads each frame to POST /photos with provenance "synthetic".
+Scenario events come over MQTT, or, when there is no broker, from GET /buildings/{id}/events before each frame.
 
     python -m hadaq_vision.camera_sim --folder assets/camera/B01-CAM01 --interval 10
 """
@@ -60,6 +61,22 @@ class CameraSim:
             return self.mode, i + 1, frames[i]
 
 
+def poll_events(api: httpx.Client, building: str, seen: set[str], sim: CameraSim | None) -> None:
+    """HTTP fallback for scenario events: hand every event not seen before to the camera, oldest first.
+    With sim=None it only marks the current events as seen (call it once at start-up)."""
+    try:
+        events = api.get(f"/buildings/{building}/events", params={"limit": 50}).json()
+    except (httpx.HTTPError, ValueError) as exc:
+        log.warning("could not read events: %s", exc)
+        return
+    for event in reversed(events):  # the API returns newest first
+        if event["event_id"] in seen:
+            continue
+        seen.add(event["event_id"])
+        if sim is not None:
+            sim.on_event(event.get("type", ""))
+
+
 def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument("--folder", type=Path, default=Path("assets/camera/B01-CAM01"))
@@ -74,14 +91,21 @@ def main() -> None:
     client = mqtt.Client(mqtt.CallbackAPIVersion.VERSION2, client_id=f"camera-sim-{args.camera}")
     client.on_message = lambda c, u, msg: sim.on_event(json.loads(msg.payload).get("type", ""))
     client.on_connect = lambda c, u, f, rc, p: c.subscribe(f"hadaq/v1/{args.building}/events/#")
+    mqtt_ok = True
     try:
         client.connect(args.mqtt_host, 1883)
         client.loop_start()
     except OSError as exc:
-        log.warning("MQTT unavailable (%s); scenario events will not switch sequences", exc)
+        mqtt_ok = False
+        log.warning("MQTT unavailable (%s); reading scenario events from the API instead", exc)
 
+    seen: set[str] = set()
     with httpx.Client(base_url=args.api, timeout=30) as api:
+        if not mqtt_ok:
+            poll_events(api, args.building, seen, None)
         while True:
+            if not mqtt_ok:
+                poll_events(api, args.building, seen, sim)
             sequence, frame, path = sim.next_frame()
             with path.open("rb") as handle:
                 files = {"file": (path.name, handle, "image/jpeg")}

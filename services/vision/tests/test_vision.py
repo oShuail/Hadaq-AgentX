@@ -43,3 +43,27 @@ def test_generated_camera_series_and_zone_mapping(tmp_path):
         x0, y0, x1, y1 = crack.bbox_xyxy
         assert pixel_to_zone((x0+x1)/2, (y0+y1)/2, list(WALL_BBOX), "B01", "W01") == "B01-W01-R2C5"
     assert detector.detect(damage[-1])[0].length_px > detector.detect(baseline[0])[0].length_px
+
+
+def test_camera_follows_scenario_events_over_http(tmp_path):
+    import httpx
+
+    from hadaq_vision.camera_sim import CameraSim, poll_events
+
+    events = [{"event_id": "evt_old", "type": "new_crack"}]
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        return httpx.Response(200, json=list(reversed(events)))  # newest first, like the API
+
+    api = httpx.Client(base_url="http://api", transport=httpx.MockTransport(handler))
+    sim = CameraSim(tmp_path / "B01-CAM01")
+    seen: set[str] = set()
+    poll_events(api, "B01", seen, None)  # start-up: old events are ignored
+    poll_events(api, "B01", seen, sim)
+    assert sim.next_frame()[0] == "baseline"
+    events.append({"event_id": "evt_new", "type": "new_crack"})
+    poll_events(api, "B01", seen, sim)
+    assert sim.next_frame()[0] == "damage"
+    events.append({"event_id": "evt_reset", "type": "demo_reset"})
+    poll_events(api, "B01", seen, sim)
+    assert sim.next_frame()[0] == "baseline"

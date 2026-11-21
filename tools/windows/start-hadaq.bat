@@ -2,7 +2,8 @@
 rem Starts the Hadaq backend on Windows without make or Docker (owner: Omar).
 rem Double-click it. The first run creates .venv and installs the Python packages (a few minutes).
 rem Then it opens a window each for the API (:8000), the agents (:8100, mock mode unless .env says otherwise),
-rem the sensor simulator and the web app (:5173), skipping any that already run, and opens the browser.
+rem the sensor simulator, the camera and vision worker (mock detector) and the web app (:5173), skipping any
+rem that already run, and opens the browser.
 setlocal
 cd /d "%~dp0..\.."
 
@@ -19,7 +20,7 @@ if not exist ".venv\Scripts\python.exe" (
   echo Creating the Python environment in .venv ...
   %PY% -m venv .venv || goto :fail
 )
-".venv\Scripts\python.exe" -c "import hadaq_api, hadaq_agents, uvicorn, paho.mqtt" 2>nul
+".venv\Scripts\python.exe" -c "import hadaq_api, hadaq_agents, hadaq_vision, uvicorn, paho.mqtt, cv2" 2>nul
 if errorlevel 1 (
   echo Installing the Python packages into .venv ^(first run only, a few minutes^) ...
   ".venv\Scripts\python.exe" -m pip install -U pip || goto :fail
@@ -41,6 +42,8 @@ netstat -ano | findstr /r /c:":8000 .*LISTENING" >nul || (
 )
 netstat -ano | findstr /r /c:":8100 .*LISTENING" >nul || start "Hadaq agents :8100" cmd /k ".venv\Scripts\python.exe -m uvicorn hadaq_agents.server:app --port 8100"
 tasklist /v /fi "WINDOWTITLE eq Hadaq sensors*" | findstr /i "cmd.exe" >nul || start "Hadaq sensors" cmd /k ".venv\Scripts\python.exe devices\sensor-sim\sensor_sim.py %SIM_ARGS%"
+tasklist /v /fi "WINDOWTITLE eq Hadaq camera*" | findstr /i "cmd.exe" >nul || start "Hadaq camera" cmd /k ".venv\Scripts\python.exe -m hadaq_vision.camera_sim --folder assets/camera/B01-CAM01 --interval 10"
+tasklist /v /fi "WINDOWTITLE eq Hadaq vision*" | findstr /i "cmd.exe" >nul || start "Hadaq vision" cmd /k ".venv\Scripts\python.exe -m hadaq_vision.worker --backend mock"
 netstat -ano | findstr /r /c:":5173 .*LISTENING" >nul || (
   if not exist "apps\web\node_modules" (
     echo Installing the web app packages ^(first run only^) ...
@@ -50,7 +53,7 @@ netstat -ano | findstr /r /c:":5173 .*LISTENING" >nul || (
 )
 
 echo.
-echo Hadaq is running: web http://localhost:5173, API :8000, agents :8100, sensors. Close those windows to stop it.
+echo Hadaq is running: web http://localhost:5173, API :8000, agents :8100, sensors, camera. Close those windows to stop it.
 timeout /t 5 /nobreak >nul
 start "" http://localhost:5173
 exit /b 0

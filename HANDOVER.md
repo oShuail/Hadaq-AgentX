@@ -16,6 +16,7 @@ Read this first when you start a session (human or AI). Update it before you end
 | Focus building model | B01 is named Qasr Salwa (قصر سلوى). Model `apps/web/public/models/b01_v3.glb` (decimated Meshy citadel from `assets/turaif/`), placed by `contracts/building_b01.json` `base_line` and `azimuth_deg` | Omar |
 | Real scan | AL Turaif House (Sketchfab embed, by ATS) is the 3D view of the B02 page. Our own photogrammetry scan is not done | Omar |
 | API, simulation, agents, vision, devices | Scaffolded and tested (see each team guide in `docs/team/`). Not changed in the last session | Turky, Basma, Omar, Abdurhmn, Saleh |
+| Simulation site data (`contracts/building_b01.json` `site.*`) | Set from Open-Meteo ERA5 by Basma (PR #3): `heavy_rain_days_per_year` 1.91 (2015 to 2025, ASSUMED 10 mm/day threshold), `demo_storm_date` 2023-01-05. Only used by `mode: "replay"` runs, which nothing sends yet (see Known issues) | Basma |
 
 ### Run it
 
@@ -50,6 +51,8 @@ After pulling the 3D map change, run `cd apps/web && npm install` once (Cesium w
 - B01 is an AI-generated model at a placeholder spot, not a survey of a real building.
 - Esri imagery is fine for a non-commercial demo with the attribution kept (Explore, About).
 - Chrome slows the 3D view to about 1 fps when its window is hidden or covered. That is the browser, not the app. Measured on Omar's laptop (AMD integrated GPU): about 27 ms per frame, roughly 35 fps.
+- The real storm (`demo_storm_date`) is not used in the demo yet: the web client (`apps/web/src/api/client.ts` `runSimulation`) and the agent tools (`run_rain_simulation`, `compare_scenarios`) all send `mode: "synthetic_storm"`. The API only fills `demo_storm_date` for `mode: "replay"` with no date.
+- A replay run needs the internet or a filled weather cache (`data/weather_cache/`). Offline with no cache, the simulation job fails; there is no fallback to the synthetic storm yet.
 - `tools/turaif_model/` (the old Cesium district builder) is superseded and kept only for reference.
 - `apps/web/.env.local` files from the Cesium version still have `VITE_CESIUM_ION_TOKEN`, `VITE_DISTRICT_URL`, `VITE_GOOGLE_3D`. They are unused and can be deleted.
 
@@ -59,12 +62,18 @@ After pulling the 3D map change, run `cd apps/web && npm install` once (Cesium w
 - **Omar:** merge `omar/turaif-district` into `main`; fill the building pages (wall condition details, camera per wall, per-building agent context); register B02 in `contracts/` when it gets sensors; real LLM answers with evidence chips; check the wall zones line up with the B01 facade in the Focus building view; full demo run twice (`docs/demo-script.md`).
 - **Turky:** app shell is now `App.tsx` + `hud/` + `twin3d/`; panel polish in the Building twin tab (it now lives in the bottom-right tower: one screen at 1080p, no scrolling for key info).
 - **Saleh:** scenario buttons moved from the bottom bar to the **Activity** tab; the phone page `?panel=1` is unchanged.
-- **Basma:** no web changes needed; Moisture and Risk toggles now sit in the simulation pill above the sun clock.
+- **Basma:** share the `hadaq_sim.cli storms` row for 2023-01-05 (total mm and peak mm/h) for the slide; run a replay once on the demo laptop to fill `data/weather_cache/`. Moisture and Risk toggles now sit in the simulation pill above the sun clock.
+- **Omar or Turky:** switch the web client and the agent tools to `mode: "replay"` so the demo uses the real storm, and make the API fall back to the synthetic storm if the weather fetch fails offline.
 - **Abdurhmn:** demo video shots changed again (HUD layout, views bottom left, readings pinned on the facade in the Qasr Salwa view), see `docs/demo-script.md`.
 
 ---
 
 ## Session log
+
+### 2026-11-20, evening (Omar, with an AI assistant)
+
+- Reviewed and merged Basma's PR #3 (`basma/storm-data`): `contracts/building_b01.json` now has `heavy_rain_days_per_year` 1.91 and `demo_storm_date` 2023-01-05 from Open-Meteo ERA5. JSON valid, merged clean; the change in the A score is small.
+- Found that nothing runs a replay yet, so the real storm is not used in the demo; added it to Known issues and Next steps. The numbers were not re-checked independently (Open-Meteo was not reachable from the review session).
 
 ### 2026-11-20, later (Omar, with an AI assistant)
 

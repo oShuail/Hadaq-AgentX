@@ -28,6 +28,7 @@ runs/
 *.pth
 *.pt
 assets/camera/*/*/
+assets/camera/*/.demo_frames_version
 !assets/camera/README.md
 
 # 3D models above 50 MB go on Drive; small GLB files in apps/web/public/models are fine

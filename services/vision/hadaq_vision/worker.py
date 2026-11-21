@@ -54,14 +54,14 @@ def process_photo(api: httpx.Client, detector, photo: dict, registry: dict) -> D
                           model=detector.name, detections=detections)
 
 
-def main() -> None:
+def main(argv: list[str] | None = None) -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument("--api", default="http://localhost:8000")
     parser.add_argument("--building", default="B01")
     parser.add_argument("--backend", choices=["mock", "rfdetr"], default="mock")
     parser.add_argument("--checkpoint", default=None)
     parser.add_argument("--interval", type=float, default=2.0)
-    args = parser.parse_args()
+    args = parser.parse_args(argv)
 
     registry = load_registry()
     detector = load_detector(args.backend, args.checkpoint, registry["cameras"][0]["wall_bbox_px"])

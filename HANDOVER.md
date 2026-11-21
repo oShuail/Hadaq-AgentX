@@ -108,7 +108,19 @@ After pulling the 3D map change, run `cd apps/web && npm install` once (Cesium w
 
 ---
 
+## Hosted demo (Vercel + Render)
+
+- Web app: Vercel project `hadaq` (https://hadaq.vercel.app), built from `apps/web`. It reads `VITE_API_URL` and `VITE_AGENTS_URL` (Vercel project settings, Environment Variables); without them it looks for `localhost` and shows Offline.
+- Backend: Render web service `hadaq-api` from `render.yaml` (Docker, `infra/render/`): the API with the agents' routes on one port, plus the sensor simulator, camera simulator and mock vision worker in one helper process, all over HTTP (no MQTT). About 380 MB, under the free plan's 512 MB.
+- Free plan: the service sleeps after about 15 minutes without visitors and takes about a minute to wake; its disk is wiped on every restart (fresh database, new photos). Open the site a minute before showing it.
+- Real LLM answers: add `HADAQ_LLM` and `ANTHROPIC_API_KEY` in the Render dashboard (Environment). Without them the agent runs the mock plan.
+
 ## Session log
+
+### 2026-11-22 (Omar, with an AI assistant)
+
+- The Vercel site showed Offline and "no data": it had no API to talk to. Added a Render backend (`render.yaml`, `infra/render/`), see "Hosted demo". `sensor_sim`, `camera_sim` and the vision worker now take `main(argv)` so the hosted helper can run them in threads.
+- Fixed the two-minute run test to a fixed start time (it failed at night in CI).
 
 ### 2026-11-21, later (Omar, with an AI assistant)
 

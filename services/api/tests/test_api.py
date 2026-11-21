@@ -60,10 +60,13 @@ def test_photo_and_detections(client):
     photo = client.post("/photos", files=files, data=data).json()
     assert photo["photo_id"].startswith("ph_")
     assert client.get("/buildings/B01/photos?status=new").json()[0]["photo_id"] == photo["photo_id"]
-    batch = {"photo_id": photo["photo_id"], "building_id": "B01", "camera_id": "B01-CAM01", "model": "mock",
+    batch = {"photo_id": photo["photo_id"], "building_id": "B01", "camera_id": "B01-CAM01", "model": "mock-detector",
              "detections": [{"photo_id": photo["photo_id"], "camera_id": "B01-CAM01", "building_id": "B01",
                              "zone_id": "B01-W01-R2C5", "cls": "crack", "confidence": 0.9,
-                             "bbox_xyxy": [1, 2, 3, 4], "model": "mock", "change": "grown", "growth_pct": 25}]}
+                             "bbox_xyxy": [1, 2, 3, 4], "model": "mock-detector", "provenance": "synthetic",
+                             "change": "grown", "growth_pct": 25}]}
     assert client.post("/detections", json=batch).json()["stored"] == 1
     assert client.get("/buildings/B01/photos?status=new").json() == []
     assert client.get("/buildings/B01/detections/latest").json()[0]["cls"] == "crack"
+    event = next(e for e in client.get("/buildings/B01/events").json() if e["type"] == "detection_ready")
+    assert event["provenance"] == "synthetic"

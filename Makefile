@@ -53,4 +53,4 @@ sim: ## Basma: one scenario from the command line
 	$(LOAD_ENV) $(BIN)/python -m hadaq_sim.cli run --scenario storm_replay
 
 test:
-	$(BIN)/pytest -q packages/hadaq_schemas/tests services/simulation/tests services/api/tests services/agents/tests services/vision/tests
+	$(BIN)/pytest -q packages/hadaq_schemas/tests services/simulation/tests services/api/tests services/agents/tests services/vision/tests devices/sensor-sim/test_sensor_sim.py

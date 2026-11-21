@@ -57,20 +57,29 @@ class MockDetector:
     name = "mock-detector"
     synthetic = True
 
-    def __init__(self, crack_center: tuple[float, float] = (2300.0, 1900.0)) -> None:
-        self.cx, self.cy = crack_center
+    def __init__(self, wall_bbox_px: list[float] | None = None) -> None:
+        x0, y0, x1, y1 = wall_bbox_px or [0, 0, 4000, 3000]
+        self.cx = x0 + (4.5 / 8) * (x1 - x0)  # W01 R2C5
+        self.cy = y0 + (2.5 / 4) * (y1 - y0)
+        self.scale = (y1 - y0) / 3000
+        self.wall_bbox_px = [x0, y0, x1, y1]
 
     def detect(self, image_path: Path) -> list[RawDetection]:
         frame_match = re.search(r"(\d+)", image_path.stem)
         frame = int(frame_match.group(1)) if frame_match else 1
         damaged = "damage" in str(image_path).lower()
-        length = 300.0 * (1.15 ** frame if damaged else 1.0)
-        box = [self.cx - 20, self.cy - length / 2, self.cx + 20, self.cy + length / 2]
+        length = 300.0 * self.scale * (1.15 ** frame if damaged else 1.0)
+        box = [self.cx - 20 * self.scale, self.cy - length / 2,
+               self.cx + 20 * self.scale, self.cy + length / 2]
         detections = [RawDetection("crack", 0.83, box, area_px=length * 6, length_px=length)]
         if damaged and frame >= 2:
-            detections.append(RawDetection("plaster_loss", 0.71, [600, 2400, 1100, 2800], area_px=150000.0))
+            x0, y0, x1, y1 = self.wall_bbox_px
+            box = [x0 + .13 * (x1 - x0), y0 + .83 * (y1 - y0),
+                   x0 + .25 * (x1 - x0), y0 + .96 * (y1 - y0)]
+            detections.append(RawDetection("plaster_loss", 0.71, box,
+                                           area_px=(box[2] - box[0]) * (box[3] - box[1])))
         return detections
 
 
-def load_detector(backend: str, checkpoint: str | None = None):
-    return RfdetrDetector(checkpoint) if backend == "rfdetr" else MockDetector()
+def load_detector(backend: str, checkpoint: str | None = None, wall_bbox_px: list[float] | None = None):
+    return RfdetrDetector(checkpoint) if backend == "rfdetr" else MockDetector(wall_bbox_px)

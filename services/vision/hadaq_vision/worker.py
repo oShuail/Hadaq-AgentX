@@ -64,7 +64,7 @@ def main() -> None:
     args = parser.parse_args()
 
     registry = load_registry()
-    detector = load_detector(args.backend, args.checkpoint)
+    detector = load_detector(args.backend, args.checkpoint, registry["cameras"][0]["wall_bbox_px"])
     log.info("Vision worker running with %s", detector.name)
     with httpx.Client(base_url=args.api, timeout=60) as api:
         while True:

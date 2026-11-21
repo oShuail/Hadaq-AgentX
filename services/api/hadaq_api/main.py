@@ -278,8 +278,11 @@ async def post_detections(batch: DetectionBatch) -> dict:
         for d in batch.detections
         if d.change in ("new", "grown")
     ]
+    detection_provenance = (Provenance.SYNTHETIC if batch.model == "mock-detector" or
+                            (batch.detections and all(d.provenance == Provenance.SYNTHETIC for d in batch.detections))
+                            else Provenance.MODEL_OUTPUT)
     handle_event(
-        Event(type="detection_ready", building_id=batch.building_id, source="vision", provenance=Provenance.MODEL_OUTPUT,
+        Event(type="detection_ready", building_id=batch.building_id, source="vision", provenance=detection_provenance,
               payload={"photo_id": batch.photo_id, "count": len(batch.detections), "changed": changed, "model": batch.model}),
         publish_mqtt=True,
     )

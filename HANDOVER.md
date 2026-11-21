@@ -6,7 +6,7 @@ Read this first when you start a session (human or AI). Update it before you end
 
 ---
 
-## Current state (2026-11-20)
+## Current state (2026-11-21)
 
 | Area | State | Owner |
 | --- | --- | --- |
@@ -15,7 +15,7 @@ Read this first when you start a session (human or AI). Update it before you end
 | 3D map data (`apps/web/public/site/`) | Baked and committed (about 9 MB): OSM + Microsoft footprints, Esri imagery, AWS terrain, 76k palms. No keys needed | Omar |
 | Focus building model | B01 is named Qasr Salwa (قصر سلوى). Model `apps/web/public/models/b01_v3.glb` (decimated Meshy citadel from `assets/turaif/`), placed by `contracts/building_b01.json` `base_line` and `azimuth_deg` | Omar |
 | Real scan | AL Turaif House (Sketchfab embed, by ATS) is the 3D view of the B02 page. Our own photogrammetry scan is not done | Omar |
-| API, simulation, agents, vision, devices | Scaffolded and tested (see each team guide in `docs/team/`). Not changed in the last session | Turky, Basma, Omar, Abdurhmn, Saleh |
+| API, simulation, agents, vision, devices | Scaffolded and tested (see each team guide in `docs/team/`). On `saleh/data-feeds`, the sensor simulator meets the 30-second demo curve; camera simulation generates a fixed synthetic wall series locally when no photos are present. API and vision recognize the growing R2C5 crack with synthetic provenance | Turky, Basma, Omar, Abdurhmn, Saleh |
 
 ### Run it
 
@@ -43,6 +43,8 @@ After pulling the 3D map change, run `cd apps/web && npm install` once (Cesium w
 
 ## Known issues and honesty notes
 
+- The B01-CAM01 photo folders are empty in git by design. Without an actual wall photo, `make camera` generates illustrative synthetic artwork at 1600 x 1200 with wall bounds `[80, 80, 1520, 1120]`. Replace both folders and remeasure the bounds when the real fixed-camera series is available; no photos have been shared to Drive.
+- This Windows/WSL host stops its Docker MQTT broker when WSL becomes idle. Keeping WSL alive enabled two fresh end-to-end sensor cycles. Camera upload, worker comparison and the synthetic provenance event passed twice through the API. The web shows sensor values, the photo detection boxes and the R2C5 attention box on the 3D wall; two mock agent drainage answers returned. This is an illustrative demo, not real photos or a calibrated model.
 - Map layers switched off for now (built but hidden, kept in code): car parks and cars, lanterns, street lights, visitors, helipads. Turn one back on by removing it from `DISABLED_LAYERS` in `apps/web/src/twin3d/Twin.ts`.
 - B01 is called Qasr Salwa but stands at a placeholder spot west of the real Salwa Palace; the real palace is not a separate outline in our OSM data. Say "placeholder location" if asked, or move it with `base_line`.
 - B02 ("AL Turaif House", the OSM "palace of Nasr") has no registry in `contracts/`, so its page has placeholders and the agent does not answer for it.
@@ -55,6 +57,7 @@ After pulling the 3D map change, run `cd apps/web && npm install` once (Cesium w
 
 ## Next steps
 
+- **Saleh and Abdurhmn:** rehearse the complete two-minute shot sequence on the demo laptop with all services running, and share the photo series to the team Drive if needed. Replace the illustrative series with a real straight-on source photo and remeasure `wall_bbox_px` when available.
 - **Everyone:** pull `omar/turaif-district` (or `main` once merged), `npm install` in `apps/web`, open the app and check your part still shows up in the new tabs.
 - **Omar:** merge `omar/turaif-district` into `main`; fill the building pages (wall condition details, camera per wall, per-building agent context); register B02 in `contracts/` when it gets sensors; real LLM answers with evidence chips; check the wall zones line up with the B01 facade in the Focus building view; full demo run twice (`docs/demo-script.md`).
 - **Turky:** app shell is now `App.tsx` + `hud/` + `twin3d/`; panel polish in the Building twin tab (it now lives in the bottom-right tower: one screen at 1080p, no scrolling for key info).
@@ -65,6 +68,12 @@ After pulling the 3D map change, run `cd apps/web && npm install` once (Cesium w
 ---
 
 ## Session log
+
+### 2026-11-21 (Saleh data feeds)
+
+- Tuned the sensor simulator's storm, drying, humidity, temperature, fault and crack curves for the two-minute demo without changing IDs, topics or provenance; added a 30-second scenario timing test to `make test`.
+- With no wall photo available, added deterministic locally generated baseline/damage frames as a camera fallback and aligned the mock detector to the measured generated wall bounds. The API now marks mock `detection_ready` events synthetic.
+- Python suite: 19 passed with pytest plugin autoload disabled because this host's application control blocks the `xxhash` DLL. Web build passed. Two fresh MQTT/API sensor cycles reached 62–63 %rel at the base within 27 seconds, showed fault quality and a stepped crack. Two camera/API/vision cycles labeled the R2C5 crack grown. The web displayed the photo, live readings and 3D attention box; made narrow crack outlines easier to see. Two mock agent drainage queries succeeded; Drive sharing and an on-laptop rehearsal remain pending.
 
 ### 2026-11-20, later (Omar, with an AI assistant)
 

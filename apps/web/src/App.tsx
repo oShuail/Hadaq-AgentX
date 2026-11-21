@@ -18,7 +18,7 @@ import TimeBar from "./TimeBar";
 import { BUILDING_ID } from "./config";
 import { sensorHealth, useLive } from "./state/useLive";
 import { attentionItems } from "./twin/attention";
-import { FOCUS_TWIN, twinById } from "./twins";
+import { twinById } from "./twins";
 import { LAYERS, type LayerId, type TwinStats } from "./twin3d/Twin";
 import type { SensorSpec, WallSpec } from "./types/contracts";
 import registry from "../../../contracts/building_b01.json";
@@ -68,12 +68,17 @@ export default function App() {
   };
   const openPage = (twinId: string) => navigate(`/building/${encodeURIComponent(twinId)}`);
 
-  // Clicking a building that has a twin page (Qasr Salwa, AL Turaif House) opens that page.
+  // Qasr Salwa (or one of its wall zones) is selected: its reading cards show on the map.
+  const focusSelected = selection?.kind === "zone" || (selection?.kind === "building" && selection.isFocus);
+
+  // Clicking a building that has a twin page opens that page. Qasr Salwa takes two clicks: the first selects it and
+  // shows its readings on the map, the second (while it is selected) opens its page.
   const select = (s: Selection | null) => {
+    const again = s?.kind === "building" && s.isFocus && focusSelected;
     setSelection(s);
     if (!s) return;
     setTab("twin");
-    if (s.kind === "building" && s.twinId) openPage(s.twinId);
+    if (s.kind === "building" && s.twinId && (!s.isFocus || again)) openPage(s.twinId);
   };
 
   // The wall comes from the API; with the API off ("Offline") the map still uses the registry file directly.
@@ -96,23 +101,22 @@ export default function App() {
   // Boxes around the wall areas that need attention: high risk, new or grown defects, moisture alerts.
   const attention = useMemo(() => attentionItems(live.risk, live.detections, live.events), [live.risk, live.detections, live.events]);
 
-  // Sensor readings pinned to the facade next to their zones.
+  // Sensor readings pinned to the facade next to their zones, only once Qasr Salwa is selected.
   const callouts = useMemo(
     () =>
-      sensorCallouts(live.building?.sensors ?? (registry.sensors as SensorSpec[]), live.readings, attention, wall?.cols ?? 8, tab !== "explore", (id) =>
-        sensorHealth(live, id).status,
-      ),
-    [live, attention, wall?.cols, tab],
+      focusSelected
+        ? sensorCallouts(live.building?.sensors ?? (registry.sensors as SensorSpec[]), live.readings, attention, wall?.cols ?? 8, tab !== "explore", (id) =>
+            sensorHealth(live, id).status,
+          )
+        : [],
+    [live, attention, wall?.cols, tab, focusSelected],
   );
 
   const go = (target: FlyTarget) => {
     setView(target);
     setFly((f) => ({ target, nonce: f.nonce + 1 }));
-    if (target === "focus") {
-      setZonesVisible(true);
-      // The Qasr Salwa view also makes it the building the twin panel talks about.
-      setSelection((s) => s ?? { kind: "building", osmId: null, name: FOCUS_TWIN.name, isFocus: true, focusLocked: true, twinId: FOCUS_TWIN.id });
-    }
+    // The Qasr Salwa view shows the wall zones; its readings appear once the building itself is clicked.
+    if (target === "focus") setZonesVisible(true);
   };
 
   const pageTwin = route.page === "building" ? twinById(route.id) : null;

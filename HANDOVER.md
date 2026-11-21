@@ -6,7 +6,7 @@ Read this first when you start a session (human or AI). Update it before you end
 
 ---
 
-## Current state (2026-11-20)
+## Current state (2026-11-21)
 
 | Area | State | Owner |
 | --- | --- | --- |
@@ -15,7 +15,8 @@ Read this first when you start a session (human or AI). Update it before you end
 | 3D map data (`apps/web/public/site/`) | Baked and committed (about 9 MB): OSM + Microsoft footprints, Esri imagery, AWS terrain, 76k palms. No keys needed | Omar |
 | Focus building model | B01 is named Qasr Salwa (قصر سلوى). Model `apps/web/public/models/b01_v3.glb` (decimated Meshy citadel from `assets/turaif/`), placed by `contracts/building_b01.json` `base_line` and `azimuth_deg` | Omar |
 | Real scan | AL Turaif House (Sketchfab embed, by ATS) is the 3D view of the B02 page. Our own photogrammetry scan is not done | Omar |
-| API, simulation, agents, vision, devices | Scaffolded and tested (see each team guide in `docs/team/`). Not changed in the last session | Turky, Basma, Omar, Abdurhmn, Saleh |
+| Sensors (B01) | **Working end to end.** 9 sensors (S01 to S09: base, mid and upper moisture, temperature, humidity, crack gauge, tilt) from `devices/sensor-sim/` over MQTT, or HTTP when there is no broker. The API gives each sensor a health status (ok, suspect, fault, stale, no_data) and a trend (`GET /buildings/B01/sensors`, `/sensors/{id}`, `/zones/{zone_id}`, `/devices`); the agents read them through `get_sensor_overview`, `get_sensor_history`, `get_zone_detail`; the web shows a trend line and the status per sensor. The brick node (S01 to S03) is still simulated with `--include-real` | Saleh, Turky |
+| API, simulation, agents, vision, devices | Scaffolded and tested (see each team guide in `docs/team/`) | Turky, Basma, Omar, Abdurhmn, Saleh |
 | Simulation site data (`contracts/building_b01.json` `site.*`) | Set from Open-Meteo ERA5 by Basma (PR #3): `heavy_rain_days_per_year` 1.91 (2015 to 2025, ASSUMED 10 mm/day threshold), `demo_storm_date` 2023-01-05. Only used by `mode: "replay"` runs, which nothing sends yet (see Known issues) | Basma |
 
 ### Run it
@@ -53,6 +54,9 @@ After pulling the 3D map change, run `cd apps/web && npm install` once (Cesium w
 - Chrome slows the 3D view to about 1 fps when its window is hidden or covered. That is the browser, not the app. Measured on Omar's laptop (AMD integrated GPU): about 27 ms per frame, roughly 35 fps.
 - The real storm (`demo_storm_date`) is not used in the demo yet: the web client (`apps/web/src/api/client.ts` `runSimulation`) and the agent tools (`run_rain_simulation`, `compare_scenarios`) all send `mode: "synthetic_storm"`. The API only fills `demo_storm_date` for `mode: "replay"` with no date.
 - A replay run needs the internet or a filled weather cache (`data/weather_cache/`). Offline with no cache, the simulation job fails; there is no fallback to the synthetic storm yet.
+- Sensor readings carry real timestamps, but the simulator compresses a day into two minutes (`--speed 720`). Rates "per minute" therefore look fast, and the anomaly rate rule (it needs 15 real minutes of history) never fires in a short demo; the absolute 60 %rel rule does.
+- A stuck sensor is only caught while another sensor of the same kind is moving, so press **Stuck sensor** during a storm. A wall that is calm everywhere is never flagged (on purpose: the real brick node can sit at one value for minutes).
+- `contracts/building_b01.json` gained S07 (base moisture R1C1), S08 (mid-wall moisture R2C3) and S09 (tilt R4C5, unit `deg`). The building page and the facade cards show them; when the panel is open only the zones that need attention get a card.
 - `tools/turaif_model/` (the old Cesium district builder) is superseded and kept only for reference.
 - `apps/web/.env.local` files from the Cesium version still have `VITE_CESIUM_ION_TOKEN`, `VITE_DISTRICT_URL`, `VITE_GOOGLE_3D`. They are unused and can be deleted.
 
@@ -61,7 +65,8 @@ After pulling the 3D map change, run `cd apps/web && npm install` once (Cesium w
 - **Everyone:** pull `omar/turaif-district` (or `main` once merged), `npm install` in `apps/web`, open the app and check your part still shows up in the new tabs.
 - **Omar:** merge `omar/turaif-district` into `main`; fill the building pages (wall condition details, camera per wall, per-building agent context); register B02 in `contracts/` when it gets sensors; real LLM answers with evidence chips; check the wall zones line up with the B01 facade in the Focus building view; full demo run twice (`docs/demo-script.md`).
 - **Turky:** app shell is now `App.tsx` + `hud/` + `twin3d/`; panel polish in the Building twin tab (it now lives in the bottom-right tower: one screen at 1080p, no scrolling for key info).
-- **Saleh:** scenario buttons moved from the bottom bar to the **Activity** tab; the phone page `?panel=1` is unchanged.
+- **Saleh:** the simulator side is done (see `docs/team/saleh.md`). Left: build the brick node and run the simulator without `--include-real` once it streams; film the water-pour shot; tune `wall_model.py` if the storm curve looks too fast or slow on the demo laptop.
+- **Whoever does the agents:** the sensor tools are in `tools.py` and both agents have them; with a real LLM, check it skips sensors that are not `ok` and cites the `rd_` evidence IDs from the trends.
 - **Basma:** share the `hadaq_sim.cli storms` row for 2023-01-05 (total mm and peak mm/h) for the slide; run a replay once on the demo laptop to fill `data/weather_cache/`. Moisture and Risk toggles now sit in the simulation pill above the sun clock.
 - **Omar or Turky:** switch the web client and the agent tools to `mode: "replay"` so the demo uses the real storm, and make the API fall back to the synthetic storm if the weather fetch fails offline.
 - **Abdurhmn:** demo video shots changed again (HUD layout, views bottom left, readings pinned on the facade in the Qasr Salwa view), see `docs/demo-script.md`.
@@ -69,6 +74,15 @@ After pulling the 3D map change, run `cd apps/web && npm install` once (Cesium w
 ---
 
 ## Session log
+
+### 2026-11-21 (Omar, with an AI assistant)
+
+- Built the sensor part end to end so the agents can read it. New `devices/sensor-sim/wall_model.py`: rain wets the base most, water ponds at the wall foot and keeps the base wet after the rain, base dries slower, daily temperature and humidity, crack and tilt; fault modes spike, stuck and dropout. `sensor_sim.py` now talks MQTT or falls back to HTTP (no Docker needed).
+- Added S07, S08, S09 to the registry (base north corner, mid-wall, tilt).
+- API: `services/api/hadaq_api/sensors.py` (health and trend per sensor), new routes `/buildings/{b}/sensors`, `/sensors/{id}`, `/zones/{zone_id}`, `/devices`; device online/offline from the MQTT last will; the live `reading` message now carries `status` and `reasons`; faulty, implausible or stuck sensors no longer raise moisture anomalies.
+- Agents: `get_sensor_overview`, `get_sensor_history`, `get_zone_detail`; `get_building_status` includes each sensor's status; the mock plan reports the fastest rising sensor and lists the sensors it did not use. One prompt line added.
+- Web: trend line and status (fault, check, stale) per sensor in the Building twin panel and the building page (`panel/SensorList.tsx`); facade cards update in place instead of being rebuilt on every reading (they used to flicker and could miss clicks); a **Stuck sensor** button in the demo controls.
+- Checked: all tests pass (28, with new ones for the wall model, sensor health and the sensor tools); `npm run build` passes; ran Mosquitto + API + agents (mock) + simulator together: storm, anomaly, automatic investigation citing the sensor trend, spike, stuck, dropout, reset, and the HTTP fallback with no broker.
 
 ### 2026-11-20, evening (Omar, with an AI assistant)
 

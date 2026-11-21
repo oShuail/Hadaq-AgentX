@@ -85,6 +85,10 @@ Base URL `http://localhost:8000`. Interactive docs at `/docs`.
 | GET | `/buildings/{building_id}` | | The registry for that building |
 | GET | `/buildings/{building_id}/readings/latest` | | Latest reading per sensor, with `evidence_id` |
 | GET | `/buildings/{building_id}/readings` | `sensor_id`, `limit` | Reading history, newest first |
+| GET | `/buildings/{building_id}/sensors` | `window` (readings, default 60) | Every registered sensor: `status`, `reasons`, `latest` (value, ts, age, quality, provenance, evidence ID) and `window` (trend, first, last, min, max, mean, change, rate per minute, evidence IDs) |
+| GET | `/buildings/{building_id}/sensors/{sensor_id}` | `window`, `points` | The same for one sensor plus `history` downsampled to `points`, oldest first |
+| GET | `/buildings/{building_id}/zones/{zone_id}` | `window` | One zone: `position` (base, middle, top), its sensors as above, the latest detections there, its risk score, its line in the latest simulation |
+| GET | `/buildings/{building_id}/devices` | | Sensor nodes: `status` (online, offline, never_seen), sensors, last seen, MQTT status (last will) |
 | POST | `/readings` | `SensorReading` | Stored reading (HTTP alternative to MQTT) |
 | POST | `/events` | `Event` | Stored event; also published to MQTT |
 | GET | `/buildings/{building_id}/events` | `limit` | Recent events |
@@ -101,7 +105,25 @@ Base URL `http://localhost:8000`. Interactive docs at `/docs`.
 | GET | `/evidence/{evidence_id}` | | The record behind any evidence ID |
 | WS | `/ws/live` | | Stream of `LiveMessage` |
 
-`LiveMessage` = `{"channel": "reading" | "event" | "photo" | "detection" | "simulation" | "risk", "data": {...}}`
+`LiveMessage` = `{"channel": "reading" | "event" | "photo" | "detection" | "simulation" | "risk", "data": {...}}`. On the `reading` channel the API adds `evidence_id`, `status` and `reasons` to the `SensorReading`.
+
+## Sensors
+
+Units: `%rel` (wall moisture), `degC`, `%RH`, `mm` (crack width), `deg` (tilt).
+
+Sensor status (computed by the API in `services/api/hadaq_api/sensors.py`, thresholds ASSUMED):
+
+| Status | When |
+| --- | --- |
+| `ok` | Recent, plausible, not stuck |
+| `suspect` | The device said `suspect`; or the value is outside the plausible range for its kind; or it is stuck: the same value 12 times in a row while another sensor of the same kind is changing |
+| `fault` | The device sent `quality: "fault"` |
+| `stale` | No reading for 30 s (`SENSOR_STALE_S`) |
+| `no_data` | Never reported |
+
+Only `ok` readings feed the moisture anomaly rule, the trends and the agents' evidence.
+
+Scenario event payloads the sensor simulator reads (all optional): `storm_started` `{"peak_rain_mm_h": 12, "hours": null}`, `sensor_fault` `{"sensor_id": "B01-S04", "mode": "spike" | "stuck" | "dropout", "duration_s": 45}`, `new_crack` `{"mm": 0.35}`.
 
 ## Agents API (Omar)
 

@@ -1,13 +1,12 @@
 // Bottom-centre clock (owner: Omar). The sun travels a half-circle arc (left = midnight, top = noon) that
-// drives the sun, lights and shadows; drag it, or use the keyboard on the time slider. When a simulation has
-// run, a pill above it plays the simulation hour by hour (the sun and wall colours follow it).
+// drives the sun, lights and shadows; drag it, or use the keyboard on the time slider. A small pill above it picks
+// how the wall zones are coloured (Damage, Moisture, Risk). The simulation runs in the background only.
 import { type Dispatch, type PointerEvent as ReactPointerEvent, type SetStateAction, useEffect, useRef } from "react";
 
 import { atMinutes, hhmm, isoDay, minutesOfDay, onDay } from "./clock";
-import { HOUR_MS, SITE } from "./config";
+import { SITE } from "./config";
 import type { WallLayer } from "./twin/colors";
 import { dayPhase, sunPosition } from "./twin3d/sun";
-import type { SimulationResult } from "./types/contracts";
 
 interface Props {
   time: Date;
@@ -16,12 +15,6 @@ interface Props {
   setPlaying: (p: boolean) => void;
   speed: number; // simulated minutes per real second
   setSpeed: (s: number) => void;
-  simulation: SimulationResult | null;
-  running: boolean;
-  hour: number;
-  setHour: (h: number) => void;
-  simPlaying: boolean;
-  setSimPlaying: (p: boolean) => void;
   layer: WallLayer;
   setLayer: (l: WallLayer) => void;
 }
@@ -51,13 +44,6 @@ export default function TimeBar(p: Props) {
     return () => window.clearInterval(id);
   }, [playing, speed, setTime]);
 
-  // Simulation scrubber.
-  const last = p.simulation ? p.simulation.times.length - 1 : 0;
-  useEffect(() => {
-    if (!p.simPlaying || !p.simulation) return;
-    const id = window.setInterval(() => p.setHour(p.hour >= last ? 0 : p.hour + 1), HOUR_MS);
-    return () => window.clearInterval(id);
-  }, [p.simPlaying, p.hour, last, p.simulation]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const sun = sunPosition(time, SITE.lat, SITE.lon);
   const rising = sunPosition(new Date(time.getTime() + 600_000), SITE.lat, SITE.lon).altitude > sun.altitude;
@@ -79,23 +65,13 @@ export default function TimeBar(p: Props) {
 
   return (
     <footer className="sunclock">
-      {(p.simulation || p.running) && (
-        <div className="sim-pill">
-          <button className="round gold" onClick={() => p.setSimPlaying(!p.simPlaying)} disabled={!p.simulation} aria-label={p.simPlaying ? "Pause the simulation" : "Play the simulation"}>
-            {p.simPlaying ? <PauseIcon /> : <PlayIcon />}
-          </button>
-          <span className="sim-text">
-            <b>Simulation</b> ·{" "}
-            {p.simulation ? `${p.simulation.scenario.replace(/_/g, " ")} · hour ${p.hour + 1} of ${last + 1}` : "running..."}
-          </span>
-          <input type="range" min={0} max={last} value={p.hour} onChange={(e) => p.setHour(Number(e.target.value))} disabled={!p.simulation} aria-label="Simulation hour" />
-          <span className="seg-pill" role="group" aria-label="Wall zone colours">
-            <button className={p.layer === "damage" ? "on" : ""} aria-pressed={p.layer === "damage"} onClick={() => p.setLayer("damage")}>Damage</button>
-            <button className={p.layer === "moisture" ? "on" : ""} aria-pressed={p.layer === "moisture"} onClick={() => p.setLayer("moisture")}>Moisture</button>
-            <button className={p.layer === "risk" ? "on" : ""} aria-pressed={p.layer === "risk"} onClick={() => p.setLayer("risk")}>Risk</button>
-          </span>
-        </div>
-      )}
+      <div className="sim-pill layer-pill">
+        <span className="seg-pill" role="group" aria-label="Wall zone colours">
+          <button className={p.layer === "damage" ? "on" : ""} aria-pressed={p.layer === "damage"} onClick={() => p.setLayer("damage")}>Damage</button>
+          <button className={p.layer === "moisture" ? "on" : ""} aria-pressed={p.layer === "moisture"} onClick={() => p.setLayer("moisture")}>Moisture</button>
+          <button className={p.layer === "risk" ? "on" : ""} aria-pressed={p.layer === "risk"} onClick={() => p.setLayer("risk")}>Risk</button>
+        </span>
+      </div>
 
       <div className="sun-dome">
         <svg

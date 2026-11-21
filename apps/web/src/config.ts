@@ -8,4 +8,3 @@ export const FOCUS_MODEL_URL = env.VITE_FOCUS_MODEL_URL ?? "/models/b01_v3.glb";
 
 export const BUILDING_ID = "B01";
 export const SITE = { lon: 46.5725, lat: 24.7336 }; // At-Turaif, origin of the 3D twin (public/site/site.json)
-export const HOUR_MS = 2500; // demo clock: 1 simulated hour every 2.5 s = 1 day per minute

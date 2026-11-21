@@ -342,6 +342,7 @@ button.back { display: inline-flex; align-items: center; gap: 6px; padding: 8px 
 .sim-pill .sim-text { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .sim-pill .sim-text b { color: var(--gold-text); }
 .sim-pill input[type="range"] { width: 110px; accent-color: var(--gold-hud); padding: 0; border: 0; background: none; }
+.sim-pill.layer-pill { padding: 4px; gap: 0; }
 .seg-pill { display: flex; border-radius: 999px; overflow: hidden; border: 1px solid var(--t-line-hi); flex: none; }
 .hud .seg-pill button { padding: 3px 10px; font-size: 11.5px; border: 0; border-radius: 0; background: transparent; color: var(--t-muted); }
 .hud .seg-pill button.on { background: var(--gold-hud); color: #21160e; font-weight: 600; }

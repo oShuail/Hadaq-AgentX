@@ -311,7 +311,7 @@ def run_mock(message: str, building_id: str, trigger: bool = False, track: str |
     wants_damage = damage_trigger or (not trigger and (_has(text, DAMAGE_WORDS) or bool(_mentioned_types(text))))
     general = not (wants_sim or wants_damage)
     submit = damage_trigger or (wants_damage and _has(text, REPORT_WORDS))
-    lines = ["[وكيل تجريبي بدون نموذج لغوي: خطة ثابتة]" if ar else "[mock agent: no LLM configured, fixed plan]"]
+    lines: list[str] = []  # no label on top: mock mode is visible in GET /health ("llm": "mock")
 
     if wants_sim or general:
         status = call(T.get_building_status, building_id=building_id)

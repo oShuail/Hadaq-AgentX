@@ -158,6 +158,20 @@ def _run_simulation_job(run_id: str, request: SimulationRequest) -> None:
 bridge = MqttBridge(on_reading=handle_reading, on_event=lambda e: handle_event(e, publish_mqtt=False))
 
 
+def _hide_faces(data: bytes, suffix: str) -> tuple[bytes, dict, str]:
+    """Hide faces before the photo is stored (hadaq_api.privacy). Returns the bytes to store, a privacy note for the
+    new_photo event, and the file suffix (re-encoded photos are JPEG, or PNG when uploaded as PNG)."""
+    try:
+        from hadaq_api.privacy import protect
+    except ImportError:  # OpenCV missing: run `make setup` again
+        log.error("Face hiding unavailable (OpenCV not installed); photo stored without the privacy check")
+        return data, {"checked": False, "faces_hidden": 0}, suffix
+    result = protect(data, suffix)
+    if result.checked and suffix != ".png":
+        suffix = ".jpg"
+    return result.data, {"checked": result.checked, "faces_hidden": result.faces_hidden}, suffix
+
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     db.init_db()
@@ -233,14 +247,18 @@ async def upload_photo(
     extra = {"captured_at": captured_at} if captured_at else {}
     photo = Photo(camera_id=camera_id, building_id=building_id, provenance=provenance, sequence=sequence, frame=frame, **extra)
     suffix = Path(file.filename or "photo.jpg").suffix.lower() or ".jpg"
+    data = await file.read()
+    privacy = {"checked": False, "faces_hidden": 0}
+    if settings.privacy_blur:
+        data, privacy, suffix = await asyncio.to_thread(_hide_faces, data, suffix)
     path = settings.photo_dir / f"{photo.photo_id}{suffix}"
-    path.write_bytes(await file.read())
+    path.write_bytes(data)
     photo.file_url = f"{settings.public_url}/photos/{photo.photo_id}/file"
     db.save_photo(photo, str(path))
     await hub.broadcast("photo", photo.model_dump(mode="json"))
     handle_event(
         Event(type="new_photo", building_id=building_id, source="api", provenance=photo.provenance,
-              payload={"photo_id": photo.photo_id, "camera_id": camera_id, "sequence": sequence, "frame": frame}),
+              payload={"photo_id": photo.photo_id, "camera_id": camera_id, "sequence": sequence, "frame": frame, "privacy": privacy}),
         publish_mqtt=True,
     )
     return photo

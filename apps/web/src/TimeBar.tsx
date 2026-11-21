@@ -5,6 +5,7 @@ import { type Dispatch, type PointerEvent as ReactPointerEvent, type SetStateAct
 
 import { atMinutes, hhmm, isoDay, minutesOfDay, onDay } from "./clock";
 import { HOUR_MS, SITE } from "./config";
+import type { WallLayer } from "./twin/colors";
 import { dayPhase, sunPosition } from "./twin3d/sun";
 import type { SimulationResult } from "./types/contracts";
 
@@ -21,8 +22,8 @@ interface Props {
   setHour: (h: number) => void;
   simPlaying: boolean;
   setSimPlaying: (p: boolean) => void;
-  layer: "moisture" | "risk";
-  setLayer: (l: "moisture" | "risk") => void;
+  layer: WallLayer;
+  setLayer: (l: WallLayer) => void;
 }
 
 const TICK_MS = 100;
@@ -89,6 +90,7 @@ export default function TimeBar(p: Props) {
           </span>
           <input type="range" min={0} max={last} value={p.hour} onChange={(e) => p.setHour(Number(e.target.value))} disabled={!p.simulation} aria-label="Simulation hour" />
           <span className="seg-pill" role="group" aria-label="Wall zone colours">
+            <button className={p.layer === "damage" ? "on" : ""} aria-pressed={p.layer === "damage"} onClick={() => p.setLayer("damage")}>Damage</button>
             <button className={p.layer === "moisture" ? "on" : ""} aria-pressed={p.layer === "moisture"} onClick={() => p.setLayer("moisture")}>Moisture</button>
             <button className={p.layer === "risk" ? "on" : ""} aria-pressed={p.layer === "risk"} onClick={() => p.setLayer("risk")}>Risk</button>
           </span>

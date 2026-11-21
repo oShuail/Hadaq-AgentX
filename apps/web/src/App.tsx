@@ -20,7 +20,11 @@ import { FOCUS_TWIN, twinById } from "./twins";
 import { LAYERS, type LayerId, type TwinStats } from "./twin3d/Twin";
 import type { SensorSpec, WallSpec } from "./types/contracts";
 import registry from "../../../contracts/building_b01.json";
-import { RISK_COLORS, moistureColor } from "./twin/colors";
+import { RISK_COLORS, type WallLayer, moistureColor } from "./twin/colors";
+import { damageZoneColors } from "./twin/damage";
+
+// Where the wall face sits in the fixed camera's photo (registry camera entry), for the zone grid on the damage map.
+const CAMERA_WALL_BOX: number[] | null = (registry as { cameras?: { wall_bbox_px?: number[] }[] }).cameras?.[0]?.wall_bbox_px ?? null;
 
 // Explore = the map alone (views bottom left, layers top right); the other tabs open the panel bottom right.
 const TAB_TITLES: Record<Tab, string> = { explore: "Explore", twin: "Building twin", agent: "Ask the agent", activity: "Activity" };
@@ -40,7 +44,7 @@ export default function App() {
   const [zonesVisible, setZonesVisible] = useState(false);
   const [hour, setHour] = useState(0);
   const [simPlaying, setSimPlaying] = useState(false);
-  const [layer, setLayer] = useState<"moisture" | "risk">("moisture");
+  const [layer, setLayer] = useState<WallLayer>("moisture");
   const [coordinate, setCoordinate] = useState<string | null>(null);
   const [route, setRoute] = useState<Route>(() => parseRoute(window.location.pathname));
   const [tab, setTab] = useState<Tab>("explore");
@@ -91,10 +95,11 @@ export default function App() {
   }, [sim, safeHour]);
 
   const zoneColors = useMemo(() => {
+    if (layer === "damage") return damageZoneColors(live.damageReport?.report ?? null);
     if (layer === "risk") return Object.fromEntries(live.risk.map((r) => [r.zone_id, RISK_COLORS[r.level]]));
     if (!sim) return {};
     return Object.fromEntries(Object.entries(sim.zones).map(([zone, values]) => [zone, moistureColor(values[safeHour] ?? 0)]));
-  }, [layer, live.risk, sim, safeHour]);
+  }, [layer, live.risk, live.damageReport, sim, safeHour]);
 
   // Boxes around the wall areas that need attention: high risk, new or grown defects, moisture alerts.
   const attention = useMemo(() => attentionItems(live.risk, live.detections, live.events), [live.risk, live.detections, live.events]);
@@ -129,6 +134,7 @@ export default function App() {
           layer={layer}
           setLayer={setLayer}
           hour={safeHour}
+          cameraWallBox={CAMERA_WALL_BOX}
           onBack={() => (window.history.state?.from === "app" ? window.history.back() : navigate("/"))}
         />
       )}

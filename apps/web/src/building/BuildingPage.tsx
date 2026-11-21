@@ -5,13 +5,15 @@ import { useState } from "react";
 
 import Brand from "../Brand";
 import AgentChat from "../chat/AgentChat";
-import CameraFeed from "../panel/CameraFeed";
+import CameraFeed, { type PhotoPrivacy } from "../panel/CameraFeed";
 import EventFeed from "../panel/EventFeed";
 import type { LiveState } from "../state/useLive";
 import { ATTENTION_COLORS, type AttentionItem } from "../twin/WallZones";
-import { RISK_COLORS, moistureColor } from "../twin/colors";
+import { RISK_COLORS, type WallLayer, moistureColor } from "../twin/colors";
+import { DAMAGE_FAMILIES, FAMILY_ORDER, familyOf } from "../twin/damage";
 import { type TwinDef, twinTitle } from "../twins";
 import type { RiskLevel, WallSpec } from "../types/contracts";
+import DamageMap from "./DamageMap";
 import ModelViewer from "./ModelViewer";
 
 interface Props {
@@ -20,15 +22,16 @@ interface Props {
   walls: WallSpec[];
   zoneColors: Record<string, string>;
   attention: AttentionItem[];
-  layer: "moisture" | "risk";
-  setLayer: (l: "moisture" | "risk") => void;
+  layer: WallLayer;
+  setLayer: (l: WallLayer) => void;
   hour: number;
+  cameraWallBox: number[] | null;
   onBack: () => void;
 }
 
 const LEVELS: RiskLevel[] = ["low", "medium", "high", "very_high"];
 
-export default function BuildingPage({ twin, live, walls, zoneColors, attention, layer, setLayer, hour, onBack }: Props) {
+export default function BuildingPage({ twin, live, walls, zoneColors, attention, layer, setLayer, hour, cameraWallBox, onBack }: Props) {
   const [zone, setZone] = useState<string | null>(null);
   const reg = twin.registered;
   const sensors = reg ? live.building?.sensors ?? [] : [];
@@ -39,6 +42,11 @@ export default function BuildingPage({ twin, live, walls, zoneColors, attention,
   const zoneMoisture = zone && live.simulation ? live.simulation.zones[zone]?.[hour] : undefined;
   const zoneSensors = zone ? sensors.filter((s) => s.zone_id === zone) : [];
   const flagged = new Map(attention.map((a) => [a.zoneId, a]));
+  const damageItems = reg ? live.damageReport?.report.items ?? [] : [];
+  const zoneDamage = zone ? damageItems.filter((d) => d.zone_id === zone) : [];
+  const damageFamilies = FAMILY_ORDER.filter((f) => damageItems.some((d) => familyOf(d.damage_type) === f));
+  const photoPrivacy = (photoId: string | undefined): PhotoPrivacy | null =>
+    (live.events.find((e) => e.type === "new_photo" && e.payload.photo_id === photoId)?.payload.privacy as PhotoPrivacy | undefined) ?? null;
 
   return (
     <div className="bpage">
@@ -109,6 +117,7 @@ export default function BuildingPage({ twin, live, walls, zoneColors, attention,
               <h3>Wall condition</h3>
               {reg && (
                 <div className="seg">
+                  <button className={layer === "damage" ? "on" : ""} onClick={() => setLayer("damage")}>Damage</button>
                   <button className={layer === "moisture" ? "on" : ""} onClick={() => setLayer("moisture")}>Moisture</button>
                   <button className={layer === "risk" ? "on" : ""} onClick={() => setLayer("risk")}>Risk</button>
                 </div>
@@ -150,7 +159,17 @@ export default function BuildingPage({ twin, live, walls, zoneColors, attention,
             )}
             {reg && (
               <div className="legend small">
-                {layer === "moisture" ? (
+                {layer === "damage" ? (
+                  damageFamilies.length ? (
+                    damageFamilies.map((f) => (
+                      <span key={f}>
+                        <i className={DAMAGE_FAMILIES[f].dashed ? "dashed" : ""} style={{ background: DAMAGE_FAMILIES[f].color }} /> {DAMAGE_FAMILIES[f].label}
+                      </span>
+                    ))
+                  ) : (
+                    <span className="muted">no damage report yet</span>
+                  )
+                ) : layer === "moisture" ? (
                   <>
                     <span><i style={{ background: moistureColor(0.15) }} /> dry</span>
                     <span><i style={{ background: moistureColor(0.5) }} /> damp</span>
@@ -172,6 +191,12 @@ export default function BuildingPage({ twin, live, walls, zoneColors, attention,
                   Risk: {zoneRisk ? `${zoneRisk.level.replace("_", " ")} (A ${zoneRisk.A} + B ${zoneRisk.B} + C ${zoneRisk.C} = ${zoneRisk.magnitude})` : "not scored yet"}
                 </div>
                 <div>Sensors here: {zoneSensors.length ? zoneSensors.map((s) => s.label).join(", ") : "none"}</div>
+                <div>
+                  Damage here:{" "}
+                  {zoneDamage.length
+                    ? zoneDamage.map((d) => `${d.name_en}${d.severity ? ` (${d.severity}${d.active ? ", growing" : ""})` : ""}: ${d.step_en}`).join(" · ")
+                    : "none in the latest report"}
+                </div>
               </div>
             )}
             {attention.length > 0 && (
@@ -184,6 +209,22 @@ export default function BuildingPage({ twin, live, walls, zoneColors, attention,
                   </li>
                 ))}
               </ul>
+            )}
+          </section>
+
+          {/* Damage map: the agent's latest damage report on its photo */}
+          <section className="bsec">
+            <h3>Damage map</h3>
+            {reg ? (
+              <DamageMap
+                key={live.damageReport?.eventId ?? "none"}
+                damage={live.damageReport}
+                wallBox={cameraWallBox}
+                rows={walls[0]?.rows ?? 4}
+                cols={walls[0]?.cols ?? 8}
+              />
+            ) : (
+              <p className="placeholder">No damage report for this building yet.</p>
             )}
           </section>
 
@@ -214,7 +255,11 @@ export default function BuildingPage({ twin, live, walls, zoneColors, attention,
           {/* Cameras */}
           <section className="bsec">
             <h3>Cameras</h3>
-            {reg ? <CameraFeed photo={live.photo} detections={live.detections} /> : <p className="placeholder">No camera on this building yet.</p>}
+            {reg ? (
+              <CameraFeed photo={live.photo} detections={live.detections} privacy={photoPrivacy(live.photo?.photo_id)} />
+            ) : (
+              <p className="placeholder">No camera on this building yet.</p>
+            )}
           </section>
 
           {/* Activity */}

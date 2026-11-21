@@ -5,6 +5,7 @@ at 75 s (services/api/hadaq_api/sensor_run.py). These checks keep the wall model
 """
 
 import sys
+from datetime import datetime, timezone
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
@@ -15,6 +16,8 @@ from hadaq_schemas import load_registry  # noqa: E402
 
 INTERVAL_S = 2
 DT_HOURS = INTERVAL_S * 720 / 3600
+# A fixed start (noon in Riyadh) so the daily temperature cycle does not make the result depend on when CI runs.
+START = datetime(2026, 1, 5, 9, 0, tzinfo=timezone.utc)
 DEMO_STORM = {"peak_rain_mm_h": 25, "wind_ms": 8, "wind_dir_deg": 270}  # the payload SensorRun sends
 
 
@@ -29,7 +32,7 @@ def play(world: World, seconds: int) -> None:
 
 def test_two_minute_run():
     for seed in range(5):
-        world = World(load_registry()["sensors"], seed=seed)
+        world = World(load_registry()["sensors"], start=START, seed=seed)
         s01, s04, s05 = (sensor(world, i) for i in ("B01-S01", "B01-S04", "B01-S05"))
         air, temp, gauge = (sensor(world, i) for i in ("B01-S03", "B01-S02", "B01-S06"))
         dry_temp = world.read(temp)[0]

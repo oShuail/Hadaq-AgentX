@@ -7,10 +7,14 @@ import AnswerText from "./AnswerText";
 
 type Message = { role: "user" | "agent"; text: string; response?: ChatResponse };
 
+// One per capability: damage by priority, Arabic treatment, one damage type, the expert report, sensor health, a
+// what-if scenario.
 const SUGGESTIONS = [
-  "What damage is on this wall, and where?",
-  "وش المعالجة للتشققات؟ ووش المواد والأدوات؟",
+  "What damage is on this wall, and what should we fix first?",
+  "وش أخطر تلف في الجدار؟ ووش علاجه والمواد والأدوات؟",
+  "How do we treat the salt at the wall base?",
   "Prepare the damage report for expert review",
+  "Which sensors can we trust right now?",
   "What if we fix the drainage?",
 ];
 

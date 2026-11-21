@@ -186,6 +186,7 @@ def _finding_lines(n: int, f: dict, t: dict, ar: bool) -> list[str]:
             lines.append(f"- **الشدة:** {KB.SEVERITY_AR[severity]}")
         if f.get("growing"):
             lines.append(f"- **يكبر:** {f['growth_pct']}%" if f.get("growth_pct") is not None else "- **يكبر**")
+        lines.append(f"- **الأولوية:** {KB.PRIORITY_AR[f['priority']]}")
         lines.append(f"- **ثقة الكاشف:** {f['confidence']}")
         if f.get("needs_review") and f.get("alternatives"):
             alternatives = "، ".join(KB.types()[a]["name_ar"] for a in f["alternatives"])
@@ -199,6 +200,7 @@ def _finding_lines(n: int, f: dict, t: dict, ar: bool) -> list[str]:
             lines.append(f"- **Severity:** {severity}")
         if f.get("growing"):
             lines.append(f"- **Growing:** {f['growth_pct']}%" if f.get("growth_pct") is not None else "- **Growing**")
+        lines.append(f"- **Priority:** {f['priority']}")
         lines.append(f"- **Detector confidence:** {f['confidence']}")
         if f.get("needs_review") and f.get("alternatives"):
             alternatives = ", ".join(KB.types()[a]["name_en"] for a in f["alternatives"])
@@ -231,15 +233,21 @@ def _mock_damage(call: Callable, lines: list[str], building_id: str, text: str, 
     findings = found.get("findings", [])
     wanted = _mentioned_types(text)
     shown = [f for f in findings if not wanted or f["damage_type"] in wanted]
+    # Most urgent first; the wall order (base row first, left to right) breaks ties.
+    shown.sort(key=lambda f: -KB.PRIORITY_ORDER.get(f.get("priority", "medium"), 1))
     if not findings:
         lines.append("ما فيه صورة محللة فيها تلف بعد: ارفع صورة للجدار أو شغّل الكاميرا." if ar
                      else "No analysed photo with damage yet: upload a wall photo or start the camera.")
     elif shown:
         provenance = findings[0].get("provenance") or ""
         simulated = provenance == "synthetic"
-        lines.append(f"**آخر صورة للجدار{' (محاكاة)' if simulated else ''}:** {KB.count_ar(len(shown))} [{found['photo_id']}]" if ar
+        counts = {p: sum(1 for f in shown if f.get("priority") == p) for p in ("high", "medium", "low")}
+        split_ar = "، ".join(f"{n} {KB.PRIORITY_AR[p]}" for p, n in counts.items() if n)
+        split_en = ", ".join(f"{n} {p}" for p, n in counts.items() if n)
+        lines.append(f"**آخر صورة للجدار{' (محاكاة)' if simulated else ''}:** {KB.count_ar(len(shown))} ({split_ar}) [{found['photo_id']}]" if ar
                      else f"**Latest wall photo{' (simulated)' if simulated else ''}:** "
-                          f"{len(shown)} finding{'' if len(shown) == 1 else 's'} [{found['photo_id']}]")
+                          f"{len(shown)} finding{'' if len(shown) == 1 else 's'} ({split_en} priority)"
+                          f"{', most urgent first' if len(shown) > 1 else ''} [{found['photo_id']}]")
     treatments: dict[tuple[str, str], dict] = {}
     for n, f in enumerate(shown, 1):
         if not f["damage_type"]:
@@ -306,7 +314,8 @@ def _mock_damage_summary(call: Callable, lines: list[str], building_id: str, ar:
     lines.append("")
     lines.append(f"**التلف الظاهر في آخر صورة** [{found['photo_id']}]" if ar else f"**Visible damage in the latest photo** [{found['photo_id']}]")
     lines.extend(parts)
-    lines.append("اسأل عن المعالجة عشان تعرف المواد والأدوات." if ar else "Ask how to treat it to see the treatment, materials and tools.")
+    lines.append("اسأل عن المعالجة عشان تعرف المواد والأدوات." if ar
+                 else f"Ask how to treat {'it' if len(parts) == 1 else 'them'} to see the treatment, materials and tools.")
 
 
 def run_mock(message: str, building_id: str, trigger: bool = False, track: str | None = None) -> ChatResponse:
@@ -354,9 +363,13 @@ def run_mock(message: str, building_id: str, trigger: bool = False, track: str |
                          else f"- **Fastest rising:** {name(r['sensor_id'])} at {_short_zone(r['zone_id'])}, {r['first']} to {r['latest']} {r['unit']} "
                               f"[{r['first_evidence_id']}] [{r['latest_evidence_id']}]")
         distrust = [x for x in sensors if x["status"] not in ("ok", "no_data")]
+        reporting = [x for x in sensors if x["status"] != "no_data"]
         if distrust:
             listed = "; ".join(f"{name(x['sensor_id'])} {x['status']} ({', '.join(x['reasons'])})" for x in distrust)
             lines.append(f"- **ما اعتمدنا عليها:** {listed}" if ar else f"- **Left out (sensor health):** {listed}")
+        elif reporting:
+            lines.append(f"- **الصحة:** كل الحساسات ({len(reporting)}) تقرأ طبيعي، ولا فيها عطل ولا قراءة عالقة" if ar
+                         else f"- **Health:** all {len(reporting)} sensors report normally (no faults, nothing stuck or stale)")
 
         if wants_compare or wants_sim:
             lines.append("")

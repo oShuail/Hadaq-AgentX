@@ -23,7 +23,7 @@ from pathlib import Path
 import httpx
 import paho.mqtt.client as mqtt
 
-from hadaq_vision.demo_frames import create_demo_frames
+from hadaq_vision.demo_frames import MARKER, VERSION, create_demo_frames
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(name)s: %(message)s")
 log = logging.getLogger("hadaq.camera_sim")
@@ -32,9 +32,13 @@ IMAGE_SUFFIXES = {".jpg", ".jpeg", ".png"}
 
 class CameraSim:
     def __init__(self, folder: Path) -> None:
+        marker = folder / MARKER
         if not any(p.suffix.lower() in IMAGE_SUFFIXES for p in (folder / "baseline").glob("*")):
             log.info("No camera photos found; creating a synthetic fixed-camera demo series in %s", folder)
             create_demo_frames(folder)
+        elif marker.exists() and marker.read_text(encoding="utf-8").strip() != VERSION:
+            log.info("Updating the generated demo series in %s to version %s", folder, VERSION)
+            create_demo_frames(folder)  # only our own generated series has the marker; real photos are never touched
         self.sequences = {name: sorted(p for p in (folder / name).glob("*") if p.suffix.lower() in IMAGE_SUFFIXES)
                           for name in ("baseline", "damage")}
         if not self.sequences["baseline"]:

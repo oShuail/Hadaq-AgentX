@@ -11,6 +11,9 @@ import re
 from dataclasses import dataclass
 from pathlib import Path
 
+from hadaq_vision.demo_frames import STATIC_DAMAGE
+from hadaq_vision.demo_frames import WALL_BBOX as DEMO_WALL_BBOX
+
 CLASSES = ["crack", "erosion", "plaster_loss", "moisture_stain", "missing_material"]
 
 
@@ -51,6 +54,23 @@ class RfdetrDetector:
         return out
 
 
+def _fractions(box: tuple[int, int, int, int]) -> tuple[float, float, float, float]:
+    """Photo pixels of the generated series -> fractions of its wall box, so any wall_bbox_px works."""
+    x0, y0, x1, y1 = DEMO_WALL_BBOX
+    return ((box[0] - x0) / (x1 - x0), (box[1] - y0) / (y1 - y0), (box[2] - x0) / (x1 - x0), (box[3] - y0) / (y1 - y0))
+
+
+# (detector class, confidence, wall-box fractions): one low, several medium, so the demo shows every priority once
+# the crack grows (high). The agent maps each class and row onto the treatment table.
+STATIC_FINDINGS = [
+    ("missing_material", 0.66, *_fractions(STATIC_DAMAGE["holes"])),        # R3C2 -> holes and burrows (low)
+    ("erosion", 0.74, *_fractions(STATIC_DAMAGE["gullies"])),               # R3C6 -> rain gullies (medium)
+    ("moisture_stain", 0.69, *_fractions(STATIC_DAMAGE["salt"])),           # R1C7 -> salt efflorescence (medium)
+    ("missing_material", 0.78, *_fractions(STATIC_DAMAGE["parapet"])),      # R4C7 -> parapet loss (medium)
+    ("erosion", 0.81, *_fractions(STATIC_DAMAGE["base_erosion"])),          # R1C4 -> base erosion (medium)
+]
+
+
 class MockDetector:
     """Frame N of the 'damage' series shows a crack that grows 15% per frame; 'baseline' frames show a small crack."""
 
@@ -64,6 +84,12 @@ class MockDetector:
         self.scale = (y1 - y0) / 3000
         self.wall_bbox_px = [x0, y0, x1, y1]
 
+    def _x(self, f: float) -> float:
+        return self.wall_bbox_px[0] + f * (self.wall_bbox_px[2] - self.wall_bbox_px[0])
+
+    def _y(self, f: float) -> float:
+        return self.wall_bbox_px[1] + f * (self.wall_bbox_px[3] - self.wall_bbox_px[1])
+
     def detect(self, image_path: Path) -> list[RawDetection]:
         frame_match = re.search(r"(\d+)", image_path.stem)
         frame = int(frame_match.group(1)) if frame_match else 1
@@ -72,6 +98,11 @@ class MockDetector:
         box = [self.cx - 20 * self.scale, self.cy - length / 2,
                self.cx + 20 * self.scale, self.cy + length / 2]
         detections = [RawDetection("crack", 0.83, box, area_px=length * 6, length_px=length)]
+        # Older damage present in every frame (drawn by demo_frames.STATIC_DAMAGE), mapped to this wall box.
+        for cls, conf, fx0, fy0, fx1, fy1 in STATIC_FINDINGS:
+            fbox = [self._x(fx0), self._y(fy0), self._x(fx1), self._y(fy1)]
+            detections.append(RawDetection(cls, conf, fbox, area_px=(fbox[2] - fbox[0]) * (fbox[3] - fbox[1]),
+                                           length_px=max(fbox[2] - fbox[0], fbox[3] - fbox[1])))
         if damaged and frame >= 2:
             x0, y0, x1, y1 = self.wall_bbox_px
             box = [x0 + .13 * (x1 - x0), y0 + .83 * (y1 - y0),

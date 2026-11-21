@@ -132,6 +132,12 @@ button.icon { width: 38px; height: 38px; display: grid; place-items: center; pad
 .events .time { color: var(--muted); font-variant-numeric: tabular-nums; }
 .events .note { color: var(--muted); font-size: 12px; white-space: pre-wrap; margin-top: 2px; }
 .events .recommendation_ready { color: var(--gold); }
+.events .report { margin-top: 4px; font-size: 12px; }
+.events .report ul { gap: 3px; font-size: 12px; }
+.events .report li { color: var(--muted); }
+.events .report strong { color: var(--gold); font-variant-numeric: tabular-nums; }
+.events .report .first { color: var(--rose); margin-top: 4px; }
+.events .report details { margin-top: 4px; color: var(--muted); }
 .events .moisture_anomaly { color: var(--rose); }
 
 .chat { display: flex; flex-direction: column; gap: 10px; min-height: 0; padding-top: 14px; }
@@ -141,7 +147,7 @@ button.icon { width: 38px; height: 38px; display: grid; place-items: center; pad
 .chat .msg.agent { background: rgba(255, 240, 220, 0.04); border: 1px solid var(--line); }
 .chat .meta { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 6px; }
 .chat .suggestions { display: grid; gap: 6px; }
-.chat .suggestions button { text-align: left; }
+.chat .suggestions button { text-align: start; }
 .chat form { display: flex; gap: 6px; }
 .chat form input { flex: 1; min-width: 0; }
 button.evidence, .evidence { font-size: 11px; padding: 1px 6px; color: var(--gold); border-color: #5a4a35; font-family: ui-monospace, monospace; }

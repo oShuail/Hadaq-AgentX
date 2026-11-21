@@ -387,7 +387,7 @@ button.back { display: inline-flex; align-items: center; gap: 6px; padding: 8px 
   .tower-panel { width: 360px; }
 }
 @media (max-width: 1240px) {
-  .tower-bl .hud-fine:first-of-type, .hud-note { display: none; }
+  .hud-note { display: none; }
   .tower-bl { width: 270px; }
   .sunclock { width: 400px; }
   .sun-controls .date { display: none; }

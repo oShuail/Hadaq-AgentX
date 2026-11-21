@@ -12,13 +12,14 @@ import { ATTENTION_COLORS, type AttentionItem } from "../twin/WallZones";
 import { RISK_COLORS, type WallLayer, moistureColor } from "../twin/colors";
 import { DAMAGE_FAMILIES, FAMILY_ORDER, familyOf } from "../twin/damage";
 import { type TwinDef, twinTitle } from "../twins";
-import type { RiskLevel, WallSpec } from "../types/contracts";
+import type { RiskLevel, SensorSpec, WallSpec } from "../types/contracts";
 import DamageMap from "./DamageMap";
 import ModelViewer from "./ModelViewer";
 
 interface Props {
   twin: TwinDef;
   live: LiveState;
+  fallbackSensors: SensorSpec[];
   walls: WallSpec[];
   zoneColors: Record<string, string>;
   attention: AttentionItem[];
@@ -31,10 +32,10 @@ interface Props {
 
 const LEVELS: RiskLevel[] = ["low", "medium", "high", "very_high"];
 
-export default function BuildingPage({ twin, live, walls, zoneColors, attention, layer, setLayer, hour, cameraWallBox, onBack }: Props) {
+export default function BuildingPage({ twin, live, fallbackSensors, walls, zoneColors, attention, layer, setLayer, hour, cameraWallBox, onBack }: Props) {
   const [zone, setZone] = useState<string | null>(null);
   const reg = twin.registered;
-  const sensors = reg ? live.building?.sensors ?? [] : [];
+  const sensors = reg ? live.building?.sensors ?? fallbackSensors : [];
   const worst = reg
     ? live.risk.reduce<RiskLevel | null>((acc, r) => (acc === null || LEVELS.indexOf(r.level) > LEVELS.indexOf(acc) ? r.level : acc), null)
     : null;

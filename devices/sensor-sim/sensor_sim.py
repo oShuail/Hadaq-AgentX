@@ -42,6 +42,8 @@ class World:
         self.fault_until = 0.0
         self.crack_mm = 1.20
         self.moisture: dict[str, float] = {}
+        self.air_temperature = None
+        self.air_humidity = 30.0
 
     def on_event(self, event_type: str) -> None:
         with self.lock:
@@ -52,7 +54,7 @@ class World:
             elif event_type == "sensor_fault":
                 self.fault_until = time.time() + 45
             elif event_type == "new_crack":
-                self.crack_mm += 0.35
+                self.crack_mm = min(3.0, self.crack_mm + 0.35)
             elif event_type == "demo_reset":
                 self.reset()
         print(f"event: {event_type}")
@@ -65,23 +67,31 @@ class World:
             if kind == "moisture":
                 m = self.moisture.get(sensor["id"], BASE_MOISTURE)
                 if self.storm:
-                    rise = 14.0 if is_base else 6.0  # %/hour while it rains
-                    m += rise * dt_hours * (1 - m / 100)
+                    # At the default speed, base readings pass 60 %rel in ~30 s;
+                    # the upper wall responds more slowly and stays less wet.
+                    target, tau_hours = (78.0, 4.0) if is_base else (52.0, 12.0)
                 else:
-                    dry = 0.03 if is_base else 0.08  # base dries slower
-                    m -= dry * dt_hours * (m - BASE_MOISTURE)
+                    target, tau_hours = BASE_MOISTURE, (120.0 if is_base else 60.0)
+                m += (target - m) * (1 - math.exp(-dt_hours / tau_hours))
                 self.moisture[sensor["id"]] = m
                 if sensor["id"] == "B01-S04" and time.time() < self.fault_until:
-                    return random.choice([0.0, 100.0, -5.0]), "fault"
+                    return random.choice([3.0, 96.0, 8.0, 91.0]), "fault"
                 return round(min(100.0, max(0.0, m + random.gauss(0, 0.6))), 1), "ok"
             if kind == "temperature":
                 hour = datetime.now().hour + datetime.now().minute / 60
-                return round(22 + 7 * math.sin(2 * math.pi * (hour - 9) / 24) - (4 if self.storm else 0) + random.gauss(0, 0.2), 1), "ok"
+                ambient = 22 + 7 * math.sin(2 * math.pi * (hour - 9) / 24)
+                if self.air_temperature is None:
+                    self.air_temperature = ambient
+                target = ambient - (4 if self.storm else 0)
+                self.air_temperature += (target - self.air_temperature) * (1 - math.exp(-dt_hours / 3.0))
+                return round(self.air_temperature + random.gauss(0, 0.2), 1), "ok"
             if kind == "humidity":
-                return round((85 if self.storm else 30) + random.gauss(0, 1.5), 1), "ok"
+                target = 85.0 if self.storm else 30.0
+                self.air_humidity += (target - self.air_humidity) * (1 - math.exp(-dt_hours / 3.0))
+                return round(min(100.0, max(0.0, self.air_humidity + random.gauss(0, 1.5))), 1), "ok"
             if kind == "crack_width":
-                self.crack_mm += 0.002 * dt_hours * (3 if self.storm else 1)
-                return round(self.crack_mm + random.gauss(0, 0.005), 3), "ok"
+                self.crack_mm = min(3.0, self.crack_mm + 0.002 * dt_hours * (3 if self.storm else 1))
+                return round(min(3.0, max(1.0, self.crack_mm + random.gauss(0, 0.005))), 3), "ok"
             return 0.0, "suspect"
 
 

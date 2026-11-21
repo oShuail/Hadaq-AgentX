@@ -12,7 +12,7 @@ Read this first when you start a session (human or AI). Update it before you end
 
 | Area | State | Owner |
 | --- | --- | --- |
-| Web app (`apps/web`) | Working. Budots-style 3D twin of Diriyah in three.js with the **Courtyard HUD** (design 3): the map is full screen and four corner towers sit over it (brand and tabs top left, status and the Layers menu top right, views and About bottom left, the panel bottom right), a sun-arc clock bottom centre, and sensor readings pinned to the B01 facade. Clicking a twin building opens its own page at `/building/<id>` (not a popup) | Omar (twin), Turky (shell) |
+| Web app (`apps/web`) | Working. Budots-style 3D twin of Diriyah in three.js with the **Courtyard HUD** (design 3): the map is full screen and four corner towers sit over it (brand and tabs top left, status and the Layers menu top right, views and About bottom left, the panel bottom right), a sun-arc clock bottom centre, and sensor readings pinned to the B01 facade. Clicking a twin building opens its own page at `/building/<id>` (not a popup). Activity's two-minute B01 run (Saleh) controls the sensor simulator through the API; the map, twin panel and building page show the live WebSocket readings | Omar (twin), Turky (shell), Saleh (sensor run) |
 | Building pages (`src/building/`, list in `src/twins.ts`) | **B01 Qasr Salwa (قصر سلوى)**: our model with the wall zone grid, wall condition, sensors, camera, activity, agent. **B02 AL Turaif House**: opened from "palace of Nasr" on the map, shows the Sketchfab scan with placeholders (no registry, sensors or camera yet). New on B01: the **Damage map** section (`DamageMap.tsx`: the agent's latest report drawn on its photo, numbered marks, colour key by damage family, treatment card, zone grid toggle) and a **Damage** layer next to Moisture and Risk that colours the grid and the 3D wall the same way (also on the map's simulation pill). The camera shows how many faces were hidden. The Activity feed shows damage reports as cards; the chat suggestions cover damage (one in Arabic) | Omar |
 | 3D map data (`apps/web/public/site/`) | Baked and committed (about 9 MB): OSM + Microsoft footprints, Esri imagery, AWS terrain, 76k palms. No keys needed | Omar |
 | Focus building model | B01 is named Qasr Salwa (قصر سلوى). Model `apps/web/public/models/b01_v3.glb` (decimated Meshy citadel from `assets/turaif/`), placed by `contracts/building_b01.json` `base_line` and `azimuth_deg` | Omar |
@@ -20,7 +20,7 @@ Read this first when you start a session (human or AI). Update it before you end
 | Agents (`services/agents/`) | Three LangGraph agents: Orchestrator, **Damage and Treatment** (new) and Simulation and Advisory. The damage agent maps the latest photo's detections onto the team's treatment table (`hadaq_agents/treatments.json`: 11 damage types in Arabic and English) and, on its own when a photo with new or grown damage is analysed, sends a damage report (type, zone, severity, treatment, materials, tools, source) for expert review. Mock mode answers in Arabic and English. LLM settings fixed for the current models (no `temperature`, which they reject; `max_tokens` 16000; effort `medium`; server-side fallback; cached system prompt; 90 s timeout) and a labelled fixed-plan answer if the LLM fails. The real LLM path is checked by a contract test against a stand-in Messages API, not yet with a real key. See `services/agents/README.md` | agents task owner |
 | Photo privacy (`services/api/hadaq_api/privacy.py`) | Faces are hidden (pixelated and blurred) before an uploaded photo is stored; YuNet face detector from the OpenCV Zoo (`models/`, MIT licence alongside). The count goes into the `new_photo` event payload (`privacy`). `PRIVACY_BLUR=false` turns it off. Needs `opencv-python-headless` (run `make setup` again) | agents task owner (review: Turky) |
 | Challenge fit (`docs/challenge-plan.md`, Arabic) | Organisers' requirements and scoring, what we have, gaps, prioritised plan. Built: damage types, treatments, materials and tools, damage map with a colour key, face hiding. Not built: real photos, expert review screen, accuracy check against an expert, a run with the real LLM key | abooda7m |
-| Simulation, vision, devices | Scaffolded and tested (see each team guide in `docs/team/`). Not changed in the last session | Basma, Abdurhmn, Saleh |
+| Simulation, vision, devices | Scaffolded and tested (see each team guide in `docs/team/`). Saleh: the camera simulator generates a fixed synthetic wall series locally when no photos are present; API and vision recognise the growing R2C5 crack with synthetic provenance | Basma, Abdurhmn, Saleh |
 | Simulation site data (`contracts/building_b01.json` `site.*`) | Set from Open-Meteo ERA5 by Basma (PR #3): `heavy_rain_days_per_year` 1.91 (2015 to 2025, ASSUMED 10 mm/day threshold), `demo_storm_date` 2023-01-05. Only used by `mode: "replay"` runs, which nothing sends yet (see Known issues) | Basma |
 
 ### Run it
@@ -49,6 +49,9 @@ After pulling the 3D map change, run `cd apps/web && npm install` once (Cesium w
 
 ## Known issues and honesty notes
 
+- The B01-CAM01 photo folders are empty in git by design. Without an actual wall photo, `make camera` generates illustrative synthetic artwork at 1600 x 1200 with wall bounds `[80, 80, 1520, 1120]`. Replace both folders and remeasure the bounds when the real fixed-camera series is available; no photos have been shared to Drive.
+- Activity's sensor run requires the API, MQTT broker and `make sensors`; it is unavailable on the static web preview unless a reachable API and simulator are deployed. The API times the scenario events, the device simulator publishes the six readings on the normal MQTT topics, and the site renders the persisted WebSocket feed. Camera frames and crack detection additionally require `make camera` and `make vision`.
+- This Windows/WSL host stops its Docker MQTT broker when WSL becomes idle. Keeping WSL alive enabled two fresh end-to-end sensor cycles and a complete timed sensor scenario including fault recovery. Camera upload, worker comparison and the synthetic provenance event passed twice through the API. The web shows sensor values, the photo detection boxes and the R2C5 attention box on the 3D wall; two mock agent drainage answers returned. This is an illustrative demo, not real photos or a calibrated model.
 - Map layers switched off for now (built but hidden, kept in code): car parks and cars, lanterns, street lights, visitors, helipads. Turn one back on by removing it from `DISABLED_LAYERS` in `apps/web/src/twin3d/Twin.ts`.
 - B01 is called Qasr Salwa but stands at a placeholder spot west of the real Salwa Palace; the real palace is not a separate outline in our OSM data. Say "placeholder location" if asked, or move it with `base_line`.
 - B02 ("AL Turaif House", the OSM "palace of Nasr") has no registry in `contracts/`, so its page has placeholders and the agent does not answer for it.
@@ -75,14 +78,33 @@ After pulling the 3D map change, run `cd apps/web && npm install` once (Cesium w
 - **Omar:** decide the new demo story and the contract changes for expert review and face blurring (`docs/challenge-plan.md` sections 9 and 10); fill the building pages (wall condition details, camera per wall, per-building agent context); register B02 in `contracts/` when it gets sensors; check the wall zones line up with the B01 facade in the Focus building view; full demo run twice.
 - **Agents task owner:** put the LLM key in `.env` (`HADAQ_LLM=anthropic:claude-sonnet-5-5`) and run the chat suggestions in Arabic and English with the real model (no verifier warnings, damage report on a new photo); then build the approval step (approve, then a work order) with the expert review screen once Omar approves the contract changes.
 - **Turky:** review `privacy.py` and the upload change in `services/api/hadaq_api/main.py`. App shell is now `App.tsx` + `hud/` + `twin3d/`; panel polish in the Building twin tab (it now lives in the bottom-right tower: one screen at 1080p, no scrolling for key info).
-- **Saleh:** scenario buttons moved from the bottom bar to the **Activity** tab; the phone page `?panel=1` is unchanged.
 - **Basma:** share the `hadaq_sim.cli storms` row for 2023-01-05 (total mm and peak mm/h) for the slide; run a replay once on the demo laptop to fill `data/weather_cache/`. Moisture and Risk toggles now sit in the simulation pill above the sun clock.
 - **Omar or Turky:** switch the web client and the agent tools to `mode: "replay"` so the demo uses the real storm, and make the API fall back to the synthetic storm if the weather fetch fails offline.
 - **Abdurhmn:** try face hiding on real At-Turaif photos with visitors (far and side views) and report any missed face. Demo video shots changed again (HUD layout, views bottom left, readings pinned on the facade in the Qasr Salwa view), see `docs/demo-script.md`.
+- **Saleh and Abdurhmn:** rehearse the complete two-minute shot sequence on the demo laptop with all services running, and share the photo series to the team Drive if needed. Replace the illustrative series with a real straight-on source photo and remeasure `wall_bbox_px` when available.
+- **Saleh:** with `make up`, `make api` and `make sensors` running, use Activity → Play sensor run for the live two-minute feed. Replay restarts it; Reset demo restores baseline. The phone page `?panel=1` is unchanged.
 
 ---
 
 ## Session log
+
+### 2026-11-21, site run uses live feed (Saleh data feeds)
+
+- Replaced the browser-generated sensor overlay with API-timed scenario events. Play resets and starts the storm, stops it at 35 seconds, faults S04 at 60 seconds and steps S06 at 75 seconds. The device simulator publishes readings over MQTT, the API persists and broadcasts them, and the site plots those actual readings. Replay and reset control the same simulator. Added broker/device availability checks and a scheduler test; web build and 20 Python tests passed.
+
+### 2026-11-21, site sensor playback (Saleh data feeds)
+
+- Added a browser-only two-minute B01 playback in Activity with storm, slow wall drying, S04 fault and recovery, and an S06 crack step. Its synthetic readings update the map callouts, Building twin panel and B01 building page; the latter now uses the registry sensor list when the API is offline. Existing live controls remain available when connected and playback is cleared. Web build and 19 Python tests passed.
+
+### 2026-11-21, full B01 sensor run (Saleh data feeds)
+
+- Ran `demo_reset` → `storm_started` (30 s) → `storm_ended` (24 s) → `sensor_fault` (through recovery) → `new_crack` → `demo_reset` against the live MQTT broker and API. All six sensor timestamps advanced. S01/S04 reached 64.3 %rel; S05 reached 29.8 %rel; humidity rose 28.3 to 77.7 %RH and temperature fell 28.7 to 25.3 degC. S04 reported `fault` at 8.0 %rel, recovered to `ok` after 45 s, S06 rose to 1.602 mm, and reset returned S04 to 18.2 %rel and S06 to 1.196 mm. No code changes.
+
+### 2026-11-21 (Saleh data feeds)
+
+- Tuned the sensor simulator's storm, drying, humidity, temperature, fault and crack curves for the two-minute demo without changing IDs, topics or provenance; added a 30-second scenario timing test to `make test`.
+- With no wall photo available, added deterministic locally generated baseline/damage frames as a camera fallback and aligned the mock detector to the measured generated wall bounds. The API now marks mock `detection_ready` events synthetic.
+- Python suite: 19 passed with pytest plugin autoload disabled because this host's application control blocks the `xxhash` DLL. Web build passed. Two fresh MQTT/API sensor cycles reached 62–63 %rel at the base within 27 seconds, showed fault quality and a stepped crack. Two camera/API/vision cycles labeled the R2C5 crack grown. The web displayed the photo, live readings and 3D attention box; made narrow crack outlines easier to see. Two mock agent drainage queries succeeded; Drive sharing and an on-laptop rehearsal remain pending.
 
 ### 2026-11-21 (abooda7m)
 

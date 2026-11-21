@@ -21,8 +21,10 @@ class MqttBridge:
         self.on_event = on_event  # callable(Event)
         self.client = mqtt.Client(mqtt.CallbackAPIVersion.VERSION2, client_id=f"hadaq-api-{int(time.time())}")
         self.client.on_connect = self._on_connect
+        self.client.on_disconnect = self._on_disconnect
         self.client.on_message = self._on_message
         self.connected = False
+        self.devices: dict[str, str] = {}
 
     def start(self) -> None:
         try:
@@ -45,6 +47,10 @@ class MqttBridge:
             client.subscribe(TOPIC_ALL, qos=1)
             log.info("MQTT connected to %s:%s, subscribed to %s", settings.mqtt_host, settings.mqtt_port, TOPIC_ALL)
 
+    def _on_disconnect(self, client, userdata, disconnect_flags, reason_code, properties) -> None:
+        self.connected = False
+        self.devices.clear()
+
     def _on_message(self, client, userdata, msg) -> None:
         parts = msg.topic.split("/")  # hadaq / v1 / B01 / sensors|events|devices / ...
         if len(parts) < 5:
@@ -56,6 +62,7 @@ class MqttBridge:
             elif kind == "events":
                 self.on_event(Event.model_validate_json(msg.payload))
             elif kind == "devices":
-                log.info("device %s is %s", parts[4], msg.payload.decode(errors="ignore"))
+                self.devices[parts[4]] = msg.payload.decode(errors="ignore")
+                log.info("device %s is %s", parts[4], self.devices[parts[4]])
         except (ValidationError, json.JSONDecodeError) as exc:
             log.warning("Bad payload on %s: %s", msg.topic, exc)

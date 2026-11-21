@@ -5,7 +5,7 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "hadaq-agents"
 version = "0.1.0"
-description = "Hadaq agents: Orchestrator + Simulation and Advisory (LangGraph), verifier, chat API (owner: Omar)"
+description = "Hadaq agents: Orchestrator + Damage and Treatment + Simulation and Advisory (LangGraph), verifier, chat API (owner: Omar)"
 requires-python = ">=3.11"
 dependencies = [
   "hadaq-schemas",
@@ -23,3 +23,6 @@ dev = ["pytest>=8"]
 
 [tool.setuptools.packages.find]
 include = ["hadaq_agents*"]
+
+[tool.setuptools.package-data]
+hadaq_agents = ["*.json"]

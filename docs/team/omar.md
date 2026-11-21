@@ -104,6 +104,17 @@ ADVISOR_TOOLS = [*ADVISOR_TOOLS, get_zone_history]  # or ORCHESTRATOR_TOOLS
 
 Rules for tools: verb_noun names, a docstring the LLM can act on, return compact JSON with evidence IDs, never compute "facts" the API does not return.
 
+Sensor tools already there (both agents have them):
+
+| Tool | API | Use it for |
+| --- | --- | --- |
+| `get_building_status` | `GET /buildings/{b}/sensors`, detections, risk | First look; every reading carries its sensor's `status` |
+| `get_sensor_overview` | `GET /buildings/{b}/sensors?window=60` | What is changing: trend, change, min, max, rate per minute, health and why, with evidence IDs |
+| `get_sensor_history` | `GET /buildings/{b}/sensors/{id}?window=&points=` | How one value developed (downsampled, oldest first) |
+| `get_zone_detail` | `GET /buildings/{b}/zones/{zone_id}` | One zone: its sensors, camera detections, risk and simulation line |
+
+Readings from sensors whose status is not `ok` (fault, suspect, stale) must not be used as evidence; the prompts say so and the mock plan lists them under "Not used". Times are real time: the simulator compresses a day into two minutes, so "per minute" rates look fast.
+
 ### 6. Twin view
 
 - `apps/web/src/twin3d/focus.ts` draws 32 panels 0.4 m in front of the facade from `base_line`, `height_m`, `rows`, `cols`, plus the attention boxes. If the panels look off, fix the coordinates in the registry, not the code.

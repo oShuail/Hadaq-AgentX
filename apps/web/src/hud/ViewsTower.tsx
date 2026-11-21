@@ -62,7 +62,6 @@ export default function ViewsTower({ view, onView, stats }: Props) {
             </button>
           ))}
         </div>
-        <p className="hud-fine">Heights estimated unless OSM has them · ruins illustrative · model AI-generated</p>
         <p className="hud-fine">
           © <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noreferrer">OpenStreetMap</a> · Microsoft footprints · Esri imagery · AWS terrain
         </p>

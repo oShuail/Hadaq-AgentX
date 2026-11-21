@@ -3,9 +3,16 @@
 Photos are NOT committed to git (too big). Keep them on the team Drive and copy them here locally:
 
 ```
+
 assets/camera/B01-CAM01/baseline/frame_001.jpg, frame_002.jpg, ...   same view, normal wall (loops)
 assets/camera/B01-CAM01/damage/frame_001.jpg, frame_002.jpg, ...     same view, damage growing step by step
 ```
+
+If no photos are present, `make camera` creates a deterministic synthetic wall
+series locally (4 baseline and 8 progressive damage frames, 1600 x 1200). Its
+wall face is `[80, 80, 1520, 1120]` in `contracts/building_b01.json`.
+This is demo artwork, not an inspection photo. Replace both folders with a real
+fixed-camera series and remeasure `wall_bbox_px` before using actual photos.
 
 Rules:
 - Same tripod position and framing in every frame (the camera simulator pretends to be a fixed camera).

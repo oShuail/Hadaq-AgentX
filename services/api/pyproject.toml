@@ -16,6 +16,7 @@ dependencies = [
   "paho-mqtt>=2.0",
   "httpx>=0.27",
   "python-multipart>=0.0.9",
+  "opencv-python-headless>=4.9",  # privacy.py: blur faces in uploaded photos (detectors ship with the package)
 ]
 
 [project.optional-dependencies]
@@ -24,3 +25,6 @@ dev = ["pytest>=8"]
 
 [tool.setuptools.packages.find]
 include = ["hadaq_api*"]
+
+[tool.setuptools.package-data]
+hadaq_api = ["models/*.onnx", "models/*.txt"]

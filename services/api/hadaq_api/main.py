@@ -14,7 +14,7 @@ import logging
 import threading
 import time
 from contextlib import asynccontextmanager
-from datetime import datetime
+from datetime import datetime, timezone
 from pathlib import Path
 
 import httpx
@@ -23,8 +23,10 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse
 
 from hadaq_api import db
+from hadaq_api import sensors as sensor_health
 from hadaq_api.live import hub
 from hadaq_api.mqtt_bridge import MqttBridge
+from hadaq_api.sensor_run import SensorRun
 from hadaq_api.settings import settings
 from hadaq_schemas import (
     Detection,
@@ -37,6 +39,7 @@ from hadaq_schemas import (
     SimulationResult,
     load_registry,
     new_id,
+    parse_zone_id,
 )
 from hadaq_sim import WallParams, detect_moisture_anomaly, run_simulation, score_building, weather_for_spec
 
@@ -46,6 +49,7 @@ log = logging.getLogger("hadaq.api")
 AGENT_TRIGGERS = {"storm_started", "moisture_anomaly", "detection_ready"}
 _last_anomaly: dict[str, float] = {}
 _risk_cache: dict[str, list[dict]] = {}
+_device_status: dict[str, dict] = {}  # device_id -> {"status": "online" | "offline", "ts": ...} from MQTT (retained)
 
 
 # ---------- core handlers (used by HTTP routes and the MQTT thread) ----------
@@ -81,14 +85,30 @@ def handle_event(event: Event, publish_mqtt: bool) -> None:
         _notify_agents(event)
 
 
+def _sensor_spec(reading: SensorReading) -> dict:
+    registry = load_registry()
+    spec = next((s for s in registry["sensors"] if s["id"] == reading.sensor_id), None)
+    return spec or {"id": reading.sensor_id, "kind": reading.kind, "unit": reading.unit, "zone_id": reading.zone_id}
+
+
+def _peers(building_id: str, spec: dict, histories: dict[str, list[dict]] | None = None) -> list[list[dict]]:
+    """Recent histories of the other sensors of the same kind (to tell a stuck sensor from a calm wall)."""
+    others = [s["id"] for s in load_registry()["sensors"] if s["kind"] == spec["kind"] and s["id"] != spec["id"]]
+    if histories is not None:
+        return [histories[o] for o in others if histories.get(o)]
+    return [h for h in (db.reading_history(building_id, o, sensor_health.FLATLINE_N * 2) for o in others) if h]
+
+
 def handle_reading(reading: SensorReading) -> None:
     row_id = db.save_reading(reading)
     evidence_id = f"rd_{row_id}"
-    hub.publish_threadsafe("reading", {**reading.model_dump(mode="json"), "evidence_id": evidence_id})
-    if reading.kind != "moisture" or reading.quality == "fault":
-        return
-    history = [(datetime.fromisoformat(r["ts"]), r["value"]) for r in db.reading_history(reading.building_id, reading.sensor_id, 120)]
-    anomaly = detect_moisture_anomaly(history)
+    history = db.reading_history(reading.building_id, reading.sensor_id, 120)
+    spec = _sensor_spec(reading)
+    status, reasons = sensor_health.health(spec, history, peers=_peers(reading.building_id, spec) if sensor_health.is_flat(history) else None)
+    hub.publish_threadsafe("reading", {**reading.model_dump(mode="json"), "evidence_id": evidence_id, "status": status, "reasons": reasons})
+    if reading.kind != "moisture" or status not in ("ok", "stale"):
+        return  # a faulty, implausible or stuck sensor must not raise a moisture alarm (late uploads may)
+    anomaly = detect_moisture_anomaly([(datetime.fromisoformat(r["ts"]), r["value"]) for r in history if sensor_health.usable(r)])
     now = time.time()
     if anomaly and now - _last_anomaly.get(reading.sensor_id, 0.0) > settings.anomaly_cooldown_s:
         _last_anomaly[reading.sensor_id] = now
@@ -155,7 +175,35 @@ def _run_simulation_job(run_id: str, request: SimulationRequest) -> None:
         hub.publish_threadsafe("simulation", {"run_id": run_id, "status": "failed", "error": str(exc)})
 
 
-bridge = MqttBridge(on_reading=handle_reading, on_event=lambda e: handle_event(e, publish_mqtt=False))
+def handle_device_status(device_id: str, status: str) -> None:
+    _device_status[device_id] = {"status": status, "ts": datetime.now(timezone.utc).isoformat()}
+
+
+bridge = MqttBridge(on_reading=handle_reading, on_event=lambda e: handle_event(e, publish_mqtt=False), on_device=handle_device_status)
+sensor_run = SensorRun()
+SIM_DEVICE = "sim-01"
+
+
+def _emit_sensor_event(event_type: str) -> None:
+    # A heavier storm than the scenario panel's 12 mm/h so the base crosses the 60 %rel line inside the two-minute run
+    # (devices/sensor-sim/tests/test_demo_run.py). Synthetic, like every event of this run.
+    payload = {"peak_rain_mm_h": 25, "wind_ms": 8, "wind_dir_deg": 270} if event_type == "storm_started" else {}
+    handle_event(Event(type=event_type, building_id="B01", source="scenario_panel",
+                       provenance=Provenance.SYNTHETIC, payload=payload), publish_mqtt=True)
+
+
+def _hide_faces(data: bytes, suffix: str) -> tuple[bytes, dict, str]:
+    """Hide faces before the photo is stored (hadaq_api.privacy). Returns the bytes to store, a privacy note for the
+    new_photo event, and the file suffix (re-encoded photos are JPEG, or PNG when uploaded as PNG)."""
+    try:
+        from hadaq_api.privacy import protect
+    except ImportError:  # OpenCV missing: run `make setup` again
+        log.error("Face hiding unavailable (OpenCV not installed); photo stored without the privacy check")
+        return data, {"checked": False, "faces_hidden": 0}, suffix
+    result = protect(data, suffix)
+    if result.checked and suffix != ".png":
+        suffix = ".jpg"
+    return result.data, {"checked": result.checked, "faces_hidden": result.faces_hidden}, suffix
 
 
 @asynccontextmanager
@@ -166,6 +214,7 @@ async def lifespan(app: FastAPI):
     if settings.mqtt_enabled:
         bridge.start()
     yield
+    await sensor_run.stop(_emit_sensor_event, reset=sensor_run.task is not None and not sensor_run.task.done())
     if settings.mqtt_enabled:
         bridge.stop()
 
@@ -179,6 +228,33 @@ app.add_middleware(CORSMiddleware, allow_origins=["*"], allow_methods=["*"], all
 @app.get("/health")
 def health() -> dict:
     return {"status": "ok", "mqtt": bridge.connected}
+
+
+def _sim_online(building_id: str) -> bool:
+    """The sensor simulator is sending: over MQTT (retained status) or HTTP (fresh readings), see GET .../devices."""
+    return any(d["device_id"] == SIM_DEVICE and d["status"] == "online" for d in devices(building_id))
+
+
+@app.get("/buildings/{building_id}/demo/sensor-run")
+def sensor_run_status(building_id: str) -> dict:
+    _registry_for(building_id)
+    return sensor_run.status(_sim_online(building_id))
+
+
+@app.post("/buildings/{building_id}/demo/sensor-run")
+async def start_sensor_run(building_id: str) -> dict:
+    _registry_for(building_id)
+    if not _sim_online(building_id):
+        raise HTTPException(status_code=503, detail="Start the sensor simulator first (make sensors)")
+    await sensor_run.start(_emit_sensor_event)
+    return sensor_run.status(True)
+
+
+@app.post("/buildings/{building_id}/demo/sensor-run/stop")
+async def stop_sensor_run(building_id: str) -> dict:
+    _registry_for(building_id)
+    await sensor_run.stop(_emit_sensor_event)
+    return sensor_run.status(_sim_online(building_id))
 
 
 @app.get("/buildings/{building_id}")
@@ -196,6 +272,88 @@ def readings_latest(building_id: str) -> list[dict]:
 def readings(building_id: str, sensor_id: str | None = None, limit: int = 200) -> list[dict]:
     _registry_for(building_id)
     return db.reading_history(building_id, sensor_id, min(limit, 2000))
+
+
+@app.get("/buildings/{building_id}/sensors")
+def sensors_overview(building_id: str, window: int = 60) -> list[dict]:
+    """Every registered sensor: status (ok, suspect, fault, stale, no_data) with reasons, the latest reading and the
+    trend over the last `window` readings. This is what the agents read before they trust a number."""
+    registry = _registry_for(building_id)
+    window = min(max(window, 2), 2000)
+    histories = {spec["id"]: db.reading_history(building_id, spec["id"], max(window, sensor_health.FLATLINE_N * 2)) for spec in registry["sensors"]}
+    return [sensor_health.overview(spec, histories[spec["id"]][:window], peers=_peers(building_id, spec, histories))
+            for spec in registry["sensors"]]
+
+
+@app.get("/buildings/{building_id}/sensors/{sensor_id}")
+def sensor_detail(building_id: str, sensor_id: str, window: int = 120, points: int = 40) -> dict:
+    """One sensor: the overview plus its history over the window, downsampled to `points` (oldest first)."""
+    registry = _registry_for(building_id)
+    spec = next((s for s in registry["sensors"] if s["id"] == sensor_id), None)
+    if not spec:
+        raise HTTPException(status_code=404, detail=f"Unknown sensor {sensor_id}")
+    history = db.reading_history(building_id, sensor_id, min(max(window, 2), 2000))
+    overview = sensor_health.overview(spec, history, peers=_peers(building_id, spec))
+    return {**overview, "history": sensor_health.downsample(history, min(max(points, 2), 500))}
+
+
+@app.get("/buildings/{building_id}/zones/{zone_id}")
+def zone_detail(building_id: str, zone_id: str, window: int = 60) -> dict:
+    """Everything known about one wall zone: its sensors, the latest camera detections there, its risk score and
+    its line in the latest simulation."""
+    registry = _registry_for(building_id)
+    try:
+        _, wall_id, row, col = parse_zone_id(zone_id)
+    except ValueError as exc:
+        raise HTTPException(status_code=404, detail=str(exc)) from exc
+    wall = next((w for w in registry["walls"] if w["id"] == wall_id), None)
+    if not wall or not (1 <= row <= wall["rows"] and 1 <= col <= wall["cols"]):
+        raise HTTPException(status_code=404, detail=f"Unknown zone {zone_id}")
+    specs = [s for s in registry["sensors"] if s["zone_id"] == zone_id]
+    sim_row = db.latest_simulation(building_id)
+    summary = (sim_row.result or {}).get("summary", {}).get(zone_id) if sim_row else None
+    risk_scores = _risk_cache.get(building_id) or compute_risk(building_id)
+    return {
+        "zone_id": zone_id,
+        "wall_id": wall_id,
+        "row": row,
+        "col": col,
+        "position": "base" if row == 1 else "top" if row == wall["rows"] else "middle",
+        "sensors": [sensor_health.overview(s, db.reading_history(building_id, s["id"], min(max(window, 2), 2000)), peers=_peers(building_id, s))
+                    for s in specs],
+        "detections": [d for d in db.latest_detections(building_id) if d.get("zone_id") == zone_id],
+        "risk": next((r for r in risk_scores if r["zone_id"] == zone_id), None),
+        "simulation": {"run_id": sim_row.run_id, **summary} if summary else None,
+    }
+
+
+@app.get("/buildings/{building_id}/devices")
+def devices(building_id: str) -> list[dict]:
+    """Sensor nodes (real or simulated): MQTT online/offline (retained status, last will) and when they last sent data."""
+    registry = _registry_for(building_id)
+    now = datetime.now(timezone.utc)
+    by_device: dict[str, list[str]] = {}
+    for spec in registry["sensors"]:
+        by_device.setdefault(spec.get("device_id") or "unknown", []).append(spec["id"])
+    out = []
+    for device_id, sensor_ids in sorted(by_device.items()):
+        latest = db.latest_readings(building_id, sensor_ids)
+        last = max((sensor_health._ts(r) for r in latest), default=None)
+        age = (now - last).total_seconds() if last else None
+        reporting = age is not None and age <= sensor_health.STALE_AFTER_S
+        mqtt_status = _device_status.get(device_id)
+        # A last will ("offline") newer than the last reading means the node just dropped off.
+        dropped = bool(mqtt_status and mqtt_status["status"] == "offline" and (not last or datetime.fromisoformat(mqtt_status["ts"]) > last))
+        out.append({
+            "device_id": device_id,
+            "status": "online" if reporting and not dropped else "offline" if last else "never_seen",
+            "sensors": sensor_ids,
+            "last_seen": last.isoformat() if last else None,
+            "last_seen_age_s": round(age, 1) if age is not None else None,
+            "mqtt": mqtt_status,
+            "provenance": sorted({r["provenance"] for r in latest if r.get("provenance")}),
+        })
+    return out
 
 
 @app.post("/readings")
@@ -233,14 +391,18 @@ async def upload_photo(
     extra = {"captured_at": captured_at} if captured_at else {}
     photo = Photo(camera_id=camera_id, building_id=building_id, provenance=provenance, sequence=sequence, frame=frame, **extra)
     suffix = Path(file.filename or "photo.jpg").suffix.lower() or ".jpg"
+    data = await file.read()
+    privacy = {"checked": False, "faces_hidden": 0}
+    if settings.privacy_blur:
+        data, privacy, suffix = await asyncio.to_thread(_hide_faces, data, suffix)
     path = settings.photo_dir / f"{photo.photo_id}{suffix}"
-    path.write_bytes(await file.read())
+    path.write_bytes(data)
     photo.file_url = f"{settings.public_url}/photos/{photo.photo_id}/file"
     db.save_photo(photo, str(path))
     await hub.broadcast("photo", photo.model_dump(mode="json"))
     handle_event(
         Event(type="new_photo", building_id=building_id, source="api", provenance=photo.provenance,
-              payload={"photo_id": photo.photo_id, "camera_id": camera_id, "sequence": sequence, "frame": frame}),
+              payload={"photo_id": photo.photo_id, "camera_id": camera_id, "sequence": sequence, "frame": frame, "privacy": privacy}),
         publish_mqtt=True,
     )
     return photo
@@ -278,8 +440,11 @@ async def post_detections(batch: DetectionBatch) -> dict:
         for d in batch.detections
         if d.change in ("new", "grown")
     ]
+    detection_provenance = (Provenance.SYNTHETIC if batch.model == "mock-detector" or
+                            (batch.detections and all(d.provenance == Provenance.SYNTHETIC for d in batch.detections))
+                            else Provenance.MODEL_OUTPUT)
     handle_event(
-        Event(type="detection_ready", building_id=batch.building_id, source="vision", provenance=Provenance.MODEL_OUTPUT,
+        Event(type="detection_ready", building_id=batch.building_id, source="vision", provenance=detection_provenance,
               payload={"photo_id": batch.photo_id, "count": len(batch.detections), "changed": changed, "model": batch.model}),
         publish_mqtt=True,
     )

@@ -1,5 +1,8 @@
 import type { RiskLevel } from "../types/contracts";
 
+/** What the wall zones are coloured by, on the map and on the building page. */
+export type WallLayer = "moisture" | "risk" | "damage";
+
 // Muted palette, readable on the dark UI.
 export const RISK_COLORS: Record<RiskLevel, string> = {
   low: "#6B9E78",

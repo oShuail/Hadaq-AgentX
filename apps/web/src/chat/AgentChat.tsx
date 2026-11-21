@@ -7,10 +7,10 @@ import type { ChatResponse } from "../types/contracts";
 type Message = { role: "user" | "agent"; text: string; response?: ChatResponse };
 
 const SUGGESTIONS = [
-  "What is happening to this wall?",
-  "Simulate three days of heavy rain",
+  "What damage is on this wall, and where?",
+  "وش المعالجة للتشققات؟ ووش المواد والأدوات؟",
+  "Prepare the damage report for expert review",
   "What if we fix the drainage?",
-  "Which zones are most at risk and why?",
 ];
 
 export default function AgentChat({ buildingId }: { buildingId: string }) {
@@ -48,13 +48,13 @@ export default function AgentChat({ buildingId }: { buildingId: string }) {
         {messages.length === 0 && (
           <div className="suggestions">
             {SUGGESTIONS.map((s) => (
-              <button key={s} onClick={() => send(s)}>{s}</button>
+              <button key={s} dir="auto" onClick={() => send(s)}>{s}</button>
             ))}
           </div>
         )}
         {messages.map((m, i) => (
           <div key={i} className={`msg ${m.role}`}>
-            <div className="text">{m.text}</div>
+            <div className="text" dir="auto">{m.text}</div>
             {m.response && (
               <div className="meta">
                 {m.response.needs_approval && <span className="badge warn">Waiting for expert approval</span>}

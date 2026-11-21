@@ -23,6 +23,7 @@ class Settings:
     agents_enabled: bool = _bool("AGENTS_ENABLED", True)
     public_url: str = os.getenv("API_PUBLIC_URL", "http://localhost:8000")
     anomaly_cooldown_s: int = int(os.getenv("ANOMALY_COOLDOWN_S", "600"))
+    privacy_blur: bool = _bool("PRIVACY_BLUR", True)  # hide faces in uploaded photos before they are stored
 
 
 settings = Settings()

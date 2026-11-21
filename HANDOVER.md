@@ -34,7 +34,16 @@ make sensors             # sensor simulator (MQTT, or HTTP by itself when there 
 make camera && make vision   # camera frames and the mock detector (damage reports)
 ```
 
-On Windows without Docker or make: double-click `tools\windows\start-hadaq.bat` (creates `.venv` if needed, starts API, agents, sensors over HTTP and the web app, opens the browser).
+On Windows without Docker or make, one PowerShell terminal per part, from the repo root (start the API first; `make setup` once, or `py -3 -m venv .venv` and the `pip install -e ...` line from the Makefile):
+
+```powershell
+$env:MQTT_ENABLED="false"; .venv\Scripts\python.exe -m uvicorn hadaq_api.main:app --port 8000
+.venv\Scripts\python.exe -m uvicorn hadaq_agents.server:app --port 8100
+.venv\Scripts\python.exe devices\sensor-sim\sensor_sim.py --include-real --transport http
+.venv\Scripts\python.exe -m hadaq_vision.camera_sim --folder assets/camera/B01-CAM01 --interval 10
+.venv\Scripts\python.exe -m hadaq_vision.worker --backend mock
+cd apps\web; npm run dev
+```
 
 After pulling the 3D map change, run `cd apps/web && npm install` once (Cesium was replaced by three.js).
 
@@ -98,10 +107,14 @@ After pulling the 3D map change, run `cd apps/web && npm install` once (Cesium w
 
 ## Session log
 
+### 2026-11-21, later (Omar, with an AI assistant)
+
+- Removed the Windows start and stop scripts (`tools/windows/`): the team runs each part in its own terminal. The PowerShell commands are under "Run it".
+
 ### 2026-11-21, integration (Omar, with an AI assistant)
 
 - Put all open work together on `omar/integration`: `abooda7m/agents` (damage and treatment agent, face hiding, damage map), `saleh/data-feeds` (two-minute sensor run, synthetic camera frames, synthetic provenance for mock detections) and `omar/sensors` (sensor health, wall model, sensor tools). Basma's and the older `omar/*` branches were already in `main`.
-- Decisions while merging: Saleh's simulator tuning moved into `wall_model.py` (fault values, crack cap) and his timing test became `test_demo_run.py`; `K_RAIN` 0.38 to 0.5 and the run's storm 12 to 25 mm/h so the base passes 60 %rel at about 30 s as in his run; the run works over HTTP too (available when `sim-01` is online by MQTT status or fresh readings); the damage agent uses the crack gauge only when its status is `ok`; the mock agent's sensor lines exist in Arabic too; the run's drying label now says the base stays wet (it does: ponding); the camera simulator follows scenario events over HTTP when there is no broker; `tools/windows/start-hadaq.bat` now also installs OpenCV and starts the camera and the vision worker, and `stop-hadaq.bat` stops everything for a restart after a pull.
+- Decisions while merging: Saleh's simulator tuning moved into `wall_model.py` (fault values, crack cap) and his timing test became `test_demo_run.py`; `K_RAIN` 0.38 to 0.5 and the run's storm 12 to 25 mm/h so the base passes 60 %rel at about 30 s as in his run; the run works over HTTP too (available when `sim-01` is online by MQTT status or fresh readings); the damage agent uses the crack gauge only when its status is `ok`; the mock agent's sensor lines exist in Arabic too; the run's drying label now says the base stays wet (it does: ponding); the camera simulator follows scenario events over HTTP when there is no broker.
 - Checked: 63 Python tests pass (`make test` paths), `npm run build` passes; live runs in the container: MQTT run (storm, anomalies on S07 and S04 at 27 s and 35 s, S04 fault 60 to 105 s and back to `ok`, crack 1.20 to 1.55 mm), HTTP run with `--include-real` (nine sensors, devices online), the mock chat in English (fastest rising sensor, faulty S04 left out) and Arabic, and camera + vision + damage report citing the crack gauge reading. Not checked: the real LLM, the web app in a browser on the merged branch (checked on Omar's laptop after the pull).
 
 ### 2026-11-21 (Omar, with an AI assistant)

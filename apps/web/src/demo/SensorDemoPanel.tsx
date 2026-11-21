@@ -30,7 +30,7 @@ export default function SensorDemoPanel({ demo }: { demo: ReturnType<typeof useS
         <button className="primary" onClick={demo.start} disabled={!demo.available}>{demo.elapsed > 0 ? "Replay" : "Play sensor run"}</button>
         {demo.elapsed > 0 && <button onClick={demo.reset}>Reset demo</button>}
       </div>
-      {!demo.available && <p className="muted small">Start the API and the sensor simulator (make sensors, or tools\windows\start-hadaq.bat) to run the live feed.</p>}
+      {!demo.available && <p className="muted small">Start the API and the sensor simulator (make sensors) to run the live feed.</p>}
       {demo.error && <p className="muted small" role="alert">{demo.error}</p>}
       <div className="sensor-demo-track" role="progressbar" aria-valuemin={0} aria-valuemax={DEMO_DURATION} aria-valuenow={demo.elapsed} aria-label="Sensor run progress">
         <i style={{ width: `${demo.elapsed / DEMO_DURATION * 100}%` }} />

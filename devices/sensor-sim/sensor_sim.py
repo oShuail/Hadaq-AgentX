@@ -160,7 +160,7 @@ def build_transport(args, building: str, device_ids: list[str], on_event):
         time.sleep(5)
 
 
-def main() -> None:
+def main(argv: list[str] | None = None) -> None:
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument("--transport", choices=["auto", "mqtt", "http"], default="auto")
     parser.add_argument("--host", default="localhost", help="MQTT broker host")
@@ -171,7 +171,7 @@ def main() -> None:
     parser.add_argument("--include-real", action="store_true", help="also simulate the brick node sensors S01 to S03")
     parser.add_argument("--seed", type=int, default=None, help="fixed random seed for repeatable runs")
     parser.add_argument("--steps", type=int, default=0, help="stop after this many rounds (0 = run until Ctrl+C)")
-    args = parser.parse_args()
+    args = parser.parse_args(argv)
 
     registry = load_registry()
     building = registry["building"]["id"]
@@ -191,7 +191,8 @@ def main() -> None:
     transport = build_transport(args, building, device_ids, on_event)
     log.info("Simulating %s every %.1f s at %gx over %s", [s["id"] for s in sensors], args.interval, args.speed, transport.name)
 
-    signal.signal(signal.SIGTERM, _stop)  # a plain kill also says "offline" before leaving
+    if threading.current_thread() is threading.main_thread():  # signals only work there (the hosted demo uses a thread)
+        signal.signal(signal.SIGTERM, _stop)  # a plain kill also says "offline" before leaving
     dt_hours = args.interval * args.speed / 3600
     rounds = 0
     try:

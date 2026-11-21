@@ -1,0 +1,11 @@
+.git
+.venv
+**/node_modules
+apps/web/dist
+data
+**/__pycache__
+assets/camera/*/*/
+assets/camera/*/.demo_frames_version
+notebooks
+.env
+.env.local

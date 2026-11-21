@@ -81,7 +81,7 @@ def poll_events(api: httpx.Client, building: str, seen: set[str], sim: CameraSim
             sim.on_event(event.get("type", ""))
 
 
-def main() -> None:
+def main(argv: list[str] | None = None) -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument("--folder", type=Path, default=Path("assets/camera/B01-CAM01"))
     parser.add_argument("--api", default="http://localhost:8000")
@@ -89,7 +89,7 @@ def main() -> None:
     parser.add_argument("--building", default="B01")
     parser.add_argument("--camera", default="B01-CAM01")
     parser.add_argument("--interval", type=float, default=10.0)
-    args = parser.parse_args()
+    args = parser.parse_args(argv)
 
     sim = CameraSim(args.folder)
     client = mqtt.Client(mqtt.CallbackAPIVersion.VERSION2, client_id=f"camera-sim-{args.camera}")

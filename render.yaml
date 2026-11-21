@@ -1,0 +1,16 @@
+# Render blueprint for the hosted demo backend (owner: Omar). The web app stays on Vercel.
+# For real LLM answers add HADAQ_LLM and ANTHROPIC_API_KEY in the Render dashboard (Environment).
+# Render: New > Blueprint > pick this repo. Then set VITE_API_URL and VITE_AGENTS_URL on Vercel to the service URL.
+services:
+  - type: web
+    name: hadaq-api
+    runtime: docker
+    plan: free
+    region: frankfurt
+    dockerfilePath: ./infra/render/Dockerfile
+    dockerContext: .
+    healthCheckPath: /health
+    autoDeploy: true
+    envVars:
+      - key: HADAQ_LLM
+        value: mock

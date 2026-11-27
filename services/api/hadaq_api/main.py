@@ -1,4 +1,4 @@
-"""Hadaq API gateway (owner: Turky).
+"""Hadaq API gateway (owner: Turki).
 
 Run:  uvicorn hadaq_api.main:app --reload --port 8000
 Docs: http://localhost:8000/docs

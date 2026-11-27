@@ -1,4 +1,4 @@
-# Turky: API, database, MQTT, shared formats, map shell
+# Turki: API, database, MQTT, shared formats, map shell
 
 **Mission:** you own the hub. Every reading, photo, detection, simulation and event flows through your API, gets stored, gets an evidence ID, and is pushed live to the browser. You also own the shared formats and the app shell: the 3D map, click-to-select and the side panel.
 

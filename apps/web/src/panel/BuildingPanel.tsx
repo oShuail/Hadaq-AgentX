@@ -1,4 +1,4 @@
-// Side panel for the selected building or wall zone (shell: Turky; sensors: Saleh; camera: Abdurhmn; risk: Basma; chat: Omar).
+// Side panel for the selected building or wall zone (shell: Turki; sensors: Saleh; camera: Abdurhmn; risk: Basma; chat: Omar).
 import { useState } from "react";
 
 import AgentChat from "../chat/AgentChat";

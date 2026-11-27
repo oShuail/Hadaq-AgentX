@@ -1,4 +1,4 @@
-"""Sensor health and trends (owner: Turky, with Saleh). Pure functions over stored readings, used by the API routes.
+"""Sensor health and trends (owner: Turki, with Saleh). Pure functions over stored readings, used by the API routes.
 
 Each sensor gets a status the web app and the agents can trust:
 

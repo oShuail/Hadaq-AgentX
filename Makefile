@@ -31,7 +31,7 @@ up:
 down:
 	docker compose down
 
-api: ## Turky, http://localhost:8000/docs
+api: ## Turki, http://localhost:8000/docs
 	$(LOAD_ENV) $(BIN)/uvicorn hadaq_api.main:app --reload --port 8000
 
 agents: ## Omar, http://localhost:8100/docs

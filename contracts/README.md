@@ -75,7 +75,7 @@ The API subscribes to `hadaq/v1/#` and is the only service that writes to the da
 | `recommendation_ready` | Agents | The agent proposed an action that waits for expert approval |
 | `agent_note` | Agents | Summary of an automatic investigation, shown in the activity feed |
 
-## HTTP API (Turky)
+## HTTP API (Turki)
 
 Base URL `http://localhost:8000`. Interactive docs at `/docs`.
 

@@ -3,7 +3,7 @@
 ## Workflow (hackathon speed, but safe)
 
 1. Pull first: `git pull --rebase origin main`
-2. Branch per task: `<name>/<topic>`, for example `basma/moisture-tuning`, `saleh/brick-node`, `turky/mqtt-bridge`
+2. Branch per task: `<name>/<topic>`, for example `basma/moisture-tuning`, `saleh/brick-node`, `turki/mqtt-bridge`
 3. Small commits with clear messages (below). Run `make test` before pushing.
 4. Open a pull request to `main`. Omar reviews merges that touch `contracts/` or more than one slice; anything inside your own folder can be merged by you once CI is green.
 5. Never force-push to `main`.

@@ -9,10 +9,10 @@
 | `devices/esp32-node/` | PlatformIO firmware for the brick node |
 | `devices/sensor-sim/sensor_sim.py` | Simulated sensors: MQTT like the real node, or HTTP when there is no broker |
 | `devices/sensor-sim/wall_model.py` | The wall the simulated sensors measure (rain, ponding at the foot, drying, crack, tilt, faults) |
-| `services/api/hadaq_api/sensors.py` (with Turky) | Sensor health (ok, suspect, fault, stale) and trends the UI and the agents read |
+| `services/api/hadaq_api/sensors.py` (with Turki) | Sensor health (ok, suspect, fault, stale) and trends the UI and the agents read |
 | `apps/web/src/demo/ScenarioPanel.tsx` | Scenario buttons (Activity tab and phone page) |
 | `services/api/hadaq_api/sensor_run.py`, `apps/web/src/demo/SensorDemoPanel.tsx` | The two-minute sensor run (Activity tab: Play sensor run) |
-| `docker-compose.yml` `mqtt` service (with Turky) | The broker |
+| `docker-compose.yml` `mqtt` service (with Turki) | The broker |
 | `apps/ios/` (Round 2) | Capture app |
 
 ## Setup

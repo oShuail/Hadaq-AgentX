@@ -33,7 +33,7 @@ The mock answer already cites `sim_...`, `risk_...` and `evt_...` IDs. That prov
 
 ## Tasks for Round 1, in order
 
-### 1. Freeze the contracts tonight (with Turky and Saleh)
+### 1. Freeze the contracts tonight (with Turki and Saleh)
 
 Read `contracts/README.md` top to bottom. Confirm: zone grid 4 rows x 8 cols, `R1` = base; topic `hadaq/v1/{building}/sensors/{sensor_id}`; event names; evidence ID prefixes. After tonight, changes only by PR.
 

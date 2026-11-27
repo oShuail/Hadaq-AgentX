@@ -20,11 +20,11 @@ flowchart LR
     PANEL[Scenario panel<br/>Saleh]
   end
   MQTT[(Mosquitto MQTT)]
-  API[API + DB + live socket<br/>Turky]
+  API[API + DB + live socket<br/>Turki]
   SIMENG[Simulation, risk, monitoring<br/>Basma]
   VIS[Vision worker RF-DETR-Seg<br/>Abdurhmn]
   AG[Agents: Orchestrator +<br/>Damage and Treatment +<br/>Simulation and Advisory<br/>Omar]
-  WEB[Web: 3D twin of Diriyah,<br/>panel, chat<br/>Turky + Omar]
+  WEB[Web: 3D twin of Diriyah,<br/>panel, chat<br/>Turki + Omar]
 
   ESP --> MQTT
   SIM --> MQTT
@@ -44,13 +44,13 @@ flowchart LR
 | Path | What | Owner | Guide |
 | --- | --- | --- | --- |
 | `contracts/` | Formats, topics, IDs everyone codes against | All (Omar approves changes) | [contracts/README.md](contracts/README.md) |
-| `packages/hadaq_schemas/` | Shared Pydantic models | Turky | |
-| `services/api/` | FastAPI gateway, MQTT bridge, SQLite/Postgres, websocket | Turky | [docs/team/turky.md](docs/team/turky.md) |
+| `packages/hadaq_schemas/` | Shared Pydantic models | Turki | |
+| `services/api/` | FastAPI gateway, MQTT bridge, SQLite/Postgres, websocket | Turki | [docs/team/turki.md](docs/team/turki.md) |
 | `services/simulation/` | Weather, moisture model, ABC risk, monitoring rule | Basma | [docs/team/basma.md](docs/team/basma.md) |
 | `services/vision/` | RF-DETR-Seg, camera simulator, vision worker | Abdurhmn | [docs/team/abdurhmn.md](docs/team/abdurhmn.md) |
 | `services/agents/` | LangGraph agents (damage and treatment, simulation), treatment table, verifier, chat API | Omar | [services/agents/README.md](services/agents/README.md) |
 | `devices/` | ESP32 brick node, sensor simulator | Saleh | [docs/team/saleh.md](docs/team/saleh.md) |
-| `apps/web/` | React + three.js app (3D twin of Diriyah) | Turky (shell), Omar (twin, chat), Saleh (scenario panel) | |
+| `apps/web/` | React + three.js app (3D twin of Diriyah) | Turki (shell), Omar (twin, chat), Saleh (scenario panel) | |
 | `docs/` | Team guides, 3D scan guide, demo script | All | |
 
 ## Quick start
@@ -86,7 +86,7 @@ Check everything: `make test` and `cd apps/web && npm run build`.
 | Basma | AI: rain simulation, weather data, risk scoring, final PDF |
 | Abdurhmn | AI and vision: defect detection, camera feed, demo video |
 | Saleh | IoT, microcontrollers, iOS: brick sensor node, sensor simulator, scenario panel |
-| Turky | Backend: API, database, MQTT, shared formats, map shell |
+| Turki | Backend: API, database, MQTT, shared formats, map shell |
 
 ## Rules
 

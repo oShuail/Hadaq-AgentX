@@ -1,0 +1,31 @@
+name: ios
+
+# The surveyor app (apps/ios). Only runs when the app or the v2 contract changes, so other branches stay fast.
+on:
+  push:
+    paths:
+      - "apps/ios/**"
+      - "contracts/v2/**"
+      - ".github/workflows/ios.yml"
+  pull_request:
+    paths:
+      - "apps/ios/**"
+      - "contracts/v2/**"
+      - ".github/workflows/ios.yml"
+
+jobs:
+  ios:
+    name: iOS app (build + core tests)
+    runs-on: macos-15
+    steps:
+      - uses: actions/checkout@v4
+      - name: Xcode version
+        run: xcodebuild -version
+      - name: Core tests (contract models, queue rules, multipart)
+        working-directory: apps/ios
+        run: swift test
+      - name: Build the app for the simulator (no signing)
+        run: |
+          xcodebuild -project apps/ios/Hadaq.xcodeproj -target Hadaq -configuration Debug \
+            -sdk iphonesimulator CODE_SIGNING_ALLOWED=NO build | tail -40
+          test "${PIPESTATUS[0]}" -eq 0

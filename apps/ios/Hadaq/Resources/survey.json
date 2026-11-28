@@ -1,0 +1,9 @@
+{
+  "survey_id": "srv_5b1d0a9e2c44",
+  "title": "Qasr Salwa, winter cycle",
+  "assignee": "surveyor",
+  "due": "2026-11-30T12:00:00+03:00",
+  "tasks": [
+    {"building_id": "B01", "wall_id": "W01", "required_shots": ["full"], "done_shots": [], "status": "not_started"}
+  ]
+}

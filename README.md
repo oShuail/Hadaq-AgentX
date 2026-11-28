@@ -46,6 +46,7 @@ flowchart LR
 | `contracts/` | Formats, topics, IDs everyone codes against | All (Omar approves changes) | [contracts/README.md](contracts/README.md) |
 | `packages/hadaq_schemas/` | Shared Pydantic models | Turki | |
 | `services/api/` | FastAPI gateway, MQTT bridge, SQLite/Postgres, websocket | Turki | [docs/team/turki.md](docs/team/turki.md) |
+| `services/core/` | Spring Boot core API (port 8080): the v1 API in Java plus a built-in demo; v2 inspections next | Turki | [services/core/README.md](services/core/README.md) |
 | `services/simulation/` | Weather, moisture model, ABC risk, monitoring rule | Basma | [docs/team/basma.md](docs/team/basma.md) |
 | `services/vision/` | RF-DETR-Seg, camera simulator, vision worker | Abdurhmn | [docs/team/abdurhmn.md](docs/team/abdurhmn.md) |
 | `services/agents/` | LangGraph agents (damage and treatment, simulation), treatment table, verifier, chat API | Omar | [services/agents/README.md](services/agents/README.md) |
@@ -67,6 +68,7 @@ Then one terminal each:
 
 ```bash
 make api          # http://localhost:8000/docs
+make core         # http://localhost:8080 (Spring Boot core API, Java 21 + MySQL/MariaDB)
 make agents       # http://localhost:8100/docs  (HADAQ_LLM=mock works without a key)
 make web          # http://localhost:5173
 make sensors      # simulated sensors

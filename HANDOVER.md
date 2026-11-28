@@ -105,7 +105,7 @@ After pulling the 3D map change, run `cd apps/web && npm install` once (Cesium w
 - **Everyone:** read `docs/challenge-plan.md` and answer its open questions (section 12). Pull `main` once the integration PR (`omar/integration`) is merged, then `make setup` and `npm install` in `apps/web` once. Your old branches are all inside it; start new work from `main`.
 - **Omar:** decide the new demo story and the contract changes for expert review and face blurring (`docs/challenge-plan.md` sections 9 and 10); fill the building pages (wall condition details, camera per wall, per-building agent context); register B02 in `contracts/` when it gets sensors; check the wall zones line up with the B01 facade in the Focus building view; full demo run twice.
 - **Agents task owner:** put the LLM key in `.env` (`HADAQ_LLM=anthropic:claude-sonnet-5-5`) and run the chat suggestions in Arabic and English with the real model (no verifier warnings, damage report on a new photo); then build the approval step (approve, then a work order) with the expert review screen once Omar approves the contract changes.
-- **Turki:** T3, T4 and the core side of T5 are done on branch `Turki`, in PR #13. Left for T5: the live run with the real AI worker (`AI_MODE=remote`) once `/ai/process` exists, and with Basma's service (`SIM_URL=http://localhost:8200`) once `/sim/run` exists. Optional: a screen to create surveys (the route exists) and a Render setup for `services/core`.
+- **Turki:** T3, T4 and the core side of T5 are on `main` (PR #13); the site manager's survey screen is on branch `Turki`. Left for T5: the live run with the real AI worker (`AI_MODE=remote`) once `/ai/process` exists, and with Basma's service (`SIM_URL=http://localhost:8200`) once `/sim/run` exists. Optional: a Render setup for `services/core`.
 - **Omar (O4):** `apps/web/src/api/core.ts` now exists with `CORE_URL` and `core.sitePriority()` (the plan said to add it if T3 came first). Extend it for the inspection page; `config.ts` has `CORE_URL` and `CORE_WS`, `.env.example` has `VITE_CORE_URL`.
 - **AI worker (Abdurhmn, Omar):** the core API sends `ProcessRequest` to `AI_URL/ai/process` and expects 202, then the multipart callback on `callback_url`. Finding and work order ids must be new (the core refuses an id that belongs to another capture with 409). `previous_findings` = the non-rejected findings of the wall's last approved inspection.
 - **Basma:** the core forwards simulations to `SIM_URL/sim/run` when it is set. The body it sends is in `services/core/README.md` ("Our choices": `run_id`, `building_id`, `wall` as WallInfo, `scenario`, `weather` as the v1 WeatherSpec, `approved_findings` as v2 Findings, `requested_by`); answer with a `SimulationResult` (extras such as the first critical hour per zone are kept). Say if you want another body. Until it is up, or if it fails, the core runs its Java port and says so.
@@ -128,6 +128,11 @@ After pulling the 3D map change, run `cd apps/web && npm install` once (Cesium w
 - Real LLM answers: add `HADAQ_LLM` and `ANTHROPIC_API_KEY` in the Render dashboard (Environment). Without them the agent runs the mock plan.
 
 ## Session log
+
+### 2026-11-29 (Turki): the site manager plans surveys
+
+- A **المسوحات · Surveys** section in the Priority tab (`hud/SurveyPlanner.tsx`): every survey with each wall's status (لم يبدأ / جزئي / مكتمل), done and missing shots and the due date, reloaded when a capture arrives or after a demo reset; and a **مسح جديد** form (title, surveyor, due date, walls from `/api/v2/registry`, each whole or in 2 or 4 parts) that calls `POST /api/v2/surveys` as `site_manager` and shows the API's own error text. `api/core.ts` gained `registry()`, `surveys()`, `createSurvey()`.
+- Checked in Chrome on core alone: an empty title is refused in Arabic; a survey for W01 in two parts is created (C1-C4, C5-C8) and appears at once, also in `GET /api/v2/surveys?assignee=surveyor` for the app; after a capture with `segment: C1-C4` it turned «جزئي» 1/2, missing C5-C8, without a reload; no console errors. `npm run build` passes.
 
 ### 2026-11-28, late night (Turki): T5, the core side
 

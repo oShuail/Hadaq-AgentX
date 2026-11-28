@@ -3,6 +3,7 @@
 import { CORE_URL } from "../config";
 import type { SitePriority } from "../state/useSitePriority";
 import { ESCALATION_NAMES_AR } from "../types/contracts";
+import SurveyPlanner from "./SurveyPlanner";
 
 const days = (iso: string | null) => (iso ? Math.max(0, Math.floor((Date.now() - Date.parse(iso)) / 864e5)) : null);
 
@@ -60,6 +61,7 @@ export default function PriorityPanel({ priority, onFly }: { priority: SitePrior
       <p className="muted priority-note">
         Ranked by the core API: DGDA criteria with weights ASSUMED; the conservator's review decides.
       </p>
+      <SurveyPlanner />
     </div>
   );
 }

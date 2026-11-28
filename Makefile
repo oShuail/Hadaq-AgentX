@@ -4,7 +4,7 @@ VENV := .venv
 BIN := $(VENV)/bin
 LOAD_ENV := set -a; [ -f .env ] && . ./.env; set +a;
 
-.PHONY: setup venv vision-ml web-install hooks up down api agents web sensors camera vision sim test
+.PHONY: setup venv vision-ml web-install hooks up down api core core-test agents web sensors camera vision sim test
 
 setup: venv web-install hooks ## everything a new teammate needs
 	@[ -f .env ] || cp .env.example .env
@@ -33,6 +33,12 @@ down:
 
 api: ## Turki, http://localhost:8000/docs
 	$(LOAD_ENV) $(BIN)/uvicorn hadaq_api.main:app --reload --port 8000
+
+core: ## Turki, Spring Boot core API on http://localhost:8080 (needs XAMPP MySQL/MariaDB, Java 21). Built-in demo data: DEMO_ENABLED=false to turn off
+	cd services/core && ./mvnw spring-boot:run
+
+core-test: ## Turki, Spring tests (uses the database hadaq_test_db)
+	cd services/core && ./mvnw test
 
 agents: ## Omar, http://localhost:8100/docs
 	$(LOAD_ENV) $(BIN)/uvicorn hadaq_agents.server:app --reload --port 8100

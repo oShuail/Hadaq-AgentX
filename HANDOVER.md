@@ -123,6 +123,13 @@ After pulling the 3D map change, run `cd apps/web && npm install` once (Cesium w
 
 ## Session log
 
+### 2026-11-28, review (Omar, with an AI assistant): PR #12 merged
+
+- Reviewed and merged Turki's PR #12 (`bf8dbbe`): `services/core` (Spring Boot 4.2, MariaDB) with v1 and v2. CI green (core job: 30 tests on MariaDB 10.11).
+- Open issues: `AI_URL` and `AGENTS_URL` both default to :8100, so the AI worker (A3) must add `/ai/process` to the existing agents app instead of starting a second server on 8100. Run only one backend (`services/core` on :8080, not `services/api` on :8000). For the real demo turn off `DEMO_CAMERA`, `DEMO_VISION` and set `AI_MODE=remote`.
+- Task plan doc updated: T1, T2 and the T3 backend marked done; left for Turki: T3 web (priority tab, building tint), T4 demo reset (MariaDB SQL), T5 wiring the real AI worker and forwarding `/api/v2/simulations` to the sim service on :8200.
+- Not checked locally: Maven Central is blocked from the review machine, so the build was verified through the GitHub Actions run only.
+
 ### 2026-11-28, later (Turki): v2 core API
 
 - Built contracts v2 in `services/core` under `/api/v2`: registry (from `contracts/building_b01.json`), surveys (one seeded: "Qasr Salwa, winter cycle"), captures (202, `client_uuid` dedupe with a unique index, faces hidden when the phone did not check, one open inspection per wall per survey, survey shot marked done), dispatch to the AI worker and the results callback (findings + work orders, replaces a re-analysis), retry, conservator review and approval (`X-Hadaq-User`, 403 / 409 rules), site priority, v2 evidence and live channels.

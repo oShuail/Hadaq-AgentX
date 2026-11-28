@@ -1,0 +1,1 @@
+"""Hadaq AI worker (photo -> faces hidden -> rectified -> damage findings in wall metres)."""

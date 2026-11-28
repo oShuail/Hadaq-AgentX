@@ -5,10 +5,11 @@ import { FOCUS_MODEL_URL } from "../config";
 import { type LayerId, Twin, type TwinSelection, type TwinStats, type ViewId } from "../twin3d/Twin";
 import type { Callout } from "../twin3d/focus";
 import type { AttentionItem } from "../twin/WallZones";
-import type { WallSpec } from "../types/contracts";
+import type { Escalation, WallSpec } from "../types/contracts";
 
 export type Selection = TwinSelection;
-export type FlyTarget = ViewId;
+// a camera view, or "twin:<building id>" to fly to one of the twin buildings (the Priority list)
+export type FlyTarget = ViewId | `twin:${string}`;
 
 interface Props {
   buildingId: string;
@@ -19,6 +20,8 @@ interface Props {
   zonesVisible: boolean;
   selectedZone: string | null;
   fly: { target: FlyTarget; nonce: number };
+  /** Worst open escalation per twin building (core API site priority): tints the ground under it. */
+  escalations?: Record<string, Escalation | null>;
   time: Date;
   layers: Record<LayerId, boolean>;
   paused?: boolean; // a building page covers the map: stop drawing
@@ -74,6 +77,7 @@ export default function SiteMap(props: Props) {
   useEffect(() => twinRef.current?.setAttention(props.attention), [props.attention, ready]);
   useEffect(() => twinRef.current?.setCallouts(props.callouts), [props.callouts, ready]);
   useEffect(() => twinRef.current?.setSelectedZone(props.selectedZone), [props.selectedZone, ready]);
+  useEffect(() => twinRef.current?.setEscalations(props.escalations ?? {}), [props.escalations, ready]);
   useEffect(() => {
     if (props.fly.nonce > 0) twinRef.current?.flyTo(props.fly.target);
   }, [props.fly.nonce]); // eslint-disable-line react-hooks/exhaustive-deps

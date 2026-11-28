@@ -287,6 +287,7 @@ button.back { display: inline-flex; align-items: center; gap: 6px; padding: 8px 
 .hud-tabs button { padding: 8px 6px; font-size: 13px; background: transparent; border: 1px solid var(--t-line); color: #efe0c8; }
 .hud-tabs button:hover { border-color: var(--gold-hud); background: rgba(201, 162, 77, 0.08); }
 .hud-tabs button.on { background: var(--gold-hud); border-color: var(--gold-hud); color: #21160e; font-weight: 600; }
+.hud-tabs button:last-child:nth-child(odd) { grid-column: 1 / -1; } /* the 5th tab (Priority) spans the row */
 
 /* Top right: status + layers */
 .tower-tr { position: absolute; z-index: 25; right: var(--edge); top: var(--edge); display: flex; flex-direction: column; align-items: flex-end; gap: 10px; }
@@ -414,7 +415,8 @@ button.back { display: inline-flex; align-items: center; gap: 6px; padding: 8px 
   .twin-callout { visibility: hidden; }
   .tower-tl .crenels, .hud-brand div, .hud-note { display: none; }
   .tower-tl .tower-body { border-radius: 14px; grid-template-columns: auto 1fr; align-items: center; }
-  .hud-tabs { grid-template-columns: repeat(4, auto); }
+  .hud-tabs { grid-template-columns: repeat(5, auto); }
+  .hud-tabs button:last-child:nth-child(odd) { grid-column: auto; }
   .hud-tabs button { padding: 6px 8px; font-size: 12px; }
   .hud-chip.sim { display: none; }
   .tower-bl { width: calc(100% - 20px); bottom: 182px; }
@@ -466,3 +468,23 @@ button.back { display: inline-flex; align-items: center; gap: 6px; padding: 8px 
 .events .report .num { min-width: 16px; height: 16px; font-size: 10px; }
 .ptag { font-size: 11px; font-weight: 600; padding: 1px 7px; border-radius: 999px; border: 1px solid var(--sage); color: var(--sage); text-transform: none; letter-spacing: 0; }
 .ptag.warn { border-color: var(--gold); color: var(--gold); }
+
+/* T3, the site manager's ranking (Priority tab), owner: Turki. Badge colours = the escalation tint on the map */
+.priority-panel { display: grid; gap: 10px; }
+.priority-sub { margin: 0; color: var(--muted); font-size: 13px; }
+.priority-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
+.priority-row { display: grid; grid-template-columns: 26px 1fr; gap: 10px; align-items: start; width: 100%; padding: 10px 12px; text-align: start; background: rgba(255, 255, 255, 0.02); border: 1px solid var(--line); border-radius: 10px; color: var(--text); cursor: pointer; }
+.priority-row:hover { border-color: var(--line-strong); background: rgba(201, 162, 77, 0.06); }
+.priority-rank { font-family: var(--display); font-size: 18px; color: var(--muted); text-align: center; }
+.priority-main { display: grid; gap: 3px; }
+.priority-head { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+.priority-en { color: var(--muted); font-size: 12px; }
+.priority-why { font-size: 13px; }
+.priority-when { font-size: 12px; color: var(--muted); }
+.priority-note { margin: 0; font-size: 11px; }
+.esc { display: inline-block; padding: 1px 9px; border-radius: 999px; font-size: 12px; font-weight: 700; border: 1px solid; }
+.esc-urgent { color: #f3d2d2; background: rgba(192, 122, 122, 0.28); border-color: var(--rose); }
+.esc-high { color: #f1dfb2; background: rgba(201, 162, 77, 0.22); border-color: var(--gold-hud); }
+.esc-medium { color: #e3d8c6; background: rgba(156, 143, 120, 0.22); border-color: #9c8f78; }
+.esc-low { color: #cfe5d4; background: rgba(107, 158, 120, 0.22); border-color: var(--sage); }
+.esc-none { color: var(--muted); border-color: var(--line-strong); font-weight: 400; }

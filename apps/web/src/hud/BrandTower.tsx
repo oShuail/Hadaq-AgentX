@@ -1,11 +1,13 @@
 // Top-left tower (owner: Omar): the Hadaq mark, the title and the four tabs.
-export type Tab = "explore" | "twin" | "agent" | "activity";
+export type Tab = "explore" | "twin" | "agent" | "activity" | "priority";
 
 export const TABS: { id: Tab; label: string }[] = [
   { id: "explore", label: "Explore" },
   { id: "twin", label: "Building twin" },
   { id: "agent", label: "Agent" },
   { id: "activity", label: "Activity" },
+  // the site manager's ranking (T3, Turki): GET /api/v2/site/priority from the core API
+  { id: "priority", label: "Priority · الأولويات" },
 ];
 
 export default function BrandTower({ tab, onTab }: { tab: Tab; onTab: (t: Tab) => void }) {

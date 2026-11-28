@@ -14,12 +14,14 @@ import BrandTower, { type Tab } from "./hud/BrandTower";
 import { sensorCallouts } from "./hud/callouts";
 import LayersMenu from "./hud/LayersMenu";
 import ViewsTower from "./hud/ViewsTower";
+import PriorityPanel from "./hud/PriorityPanel";
+import { useSitePriority } from "./state/useSitePriority";
 import TimeBar from "./TimeBar";
 import { BUILDING_ID } from "./config";
 import { sensorHealth, useLive } from "./state/useLive";
 import { attentionItems } from "./twin/attention";
 import { twinById } from "./twins";
-import { LAYERS, type LayerId, type TwinStats } from "./twin3d/Twin";
+import { LAYERS, type LayerId, type TwinStats, type ViewId } from "./twin3d/Twin";
 import type { SensorSpec, WallSpec } from "./types/contracts";
 import registry from "../../../contracts/building_b01.json";
 import { RISK_COLORS, type WallLayer, moistureColor, peakMoisture } from "./twin/colors";
@@ -29,7 +31,13 @@ import { damageZoneColors } from "./twin/damage";
 const CAMERA_WALL_BOX: number[] | null = (registry as { cameras?: { wall_bbox_px?: number[] }[] }).cameras?.[0]?.wall_bbox_px ?? null;
 
 // Explore = the map alone (views bottom left, layers top right); the other tabs open the panel bottom right.
-const TAB_TITLES: Record<Tab, string> = { explore: "Explore", twin: "Building twin", agent: "Ask the agent", activity: "Activity" };
+const TAB_TITLES: Record<Tab, string> = {
+  explore: "Explore",
+  twin: "Building twin",
+  agent: "Ask the agent",
+  activity: "Activity",
+  priority: "Priority · الأولويات",
+};
 
 // Two pages: the map (/) and a building's own twin page (/building/<id>). Plain history API, no router library.
 type Route = { page: "map" } | { page: "building"; id: string };
@@ -41,9 +49,11 @@ const parseRoute = (path: string): Route => {
 export default function App() {
   const live = useLive(BUILDING_ID);
   const demo = useSensorDemo(BUILDING_ID, live.readings);
+  // the site manager's ranking from the core API (T3): the Priority tab and the tint of the twin buildings on the map
+  const priority = useSitePriority();
   const [selection, setSelection] = useState<Selection | null>(null);
   const [fly, setFly] = useState<{ target: FlyTarget; nonce: number }>({ target: "turaif", nonce: 0 });
-  const [view, setView] = useState<FlyTarget | null>("turaif");
+  const [view, setView] = useState<ViewId | null>("turaif");
   const [layer, setLayer] = useState<WallLayer>("damage");
   const [coordinate, setCoordinate] = useState<string | null>(null);
   const [route, setRoute] = useState<Route>(() => parseRoute(window.location.pathname));
@@ -107,9 +117,17 @@ export default function App() {
     [live, attention, wall?.cols, tab, focusSelected],
   );
 
-  const go = (target: FlyTarget) => {
+  const go = (target: ViewId) => {
     setView(target);
     setFly((f) => ({ target, nonce: f.nonce + 1 }));
+  };
+
+  // a building from the Priority list: the focus building has its own view, the other twins are flown to by footprint
+  const flyToBuilding = (buildingId: string) => {
+    const twin = twinById(buildingId);
+    if (!twin || twin.onMap === "focus") return go("focus");
+    setView(null);
+    setFly((f) => ({ target: `twin:${buildingId}`, nonce: f.nonce + 1 }));
   };
 
   const pageTwin = route.page === "building" ? twinById(route.id) : null;
@@ -142,6 +160,7 @@ export default function App() {
           zonesVisible={focusSelected}
           selectedZone={selection?.kind === "zone" ? selection.zoneId : null}
           fly={fly}
+          escalations={priority.escalations}
           time={time}
           layers={layers}
           onSelect={select}
@@ -175,6 +194,7 @@ export default function App() {
                 <BuildingPanel selection={selection} live={live} onFlyToFocus={() => go("focus")} onOpenPage={openPage} />
               )}
               {tab === "agent" && <AgentChat buildingId={live.building?.building.id ?? BUILDING_ID} />}
+              {tab === "priority" && <PriorityPanel priority={priority} onFly={flyToBuilding} />}
               {tab === "activity" && (
                 <div className="activity">
                   <SensorDemoPanel demo={demo} />

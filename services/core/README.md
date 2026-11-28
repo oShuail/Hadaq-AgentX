@@ -15,7 +15,9 @@ The Hadaq hub in Java 21 / Spring Boot 4.2 on MySQL/MariaDB (`hadaq_db`), on por
 
 1. Java 21, and MySQL/MariaDB running (XAMPP is fine). `hadaq_db` and its tables are created on first start.
 2. `make core`, or run `HadaqApplication` in IntelliJ (open `services/core`). API on http://localhost:8080.
-3. Web app: put `VITE_API_URL=http://localhost:8080` in `apps/web/.env.local`, then `make web`.
+3. Web app: put `VITE_API_URL=http://localhost:8080` and `VITE_CORE_URL=http://localhost:8080` in
+   `apps/web/.env.local`, then `make web`. The **Priority · الأولويات** tab (T3) shows `/api/v2/site/priority`, and
+   the twin buildings on the map get a ground tint by their worst escalation.
 4. Optional: `make agents` (`HADAQ_LLM=mock` works without a key) for the chat and the automatic damage reports,
    and `make up` for the MQTT broker (without it set `MQTT_ENABLED=false`; the API works over HTTP).
 

@@ -1,0 +1,653 @@
+{
+  "$defs": {
+    "BaseLine": {
+      "description": "start = LEFT end when you face the facade (the C1 side).",
+      "properties": {
+        "start": {
+          "$ref": "#/$defs/LonLat"
+        },
+        "end": {
+          "$ref": "#/$defs/LonLat"
+        }
+      },
+      "required": [
+        "start",
+        "end"
+      ],
+      "title": "BaseLine",
+      "type": "object"
+    },
+    "Finding": {
+      "properties": {
+        "finding_id": {
+          "title": "Finding Id",
+          "type": "string"
+        },
+        "capture_id": {
+          "title": "Capture Id",
+          "type": "string"
+        },
+        "inspection_id": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Inspection Id"
+        },
+        "building_id": {
+          "title": "Building Id",
+          "type": "string"
+        },
+        "wall_id": {
+          "title": "Wall Id",
+          "type": "string"
+        },
+        "zone_id": {
+          "title": "Zone Id",
+          "type": "string"
+        },
+        "damage_type": {
+          "enum": [
+            "plaster_loss",
+            "crack",
+            "base_erosion",
+            "rain_grooves",
+            "salt_efflorescence",
+            "voids_burrows",
+            "structural_deformation",
+            "incompatible_repair",
+            "parapet_loss",
+            "timber_decay",
+            "biological_growth"
+          ],
+          "title": "Damage Type",
+          "type": "string"
+        },
+        "severity": {
+          "enum": [
+            1,
+            2,
+            3
+          ],
+          "title": "Severity",
+          "type": "integer"
+        },
+        "confidence": {
+          "maximum": 1,
+          "minimum": 0,
+          "title": "Confidence",
+          "type": "number"
+        },
+        "suspected": {
+          "default": false,
+          "title": "Suspected",
+          "type": "boolean"
+        },
+        "box_px": {
+          "anyOf": [
+            {
+              "items": {
+                "type": "number"
+              },
+              "maxItems": 4,
+              "minItems": 4,
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Box Px"
+        },
+        "box_wall_m": {
+          "items": {
+            "type": "number"
+          },
+          "maxItems": 4,
+          "minItems": 4,
+          "title": "Box Wall M",
+          "type": "array"
+        },
+        "polygon_wall_m": {
+          "anyOf": [
+            {
+              "items": {
+                "items": {
+                  "type": "number"
+                },
+                "type": "array"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Polygon Wall M"
+        },
+        "length_cm": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Length Cm"
+        },
+        "width_mm": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Width Mm"
+        },
+        "area_m2": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Area M2"
+        },
+        "change": {
+          "anyOf": [
+            {
+              "enum": [
+                "new",
+                "grown",
+                "unchanged",
+                "repaired"
+              ],
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Change"
+        },
+        "previous_finding_id": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Previous Finding Id"
+        },
+        "lookalike": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Lookalike"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "priority": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Priority"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "review": {
+          "$ref": "#/$defs/Review"
+        },
+        "model": {
+          "title": "Model",
+          "type": "string"
+        },
+        "provenance": {
+          "$ref": "#/$defs/Provenance",
+          "default": "model_output"
+        },
+        "evidence_ids": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Evidence Ids",
+          "type": "array"
+        }
+      },
+      "required": [
+        "capture_id",
+        "building_id",
+        "wall_id",
+        "zone_id",
+        "damage_type",
+        "severity",
+        "confidence",
+        "box_wall_m",
+        "model"
+      ],
+      "title": "Finding",
+      "type": "object"
+    },
+    "LonLat": {
+      "properties": {
+        "lon": {
+          "title": "Lon",
+          "type": "number"
+        },
+        "lat": {
+          "title": "Lat",
+          "type": "number"
+        }
+      },
+      "required": [
+        "lon",
+        "lat"
+      ],
+      "title": "LonLat",
+      "type": "object"
+    },
+    "Lookalike": {
+      "description": "The photo cannot tell two damages apart; the agent asks for evidence instead of guessing.",
+      "properties": {
+        "pair_id": {
+          "title": "Pair Id",
+          "type": "string"
+        },
+        "options": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Options",
+          "type": "array"
+        },
+        "evidence_needed": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Evidence Needed",
+          "type": "array"
+        },
+        "note_ar": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Note Ar"
+        }
+      },
+      "required": [
+        "pair_id",
+        "options",
+        "evidence_needed"
+      ],
+      "title": "Lookalike",
+      "type": "object"
+    },
+    "Priority": {
+      "properties": {
+        "score": {
+          "maximum": 100,
+          "minimum": 0,
+          "title": "Score",
+          "type": "number"
+        },
+        "criteria": {
+          "$ref": "#/$defs/PriorityCriteria"
+        },
+        "escalation": {
+          "enum": [
+            "urgent",
+            "high",
+            "medium",
+            "low"
+          ],
+          "title": "Escalation",
+          "type": "string"
+        },
+        "reason_ar": {
+          "title": "Reason Ar",
+          "type": "string"
+        },
+        "reason_en": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Reason En"
+        },
+        "method": {
+          "default": "DGDA criteria, weights ASSUMED (hadaq_agents.priority)",
+          "title": "Method",
+          "type": "string"
+        }
+      },
+      "required": [
+        "score",
+        "criteria",
+        "escalation",
+        "reason_ar"
+      ],
+      "title": "Priority",
+      "type": "object"
+    },
+    "PriorityCriteria": {
+      "description": "DGDA's criteria in their order, each 0..1.",
+      "properties": {
+        "safety": {
+          "default": 0,
+          "maximum": 1,
+          "minimum": 0,
+          "title": "Safety",
+          "type": "number"
+        },
+        "active": {
+          "default": 0,
+          "maximum": 1,
+          "minimum": 0,
+          "title": "Active",
+          "type": "number"
+        },
+        "water_before_rain": {
+          "default": 0,
+          "maximum": 1,
+          "minimum": 0,
+          "title": "Water Before Rain",
+          "type": "number"
+        },
+        "severity_x_area": {
+          "default": 0,
+          "maximum": 1,
+          "minimum": 0,
+          "title": "Severity X Area",
+          "type": "number"
+        },
+        "value": {
+          "default": 0,
+          "maximum": 1,
+          "minimum": 0,
+          "title": "Value",
+          "type": "number"
+        },
+        "location": {
+          "default": 0,
+          "maximum": 1,
+          "minimum": 0,
+          "title": "Location",
+          "type": "number"
+        }
+      },
+      "title": "PriorityCriteria",
+      "type": "object"
+    },
+    "Provenance": {
+      "enum": [
+        "measured",
+        "derived",
+        "model_output",
+        "assumed",
+        "synthetic"
+      ],
+      "title": "Provenance",
+      "type": "string"
+    },
+    "Review": {
+      "properties": {
+        "status": {
+          "default": "pending",
+          "enum": [
+            "pending",
+            "accepted",
+            "corrected",
+            "rejected"
+          ],
+          "title": "Status",
+          "type": "string"
+        },
+        "by": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "By"
+        },
+        "at": {
+          "anyOf": [
+            {
+              "format": "date-time",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "At"
+        },
+        "corrected_type": {
+          "anyOf": [
+            {
+              "enum": [
+                "plaster_loss",
+                "crack",
+                "base_erosion",
+                "rain_grooves",
+                "salt_efflorescence",
+                "voids_burrows",
+                "structural_deformation",
+                "incompatible_repair",
+                "parapet_loss",
+                "timber_decay",
+                "biological_growth"
+              ],
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Corrected Type"
+        },
+        "corrected_severity": {
+          "anyOf": [
+            {
+              "enum": [
+                1,
+                2,
+                3
+              ],
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Corrected Severity"
+        },
+        "note": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Note"
+        }
+      },
+      "title": "Review",
+      "type": "object"
+    },
+    "WallInfo": {
+      "properties": {
+        "id": {
+          "title": "Id",
+          "type": "string"
+        },
+        "building_id": {
+          "title": "Building Id",
+          "type": "string"
+        },
+        "name": {
+          "title": "Name",
+          "type": "string"
+        },
+        "azimuth_deg": {
+          "title": "Azimuth Deg",
+          "type": "number"
+        },
+        "width_m": {
+          "title": "Width M",
+          "type": "number"
+        },
+        "height_m": {
+          "title": "Height M",
+          "type": "number"
+        },
+        "rows": {
+          "default": 4,
+          "title": "Rows",
+          "type": "integer"
+        },
+        "cols": {
+          "default": 8,
+          "title": "Cols",
+          "type": "integer"
+        },
+        "base_line": {
+          "$ref": "#/$defs/BaseLine"
+        },
+        "main_facade": {
+          "default": false,
+          "title": "Main Facade",
+          "type": "boolean"
+        },
+        "visitor_route": {
+          "default": false,
+          "title": "Visitor Route",
+          "type": "boolean"
+        },
+        "original_fabric": {
+          "default": "unknown",
+          "enum": [
+            "original",
+            "restored",
+            "mixed",
+            "unknown"
+          ],
+          "title": "Original Fabric",
+          "type": "string"
+        },
+        "provenance": {
+          "$ref": "#/$defs/Provenance",
+          "default": "assumed"
+        }
+      },
+      "required": [
+        "id",
+        "building_id",
+        "name",
+        "azimuth_deg",
+        "width_m",
+        "height_m",
+        "base_line"
+      ],
+      "title": "WallInfo",
+      "type": "object"
+    }
+  },
+  "description": "Core API -> AI worker: POST {AI_URL}/ai/process. The worker answers 202 and calls back.",
+  "properties": {
+    "capture_id": {
+      "title": "Capture Id",
+      "type": "string"
+    },
+    "file_url": {
+      "title": "File Url",
+      "type": "string"
+    },
+    "callback_url": {
+      "title": "Callback Url",
+      "type": "string"
+    },
+    "wall": {
+      "$ref": "#/$defs/WallInfo"
+    },
+    "corners_px": {
+      "anyOf": [
+        {
+          "items": {
+            "items": {
+              "type": "number"
+            },
+            "type": "array"
+          },
+          "type": "array"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Corners Px"
+    },
+    "previous_findings": {
+      "items": {
+        "$ref": "#/$defs/Finding"
+      },
+      "title": "Previous Findings",
+      "type": "array"
+    }
+  },
+  "required": [
+    "capture_id",
+    "file_url",
+    "callback_url",
+    "wall"
+  ],
+  "title": "ProcessRequest",
+  "type": "object"
+}

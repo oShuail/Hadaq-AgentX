@@ -1,0 +1,4 @@
+[
+  {"building_id": "B01", "name_ar": "قصر سلوى", "name_en": "Qasr Salwa", "worst_escalation": "urgent", "open_findings": {"urgent": 1, "medium": 3}, "top_reason_ar": "تآكل قاعدة شديد على مسار الزوار", "last_survey_at": "2026-11-29T09:41:12+03:00"},
+  {"building_id": "B02", "name_ar": "بيت الطريف", "name_en": "AL Turaif House", "worst_escalation": null, "open_findings": {}, "top_reason_ar": null, "last_survey_at": null}
+]

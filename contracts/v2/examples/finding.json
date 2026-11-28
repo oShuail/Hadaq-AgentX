@@ -1,0 +1,38 @@
+{
+  "finding_id": "fnd_1a2b3c4d5e6f",
+  "capture_id": "cap_9e8d7c6b5a41",
+  "inspection_id": "ins_0c1d2e3f4a5b",
+  "building_id": "B01",
+  "wall_id": "W01",
+  "zone_id": "B01-W01-R1C4",
+  "damage_type": "base_erosion",
+  "severity": 3,
+  "confidence": 0.86,
+  "suspected": false,
+  "box_px": [6120, 3040, 7480, 3600],
+  "box_wall_m": [12.24, 0.0, 14.96, 1.12],
+  "polygon_wall_m": null,
+  "length_cm": null,
+  "width_mm": null,
+  "area_m2": 1.9,
+  "change": "new",
+  "previous_finding_id": null,
+  "lookalike": {
+    "pair_id": "dark_stain_base",
+    "options": ["active rising damp", "old dry stain"],
+    "evidence_needed": ["moisture at 3 heights", "date of last rain"],
+    "note_ar": "البقعة الداكنة عند القاعدة قد تكون رطوبة صاعدة نشطة أو أثراً قديماً جافاً"
+  },
+  "priority": {
+    "score": 91.0,
+    "criteria": {"safety": 1.0, "active": 1.0, "water_before_rain": 1.0, "severity_x_area": 0.7, "value": 0.5, "location": 1.0},
+    "escalation": "urgent",
+    "reason_ar": "تآكل قاعدة شديد على مسار الزوار",
+    "reason_en": "Severe base erosion on a visitor route",
+    "method": "DGDA criteria, weights ASSUMED (hadaq_agents.priority)"
+  },
+  "review": {"status": "pending", "by": null, "at": null, "corrected_type": null, "corrected_severity": null, "note": null},
+  "model": "rfdetr-seg-small@turaif_v1",
+  "provenance": "model_output",
+  "evidence_ids": ["cap_9e8d7c6b5a41"]
+}

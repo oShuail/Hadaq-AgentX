@@ -1,0 +1,206 @@
+{
+  "inspection_id": "ins_0c1d2e3f4a5b",
+  "survey_id": "srv_5b1d0a9e2c44",
+  "building_id": "B01",
+  "wall_id": "W01",
+  "started_at": "2026-11-29T09:41:14+03:00",
+  "captures": [
+    {
+      "client_uuid": "6f1c2b9a-4e7d-4c21-9a0b-1f2e3d4c5b6a",
+      "survey_id": "srv_5b1d0a9e2c44",
+      "building_id": "B01",
+      "wall_id": "W01",
+      "segment": "full",
+      "captured_at": "2026-11-29T09:41:12+03:00",
+      "surveyor": "surveyor",
+      "device": "iPhone 15 Pro, iOS 18.2",
+      "source": "camera",
+      "gps": {
+        "lat": 24.73352,
+        "lon": 46.57229,
+        "accuracy_m": 8.0
+      },
+      "heading_deg": 92.0,
+      "tilt_deg": 2.4,
+      "quality": {
+        "tilt_ok": true,
+        "exposure": "ok",
+        "blur_score": 412.5,
+        "steady": true,
+        "scale_ref": false,
+        "warnings": [
+          "no scale reference"
+        ]
+      },
+      "corners_px": [
+        [
+          212,
+          380
+        ],
+        [
+          3820,
+          402
+        ],
+        [
+          3796,
+          2610
+        ],
+        [
+          236,
+          2590
+        ]
+      ],
+      "image_width_px": 4032,
+      "image_height_px": 3024,
+      "faces_hidden": 1,
+      "provenance": "measured",
+      "capture_id": "cap_9e8d7c6b5a41",
+      "status": "analyzed",
+      "inspection_id": "ins_0c1d2e3f4a5b",
+      "file_url": "http://localhost:8080/api/v2/captures/cap_9e8d7c6b5a41/file",
+      "rectified_url": "http://localhost:8080/api/v2/captures/cap_9e8d7c6b5a41/rectified",
+      "px_per_m": 500.0,
+      "scale": "absolute",
+      "faces_hidden_server": 0,
+      "findings_count": 1,
+      "urgent": true,
+      "error": null,
+      "created_at": "2026-11-29T09:41:14+03:00"
+    }
+  ],
+  "findings": [
+    {
+      "finding_id": "fnd_1a2b3c4d5e6f",
+      "capture_id": "cap_9e8d7c6b5a41",
+      "inspection_id": "ins_0c1d2e3f4a5b",
+      "building_id": "B01",
+      "wall_id": "W01",
+      "zone_id": "B01-W01-R1C4",
+      "damage_type": "base_erosion",
+      "severity": 3,
+      "confidence": 0.86,
+      "suspected": false,
+      "box_px": [
+        6120,
+        3040,
+        7480,
+        3600
+      ],
+      "box_wall_m": [
+        12.24,
+        0.0,
+        14.96,
+        1.12
+      ],
+      "polygon_wall_m": null,
+      "length_cm": null,
+      "width_mm": null,
+      "area_m2": 1.9,
+      "change": "new",
+      "previous_finding_id": null,
+      "lookalike": {
+        "pair_id": "dark_stain_base",
+        "options": [
+          "active rising damp",
+          "old dry stain"
+        ],
+        "evidence_needed": [
+          "moisture at 3 heights",
+          "date of last rain"
+        ],
+        "note_ar": "البقعة الداكنة عند القاعدة قد تكون رطوبة صاعدة نشطة أو أثراً قديماً جافاً"
+      },
+      "priority": {
+        "score": 91.0,
+        "criteria": {
+          "safety": 1.0,
+          "active": 1.0,
+          "water_before_rain": 1.0,
+          "severity_x_area": 0.7,
+          "value": 0.5,
+          "location": 1.0
+        },
+        "escalation": "urgent",
+        "reason_ar": "تآكل قاعدة شديد على مسار الزوار",
+        "reason_en": "Severe base erosion on a visitor route",
+        "method": "DGDA criteria, weights ASSUMED (hadaq_agents.priority)"
+      },
+      "review": {
+        "status": "pending",
+        "by": null,
+        "at": null,
+        "corrected_type": null,
+        "corrected_severity": null,
+        "note": null
+      },
+      "model": "rfdetr-seg-small@turaif_v1",
+      "provenance": "model_output",
+      "evidence_ids": [
+        "cap_9e8d7c6b5a41"
+      ]
+    }
+  ],
+  "work_orders": [
+    {
+      "work_order_id": "wo_7f6e5d4c3b2a",
+      "inspection_id": "ins_0c1d2e3f4a5b",
+      "finding_ids": [
+        "fnd_1a2b3c4d5e6f"
+      ],
+      "location": {
+        "building_id": "B01",
+        "wall_id": "W01",
+        "zone_ids": [
+          "B01-W01-R1C4"
+        ],
+        "box_wall_m": [
+          12.24,
+          0.0,
+          14.96,
+          1.12
+        ]
+      },
+      "treatment_id": "base_erosion",
+      "steps_ar": [
+        "معالجة مصدر الرطوبة والتصريف أولاً",
+        "إصلاح قاعدة الجدار باللبن والمونة الطينية"
+      ],
+      "steps_en": [
+        "Fix the moisture source and drainage first",
+        "Repair the wall base with mud bricks and mud mortar"
+      ],
+      "materials_ar": [
+        "لبن مطابق للأصل",
+        "مونة طينية",
+        "حجر للأساس"
+      ],
+      "materials_en": [
+        "Mud bricks matching the original",
+        "Mud mortar",
+        "Foundation stone"
+      ],
+      "tools_ar": [
+        "مسطرين",
+        "ميزان ماء",
+        "مجرفة"
+      ],
+      "tools_en": [
+        "Trowel",
+        "Spirit level",
+        "Shovel"
+      ],
+      "fix_water_source_first": true,
+      "citation": {
+        "source": "Crosby, Architectural Conservation, restoration specifications (nomination dossier 2009): wall base repair",
+        "section": null,
+        "status": "approved_library"
+      },
+      "escalation": "urgent",
+      "status": "draft_needs_field_check",
+      "created_at": "2026-11-29T09:41:30+03:00"
+    }
+  ],
+  "status": "open",
+  "approved_by": null,
+  "approved_at": null
+}

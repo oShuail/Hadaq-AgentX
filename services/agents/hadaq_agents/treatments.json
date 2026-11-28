@@ -36,9 +36,9 @@
     {"detector_class": "crack", "position": "any", "damage_type": "crack"},
     {"detector_class": "plaster_loss", "position": "any", "damage_type": "plaster_loss"},
     {"detector_class": "erosion", "position": "base", "damage_type": "base_erosion"},
-    {"detector_class": "erosion", "position": "above_base", "damage_type": "rain_gullies"},
+    {"detector_class": "erosion", "position": "above_base", "damage_type": "rain_grooves"},
     {"detector_class": "missing_material", "position": "top", "damage_type": "parapet_loss"},
-    {"detector_class": "missing_material", "position": "below_top", "damage_type": "holes_burrows"},
+    {"detector_class": "missing_material", "position": "below_top", "damage_type": "voids_burrows"},
     {"detector_class": "moisture_stain", "position": "lower_half", "damage_type": "salt_efflorescence", "needs_review": true, "alternatives": ["biological_growth"]},
     {"detector_class": "moisture_stain", "position": "upper_half", "damage_type": "biological_growth", "needs_review": true, "alternatives": ["salt_efflorescence"]}
   ],
@@ -71,7 +71,7 @@
     {
       "id": "plaster_loss",
       "source": "heritage_authority",
-      "name_ar": "فقدان اللياسة",
+      "name_ar": "فقد اللياسة",
       "name_en": "Loss of mud plaster",
       "where_ar": "على الواجهة",
       "where_en": "On the facade",
@@ -107,7 +107,7 @@
       "detected_by_camera": true
     },
     {
-      "id": "rain_gullies",
+      "id": "rain_grooves",
       "source": "heritage_authority",
       "name_ar": "أخاديد الأمطار",
       "name_en": "Rain gullies",
@@ -127,7 +127,7 @@
     {
       "id": "salt_efflorescence",
       "source": "heritage_authority",
-      "name_ar": "تزهّر الأملاح",
+      "name_ar": "تزهر الأملاح",
       "name_en": "Salt efflorescence",
       "where_ar": "قرب القاعدة، وين ما يجف الماء",
       "where_en": "Near the base, where water dries out",
@@ -143,7 +143,7 @@
       "detected_by_camera": true
     },
     {
-      "id": "holes_burrows",
+      "id": "voids_burrows",
       "source": "heritage_authority",
       "name_ar": "الفجوات والجحور",
       "name_en": "Holes and burrows",

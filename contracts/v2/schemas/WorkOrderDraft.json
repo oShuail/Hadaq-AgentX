@@ -1,0 +1,199 @@
+{
+  "$defs": {
+    "Citation": {
+      "properties": {
+        "source": {
+          "title": "Source",
+          "type": "string"
+        },
+        "section": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Section"
+        },
+        "status": {
+          "enum": [
+            "approved_library",
+            "team_proposal"
+          ],
+          "title": "Status",
+          "type": "string"
+        }
+      },
+      "required": [
+        "source",
+        "status"
+      ],
+      "title": "Citation",
+      "type": "object"
+    },
+    "WorkOrderLocation": {
+      "properties": {
+        "building_id": {
+          "title": "Building Id",
+          "type": "string"
+        },
+        "wall_id": {
+          "title": "Wall Id",
+          "type": "string"
+        },
+        "zone_ids": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Zone Ids",
+          "type": "array"
+        },
+        "box_wall_m": {
+          "anyOf": [
+            {
+              "items": {
+                "type": "number"
+              },
+              "maxItems": 4,
+              "minItems": 4,
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Box Wall M"
+        }
+      },
+      "required": [
+        "building_id",
+        "wall_id",
+        "zone_ids"
+      ],
+      "title": "WorkOrderLocation",
+      "type": "object"
+    }
+  },
+  "properties": {
+    "work_order_id": {
+      "title": "Work Order Id",
+      "type": "string"
+    },
+    "inspection_id": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Inspection Id"
+    },
+    "finding_ids": {
+      "items": {
+        "type": "string"
+      },
+      "minItems": 1,
+      "title": "Finding Ids",
+      "type": "array"
+    },
+    "location": {
+      "$ref": "#/$defs/WorkOrderLocation"
+    },
+    "treatment_id": {
+      "title": "Treatment Id",
+      "type": "string"
+    },
+    "steps_ar": {
+      "items": {
+        "type": "string"
+      },
+      "title": "Steps Ar",
+      "type": "array"
+    },
+    "steps_en": {
+      "items": {
+        "type": "string"
+      },
+      "title": "Steps En",
+      "type": "array"
+    },
+    "materials_ar": {
+      "items": {
+        "type": "string"
+      },
+      "title": "Materials Ar",
+      "type": "array"
+    },
+    "materials_en": {
+      "items": {
+        "type": "string"
+      },
+      "title": "Materials En",
+      "type": "array"
+    },
+    "tools_ar": {
+      "items": {
+        "type": "string"
+      },
+      "title": "Tools Ar",
+      "type": "array"
+    },
+    "tools_en": {
+      "items": {
+        "type": "string"
+      },
+      "title": "Tools En",
+      "type": "array"
+    },
+    "fix_water_source_first": {
+      "default": false,
+      "title": "Fix Water Source First",
+      "type": "boolean"
+    },
+    "citation": {
+      "$ref": "#/$defs/Citation"
+    },
+    "escalation": {
+      "enum": [
+        "urgent",
+        "high",
+        "medium",
+        "low"
+      ],
+      "title": "Escalation",
+      "type": "string"
+    },
+    "status": {
+      "default": "draft_needs_field_check",
+      "enum": [
+        "draft_needs_field_check",
+        "approved",
+        "rejected"
+      ],
+      "title": "Status",
+      "type": "string"
+    },
+    "created_at": {
+      "format": "date-time",
+      "title": "Created At",
+      "type": "string"
+    }
+  },
+  "required": [
+    "finding_ids",
+    "location",
+    "treatment_id",
+    "steps_ar",
+    "citation",
+    "escalation"
+  ],
+  "title": "WorkOrderDraft",
+  "type": "object"
+}

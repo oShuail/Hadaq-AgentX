@@ -1,0 +1,191 @@
+{
+  "$defs": {
+    "BaseLine": {
+      "description": "start = LEFT end when you face the facade (the C1 side).",
+      "properties": {
+        "start": {
+          "$ref": "#/$defs/LonLat"
+        },
+        "end": {
+          "$ref": "#/$defs/LonLat"
+        }
+      },
+      "required": [
+        "start",
+        "end"
+      ],
+      "title": "BaseLine",
+      "type": "object"
+    },
+    "BuildingInfo": {
+      "properties": {
+        "id": {
+          "title": "Id",
+          "type": "string"
+        },
+        "name_ar": {
+          "title": "Name Ar",
+          "type": "string"
+        },
+        "name_en": {
+          "title": "Name En",
+          "type": "string"
+        },
+        "lon": {
+          "title": "Lon",
+          "type": "number"
+        },
+        "lat": {
+          "title": "Lat",
+          "type": "number"
+        },
+        "has_model": {
+          "default": false,
+          "title": "Has Model",
+          "type": "boolean"
+        },
+        "walls": {
+          "items": {
+            "$ref": "#/$defs/WallInfo"
+          },
+          "title": "Walls",
+          "type": "array"
+        }
+      },
+      "required": [
+        "id",
+        "name_ar",
+        "name_en",
+        "lon",
+        "lat"
+      ],
+      "title": "BuildingInfo",
+      "type": "object"
+    },
+    "LonLat": {
+      "properties": {
+        "lon": {
+          "title": "Lon",
+          "type": "number"
+        },
+        "lat": {
+          "title": "Lat",
+          "type": "number"
+        }
+      },
+      "required": [
+        "lon",
+        "lat"
+      ],
+      "title": "LonLat",
+      "type": "object"
+    },
+    "Provenance": {
+      "enum": [
+        "measured",
+        "derived",
+        "model_output",
+        "assumed",
+        "synthetic"
+      ],
+      "title": "Provenance",
+      "type": "string"
+    },
+    "WallInfo": {
+      "properties": {
+        "id": {
+          "title": "Id",
+          "type": "string"
+        },
+        "building_id": {
+          "title": "Building Id",
+          "type": "string"
+        },
+        "name": {
+          "title": "Name",
+          "type": "string"
+        },
+        "azimuth_deg": {
+          "title": "Azimuth Deg",
+          "type": "number"
+        },
+        "width_m": {
+          "title": "Width M",
+          "type": "number"
+        },
+        "height_m": {
+          "title": "Height M",
+          "type": "number"
+        },
+        "rows": {
+          "default": 4,
+          "title": "Rows",
+          "type": "integer"
+        },
+        "cols": {
+          "default": 8,
+          "title": "Cols",
+          "type": "integer"
+        },
+        "base_line": {
+          "$ref": "#/$defs/BaseLine"
+        },
+        "main_facade": {
+          "default": false,
+          "title": "Main Facade",
+          "type": "boolean"
+        },
+        "visitor_route": {
+          "default": false,
+          "title": "Visitor Route",
+          "type": "boolean"
+        },
+        "original_fabric": {
+          "default": "unknown",
+          "enum": [
+            "original",
+            "restored",
+            "mixed",
+            "unknown"
+          ],
+          "title": "Original Fabric",
+          "type": "string"
+        },
+        "provenance": {
+          "$ref": "#/$defs/Provenance",
+          "default": "assumed"
+        }
+      },
+      "required": [
+        "id",
+        "building_id",
+        "name",
+        "azimuth_deg",
+        "width_m",
+        "height_m",
+        "base_line"
+      ],
+      "title": "WallInfo",
+      "type": "object"
+    }
+  },
+  "properties": {
+    "site_id": {
+      "default": "diriyah",
+      "title": "Site Id",
+      "type": "string"
+    },
+    "buildings": {
+      "items": {
+        "$ref": "#/$defs/BuildingInfo"
+      },
+      "title": "Buildings",
+      "type": "array"
+    }
+  },
+  "required": [
+    "buildings"
+  ],
+  "title": "Registry",
+  "type": "object"
+}

@@ -1,0 +1,73 @@
+{
+  "description": "PATCH /api/v2/findings/{id}/review (conservator only).",
+  "properties": {
+    "status": {
+      "enum": [
+        "accepted",
+        "corrected",
+        "rejected"
+      ],
+      "title": "Status",
+      "type": "string"
+    },
+    "corrected_type": {
+      "anyOf": [
+        {
+          "enum": [
+            "plaster_loss",
+            "crack",
+            "base_erosion",
+            "rain_grooves",
+            "salt_efflorescence",
+            "voids_burrows",
+            "structural_deformation",
+            "incompatible_repair",
+            "parapet_loss",
+            "timber_decay",
+            "biological_growth"
+          ],
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Corrected Type"
+    },
+    "corrected_severity": {
+      "anyOf": [
+        {
+          "enum": [
+            1,
+            2,
+            3
+          ],
+          "type": "integer"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Corrected Severity"
+    },
+    "note": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Note"
+    }
+  },
+  "required": [
+    "status"
+  ],
+  "title": "ReviewRequest",
+  "type": "object"
+}

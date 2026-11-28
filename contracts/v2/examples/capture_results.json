@@ -1,0 +1,144 @@
+{
+  "capture_id": "cap_9e8d7c6b5a41",
+  "ok": true,
+  "error": null,
+  "scale": "absolute",
+  "px_per_m": 500.0,
+  "faces_hidden_server": 0,
+  "findings": [
+    {
+      "finding_id": "fnd_1a2b3c4d5e6f",
+      "capture_id": "cap_9e8d7c6b5a41",
+      "inspection_id": "ins_0c1d2e3f4a5b",
+      "building_id": "B01",
+      "wall_id": "W01",
+      "zone_id": "B01-W01-R1C4",
+      "damage_type": "base_erosion",
+      "severity": 3,
+      "confidence": 0.86,
+      "suspected": false,
+      "box_px": [
+        6120,
+        3040,
+        7480,
+        3600
+      ],
+      "box_wall_m": [
+        12.24,
+        0.0,
+        14.96,
+        1.12
+      ],
+      "polygon_wall_m": null,
+      "length_cm": null,
+      "width_mm": null,
+      "area_m2": 1.9,
+      "change": "new",
+      "previous_finding_id": null,
+      "lookalike": {
+        "pair_id": "dark_stain_base",
+        "options": [
+          "active rising damp",
+          "old dry stain"
+        ],
+        "evidence_needed": [
+          "moisture at 3 heights",
+          "date of last rain"
+        ],
+        "note_ar": "البقعة الداكنة عند القاعدة قد تكون رطوبة صاعدة نشطة أو أثراً قديماً جافاً"
+      },
+      "priority": {
+        "score": 91.0,
+        "criteria": {
+          "safety": 1.0,
+          "active": 1.0,
+          "water_before_rain": 1.0,
+          "severity_x_area": 0.7,
+          "value": 0.5,
+          "location": 1.0
+        },
+        "escalation": "urgent",
+        "reason_ar": "تآكل قاعدة شديد على مسار الزوار",
+        "reason_en": "Severe base erosion on a visitor route",
+        "method": "DGDA criteria, weights ASSUMED (hadaq_agents.priority)"
+      },
+      "review": {
+        "status": "pending",
+        "by": null,
+        "at": null,
+        "corrected_type": null,
+        "corrected_severity": null,
+        "note": null
+      },
+      "model": "rfdetr-seg-small@turaif_v1",
+      "provenance": "model_output",
+      "evidence_ids": [
+        "cap_9e8d7c6b5a41"
+      ]
+    }
+  ],
+  "work_orders": [
+    {
+      "work_order_id": "wo_7f6e5d4c3b2a",
+      "inspection_id": "ins_0c1d2e3f4a5b",
+      "finding_ids": [
+        "fnd_1a2b3c4d5e6f"
+      ],
+      "location": {
+        "building_id": "B01",
+        "wall_id": "W01",
+        "zone_ids": [
+          "B01-W01-R1C4"
+        ],
+        "box_wall_m": [
+          12.24,
+          0.0,
+          14.96,
+          1.12
+        ]
+      },
+      "treatment_id": "base_erosion",
+      "steps_ar": [
+        "معالجة مصدر الرطوبة والتصريف أولاً",
+        "إصلاح قاعدة الجدار باللبن والمونة الطينية"
+      ],
+      "steps_en": [
+        "Fix the moisture source and drainage first",
+        "Repair the wall base with mud bricks and mud mortar"
+      ],
+      "materials_ar": [
+        "لبن مطابق للأصل",
+        "مونة طينية",
+        "حجر للأساس"
+      ],
+      "materials_en": [
+        "Mud bricks matching the original",
+        "Mud mortar",
+        "Foundation stone"
+      ],
+      "tools_ar": [
+        "مسطرين",
+        "ميزان ماء",
+        "مجرفة"
+      ],
+      "tools_en": [
+        "Trowel",
+        "Spirit level",
+        "Shovel"
+      ],
+      "fix_water_source_first": true,
+      "citation": {
+        "source": "Crosby, Architectural Conservation, restoration specifications (nomination dossier 2009): wall base repair",
+        "section": null,
+        "status": "approved_library"
+      },
+      "escalation": "urgent",
+      "status": "draft_needs_field_check",
+      "created_at": "2026-11-29T09:41:30+03:00"
+    }
+  ],
+  "summary_ar": "تلف واحد عاجل: تآكل قاعدة شديد في R1C4 على مسار الزوار. يلزم قياس الرطوبة على ثلاثة ارتفاعات قبل اعتماد المعالجة.",
+  "summary_en": "One urgent finding: severe base erosion at R1C4 on a visitor route. Moisture at three heights is needed before the treatment is confirmed.",
+  "detector": "rfdetr-seg-small@turaif_v1",
+  "chain": "hadaq_agents.chain@v1"
+}

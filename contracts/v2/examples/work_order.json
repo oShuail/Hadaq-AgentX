@@ -1,0 +1,18 @@
+{
+  "work_order_id": "wo_7f6e5d4c3b2a",
+  "inspection_id": "ins_0c1d2e3f4a5b",
+  "finding_ids": ["fnd_1a2b3c4d5e6f"],
+  "location": {"building_id": "B01", "wall_id": "W01", "zone_ids": ["B01-W01-R1C4"], "box_wall_m": [12.24, 0.0, 14.96, 1.12]},
+  "treatment_id": "base_erosion",
+  "steps_ar": ["معالجة مصدر الرطوبة والتصريف أولاً", "إصلاح قاعدة الجدار باللبن والمونة الطينية"],
+  "steps_en": ["Fix the moisture source and drainage first", "Repair the wall base with mud bricks and mud mortar"],
+  "materials_ar": ["لبن مطابق للأصل", "مونة طينية", "حجر للأساس"],
+  "materials_en": ["Mud bricks matching the original", "Mud mortar", "Foundation stone"],
+  "tools_ar": ["مسطرين", "ميزان ماء", "مجرفة"],
+  "tools_en": ["Trowel", "Spirit level", "Shovel"],
+  "fix_water_source_first": true,
+  "citation": {"source": "Crosby, Architectural Conservation, restoration specifications (nomination dossier 2009): wall base repair", "section": null, "status": "approved_library"},
+  "escalation": "urgent",
+  "status": "draft_needs_field_check",
+  "created_at": "2026-11-29T09:41:30+03:00"
+}

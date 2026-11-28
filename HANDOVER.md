@@ -117,6 +117,14 @@ After pulling the 3D map change, run `cd apps/web && npm install` once (Cesium w
 
 ## Session log
 
+### 2026-11-28 (Omar, Round 2 day 1)
+
+- Froze contracts v2 for field inspections (surveys, captures, findings, reviews, work orders): `packages/hadaq_schemas/hadaq_schemas/inspection.py`, TypeScript mirror in `apps/web/src/types/contracts.ts`, spec in `contracts/README.md` section "v2", examples in `contracts/v2/examples/`, JSON Schemas for Java and Swift in `contracts/v2/schemas/`.
+- The core API (Spring Boot, `services/core`, :8080) is the front door for the surveyor app and the web; Python services post results back to it.
+- Damage type ids now follow the DGDA glossary: `rain_gullies` is `rain_grooves`, `holes_burrows` is `voids_burrows` (treatments, agents, web); Arabic names of plaster loss and salts match the glossary.
+- `contracts/building_b01.json` W01 gained `width_m` (32.8, derived from base_line), `main_facade`, `visitor_route`, `original_fabric`.
+- Checked: 85 Python tests pass, `npm run build` passes.
+
 ### 2026-11-27 (Turki)
 
 - Fixed the spelling of my name: Turky is now Turki everywhere (docs, code comments, Makefile, `docs/team/turky.md` renamed to `docs/team/turki.md`). No code or contract change.

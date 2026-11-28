@@ -137,3 +137,84 @@ Base URL `http://localhost:8100`.
 | POST | `/agents/chat` | `ChatRequest` | `ChatResponse` |
 | POST | `/agents/trigger` | `Event` | `{"accepted": true}`; the agent investigates in the background |
 | GET | `/health` | | `{"status": "ok", "llm": "<model or mock>"}` |
+
+---
+
+## v2: inspections (frozen 2026-11-28)
+
+Phase 2 adds field inspections: the surveyor app uploads a capture, the AI worker finds damage, the conservator reviews it. **The core API (Spring Boot, `services/core`, port 8080) is the only front door** for the app and the web. The Python services do the AI work and post results back to it. v1 above stays as it is for sensors and the old demo.
+
+- Python models: `packages/hadaq_schemas/hadaq_schemas/inspection.py`
+- TypeScript mirror: `apps/web/src/types/contracts.ts` (section "v2")
+- One valid example of every message: `contracts/v2/examples/` (tests check that they parse)
+- JSON Schemas for Java and Swift: `contracts/v2/schemas/` (regenerate: `python -m hadaq_schemas.export_schemas`)
+
+### IDs (all are evidence IDs too)
+
+| Prefix | Meaning |
+| --- | --- |
+| `srv_` | Survey |
+| `cap_` | Capture (one uploaded photo) |
+| `fnd_` | Finding (one damage on one capture) |
+| `wo_` | Work order draft |
+| `ins_` | Inspection (one wall in one survey) |
+
+### Enums
+
+| Name | Values |
+| --- | --- |
+| Damage type (DGDA glossary, verbatim) | `plaster_loss` فقد اللياسة · `crack` التشققات · `base_erosion` تآكل القاعدة · `rain_grooves` أخاديد الأمطار · `salt_efflorescence` تزهر الأملاح · `voids_burrows` الفجوات والجحور |
+| Suspected only (`suspected: true` required) | `structural_deformation`, `incompatible_repair` |
+| Bonus types | `parapet_loss`, `timber_decay`, `biological_growth` |
+| Severity | `1` خفيف · `2` متوسط · `3` شديد |
+| Escalation | `urgent` عاجل · `high` مرتفع · `medium` متوسط · `low` منخفض |
+| Capture status | `queued` (phone only) · `uploaded` · `processing` · `analyzed` · `failed` |
+| Review status | `pending` · `accepted` · `corrected` · `rejected` |
+| Work order status | `draft_needs_field_check` · `approved` · `rejected` |
+| Role (header `X-Hadaq-User`) | `surveyor` · `conservator` · `site_manager` |
+
+### Wall coordinates
+
+- **u** = metres from the LEFT end of the wall (the C1 side, standing in front of it); **v** = metres up from the base.
+- Boxes on the wall are `box_wall_m = [u0, v0, u1, v1]`. The zone is the cell that holds the box centre: `zone_from_wall_m(u, v, width_m, height_m, rows, cols)` (Python) or `zoneFromWallM` (TypeScript).
+- `corners_px` (from the app) = the wall's 4 corners in image pixels, in this order: top-left, top-right, bottom-right, bottom-left, as seen in the photo (left = the C1 end). `null` = use the whole photo; the result is then marked `scale: "relative"`.
+- Walls in the registry now carry `width_m`, `main_facade`, `visitor_route`, `original_fabric`.
+
+### Core API (Turki), base `http://<laptop-ip>:8080/api/v2`
+
+| Method | Path | Caller | Body | Returns |
+| --- | --- | --- | --- | --- |
+| GET | `/registry` | App, web | | `Registry` |
+| GET | `/surveys?assignee=surveyor` | App | | `[Survey]` |
+| POST | `/captures` | App | multipart: `file` (JPEG, faces already hidden if the phone could), `meta` (`CaptureMeta` JSON) | 202 `CaptureAccepted`. The same `client_uuid` again returns the first capture with `duplicate: true` |
+| GET | `/captures/{id}` | App, web | | `Capture` |
+| GET | `/captures/{id}/file`, `/captures/{id}/rectified` | Web, AI worker | | The images |
+| POST | `/captures/{id}/retry` | Web | | Sends a `failed` capture to the AI worker again |
+| POST | `/captures/{id}/results` | AI worker | multipart: `results` (`CaptureResults` JSON), `rectified` (JPEG, optional) | 200 |
+| GET | `/inspections/{id}` | Web | | `Inspection` |
+| GET | `/buildings/{id}/inspections` | Web | | `[Inspection]`, newest first |
+| PATCH | `/findings/{id}/review` | Web (conservator) | `ReviewRequest` | The updated `Finding` |
+| POST | `/inspections/{id}/approve` | Web (conservator) | | `Inspection`; 409 while any finding is `pending` |
+| GET | `/site/priority` | Web | | `[SitePriorityRow]`, urgent first, then by days since the last survey |
+| POST | `/simulations` | Web, agent | v1 `SimulationRequest` | Forwarded to the simulation service (:8200) |
+| GET | `/evidence/{id}` | Web, agent | | The record behind any v2 ID |
+| WS | `/ws/live` | Web, app | | `{channel, data}`. New channels: `capture`, `finding`, `review`, `work_order`, `inspection` (see `contracts.ts`) |
+
+Every request carries `X-Hadaq-User: surveyor | conservator | site_manager` (hackathon only, no real auth). JSON fields stay `snake_case`.
+
+### AI worker (Abdurhmn, Omar), `http://<laptop-ip>:8100`
+
+| Method | Path | Caller | Body | Returns |
+| --- | --- | --- | --- | --- |
+| POST | `/ai/process` | Core API | `ProcessRequest` | 202 at once; later calls `callback_url` with `CaptureResults` |
+| POST | `/agents/chat` | Web | v1 `ChatRequest` | v1 `ChatResponse` |
+
+### Simulation service (Basma), `http://<laptop-ip>:8200`
+
+| Method | Path | Caller | Body | Returns |
+| --- | --- | --- | --- | --- |
+| POST | `/sim/run` | Core API | wall, approved findings, scenario, weather mode | `SimulationResult` plus the first hour each zone crosses critical |
+
+### Changing v2
+
+One PR that updates this section, `inspection.py`, `contracts.ts`, the examples and the regenerated schemas together, announced in the group chat.

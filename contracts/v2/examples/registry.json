@@ -1,0 +1,30 @@
+{
+  "site_id": "diriyah",
+  "buildings": [
+    {
+      "id": "B01",
+      "name_ar": "قصر سلوى",
+      "name_en": "Qasr Salwa",
+      "lon": 46.572637,
+      "lat": 24.7335,
+      "has_model": true,
+      "walls": [
+        {
+          "id": "W01",
+          "building_id": "B01",
+          "name": "Main facade, street-level front wall",
+          "azimuth_deg": 270,
+          "width_m": 32.8,
+          "height_m": 7.2,
+          "rows": 4,
+          "cols": 8,
+          "base_line": {"start": {"lon": 46.57235, "lat": 24.7336474}, "end": {"lon": 46.57235, "lat": 24.7333526}},
+          "main_facade": true,
+          "visitor_route": true,
+          "original_fabric": "unknown",
+          "provenance": "assumed"
+        }
+      ]
+    }
+  ]
+}

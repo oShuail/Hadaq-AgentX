@@ -1,0 +1,31 @@
+{
+  "description": "202 response of POST /api/v2/captures (also returned for a repeated client_uuid).",
+  "properties": {
+    "capture_id": {
+      "title": "Capture Id",
+      "type": "string"
+    },
+    "status": {
+      "enum": [
+        "queued",
+        "uploaded",
+        "processing",
+        "analyzed",
+        "failed"
+      ],
+      "title": "Status",
+      "type": "string"
+    },
+    "duplicate": {
+      "default": false,
+      "title": "Duplicate",
+      "type": "boolean"
+    }
+  },
+  "required": [
+    "capture_id",
+    "status"
+  ],
+  "title": "CaptureAccepted",
+  "type": "object"
+}

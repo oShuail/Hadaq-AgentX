@@ -323,7 +323,7 @@ def get_damage_findings(building_id: str = "B01") -> str:
 def get_treatment(damage_type: str, severity: str = "") -> str:
     """Treatment, materials and tools for one damage type, from the team's treatment table, in Arabic and English, with its
     source (Heritage authority guidance, or a team proposal a conservator must confirm).
-    damage_type: crack | plaster_loss | base_erosion | rain_gullies | salt_efflorescence | holes_burrows | parapet_loss |
+    damage_type: crack | plaster_loss | base_erosion | rain_grooves | salt_efflorescence | voids_burrows | parapet_loss |
     incompatible_repair | timber_decay | biological_growth | structural_deformation.
     severity (cracks only): fine | wide | structural | unmeasured. Use only what this returns; never add materials, tools or steps."""
     try:

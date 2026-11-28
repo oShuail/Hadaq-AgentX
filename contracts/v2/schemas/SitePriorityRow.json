@@ -1,0 +1,74 @@
+{
+  "description": "GET /api/v2/site/priority: one row per building, worst first.",
+  "properties": {
+    "building_id": {
+      "title": "Building Id",
+      "type": "string"
+    },
+    "name_ar": {
+      "title": "Name Ar",
+      "type": "string"
+    },
+    "name_en": {
+      "title": "Name En",
+      "type": "string"
+    },
+    "worst_escalation": {
+      "anyOf": [
+        {
+          "enum": [
+            "urgent",
+            "high",
+            "medium",
+            "low"
+          ],
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Worst Escalation"
+    },
+    "open_findings": {
+      "additionalProperties": {
+        "type": "integer"
+      },
+      "title": "Open Findings",
+      "type": "object"
+    },
+    "top_reason_ar": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Top Reason Ar"
+    },
+    "last_survey_at": {
+      "anyOf": [
+        {
+          "format": "date-time",
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Last Survey At"
+    }
+  },
+  "required": [
+    "building_id",
+    "name_ar",
+    "name_en"
+  ],
+  "title": "SitePriorityRow",
+  "type": "object"
+}

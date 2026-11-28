@@ -1,0 +1,48 @@
+{
+  "capture_id": "cap_9e8d7c6b5a41",
+  "file_url": "http://core:8080/api/v2/captures/cap_9e8d7c6b5a41/file",
+  "callback_url": "http://core:8080/api/v2/captures/cap_9e8d7c6b5a41/results",
+  "wall": {
+    "id": "W01",
+    "building_id": "B01",
+    "name": "Main facade, street-level front wall",
+    "azimuth_deg": 270,
+    "width_m": 32.8,
+    "height_m": 7.2,
+    "rows": 4,
+    "cols": 8,
+    "base_line": {
+      "start": {
+        "lon": 46.57235,
+        "lat": 24.7336474
+      },
+      "end": {
+        "lon": 46.57235,
+        "lat": 24.7333526
+      }
+    },
+    "main_facade": true,
+    "visitor_route": true,
+    "original_fabric": "unknown",
+    "provenance": "assumed"
+  },
+  "corners_px": [
+    [
+      212,
+      380
+    ],
+    [
+      3820,
+      402
+    ],
+    [
+      3796,
+      2610
+    ],
+    [
+      236,
+      2590
+    ]
+  ],
+  "previous_findings": []
+}

@@ -1,0 +1,20 @@
+{
+  "client_uuid": "6f1c2b9a-4e7d-4c21-9a0b-1f2e3d4c5b6a",
+  "survey_id": "srv_5b1d0a9e2c44",
+  "building_id": "B01",
+  "wall_id": "W01",
+  "segment": "full",
+  "captured_at": "2026-11-29T09:41:12+03:00",
+  "surveyor": "surveyor",
+  "device": "iPhone 15 Pro, iOS 18.2",
+  "source": "camera",
+  "gps": {"lat": 24.73352, "lon": 46.57229, "accuracy_m": 8.0},
+  "heading_deg": 92.0,
+  "tilt_deg": 2.4,
+  "quality": {"tilt_ok": true, "exposure": "ok", "blur_score": 412.5, "steady": true, "scale_ref": false, "warnings": ["no scale reference"]},
+  "corners_px": [[212, 380], [3820, 402], [3796, 2610], [236, 2590]],
+  "image_width_px": 4032,
+  "image_height_px": 3024,
+  "faces_hidden": 1,
+  "provenance": "measured"
+}

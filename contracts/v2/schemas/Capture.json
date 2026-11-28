@@ -1,0 +1,404 @@
+{
+  "$defs": {
+    "CaptureQuality": {
+      "description": "Checks made by the app at the shutter. Warnings never block a shot; they are recorded.",
+      "properties": {
+        "tilt_ok": {
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Tilt Ok"
+        },
+        "exposure": {
+          "anyOf": [
+            {
+              "enum": [
+                "ok",
+                "dark",
+                "bright"
+              ],
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Exposure"
+        },
+        "blur_score": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Blur Score"
+        },
+        "steady": {
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Steady"
+        },
+        "scale_ref": {
+          "default": false,
+          "title": "Scale Ref",
+          "type": "boolean"
+        },
+        "warnings": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Warnings",
+          "type": "array"
+        }
+      },
+      "title": "CaptureQuality",
+      "type": "object"
+    },
+    "GeoFix": {
+      "properties": {
+        "lat": {
+          "title": "Lat",
+          "type": "number"
+        },
+        "lon": {
+          "title": "Lon",
+          "type": "number"
+        },
+        "accuracy_m": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Accuracy M"
+        }
+      },
+      "required": [
+        "lat",
+        "lon"
+      ],
+      "title": "GeoFix",
+      "type": "object"
+    },
+    "Provenance": {
+      "enum": [
+        "measured",
+        "derived",
+        "model_output",
+        "assumed",
+        "synthetic"
+      ],
+      "title": "Provenance",
+      "type": "string"
+    }
+  },
+  "description": "What the core API stores and returns (GET /api/v2/captures/{id}).",
+  "properties": {
+    "client_uuid": {
+      "minLength": 8,
+      "title": "Client Uuid",
+      "type": "string"
+    },
+    "survey_id": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Survey Id"
+    },
+    "building_id": {
+      "title": "Building Id",
+      "type": "string"
+    },
+    "wall_id": {
+      "title": "Wall Id",
+      "type": "string"
+    },
+    "segment": {
+      "default": "full",
+      "title": "Segment",
+      "type": "string"
+    },
+    "captured_at": {
+      "format": "date-time",
+      "title": "Captured At",
+      "type": "string"
+    },
+    "surveyor": {
+      "title": "Surveyor",
+      "type": "string"
+    },
+    "device": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Device"
+    },
+    "source": {
+      "default": "camera",
+      "enum": [
+        "camera",
+        "import"
+      ],
+      "title": "Source",
+      "type": "string"
+    },
+    "gps": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/GeoFix"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null
+    },
+    "heading_deg": {
+      "anyOf": [
+        {
+          "type": "number"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Heading Deg"
+    },
+    "tilt_deg": {
+      "anyOf": [
+        {
+          "type": "number"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Tilt Deg"
+    },
+    "quality": {
+      "$ref": "#/$defs/CaptureQuality"
+    },
+    "corners_px": {
+      "anyOf": [
+        {
+          "items": {
+            "items": {
+              "type": "number"
+            },
+            "type": "array"
+          },
+          "type": "array"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Corners Px"
+    },
+    "image_width_px": {
+      "anyOf": [
+        {
+          "type": "integer"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Image Width Px"
+    },
+    "image_height_px": {
+      "anyOf": [
+        {
+          "type": "integer"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Image Height Px"
+    },
+    "faces_hidden": {
+      "anyOf": [
+        {
+          "type": "integer"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Faces Hidden"
+    },
+    "provenance": {
+      "$ref": "#/$defs/Provenance",
+      "default": "measured"
+    },
+    "capture_id": {
+      "title": "Capture Id",
+      "type": "string"
+    },
+    "status": {
+      "default": "uploaded",
+      "enum": [
+        "queued",
+        "uploaded",
+        "processing",
+        "analyzed",
+        "failed"
+      ],
+      "title": "Status",
+      "type": "string"
+    },
+    "inspection_id": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Inspection Id"
+    },
+    "file_url": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "File Url"
+    },
+    "rectified_url": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Rectified Url"
+    },
+    "px_per_m": {
+      "anyOf": [
+        {
+          "type": "number"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Px Per M"
+    },
+    "scale": {
+      "anyOf": [
+        {
+          "enum": [
+            "absolute",
+            "relative"
+          ],
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Scale"
+    },
+    "faces_hidden_server": {
+      "anyOf": [
+        {
+          "type": "integer"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Faces Hidden Server"
+    },
+    "findings_count": {
+      "default": 0,
+      "title": "Findings Count",
+      "type": "integer"
+    },
+    "urgent": {
+      "default": false,
+      "title": "Urgent",
+      "type": "boolean"
+    },
+    "error": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Error"
+    },
+    "created_at": {
+      "format": "date-time",
+      "title": "Created At",
+      "type": "string"
+    }
+  },
+  "required": [
+    "client_uuid",
+    "building_id",
+    "wall_id",
+    "captured_at",
+    "surveyor"
+  ],
+  "title": "Capture",
+  "type": "object"
+}

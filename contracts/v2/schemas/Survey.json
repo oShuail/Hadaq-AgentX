@@ -1,0 +1,87 @@
+{
+  "$defs": {
+    "SurveyTask": {
+      "properties": {
+        "building_id": {
+          "title": "Building Id",
+          "type": "string"
+        },
+        "wall_id": {
+          "title": "Wall Id",
+          "type": "string"
+        },
+        "required_shots": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Required Shots",
+          "type": "array"
+        },
+        "done_shots": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Done Shots",
+          "type": "array"
+        },
+        "status": {
+          "default": "not_started",
+          "enum": [
+            "not_started",
+            "partial",
+            "done",
+            "synced"
+          ],
+          "title": "Status",
+          "type": "string"
+        }
+      },
+      "required": [
+        "building_id",
+        "wall_id"
+      ],
+      "title": "SurveyTask",
+      "type": "object"
+    }
+  },
+  "properties": {
+    "survey_id": {
+      "title": "Survey Id",
+      "type": "string"
+    },
+    "title": {
+      "title": "Title",
+      "type": "string"
+    },
+    "assignee": {
+      "title": "Assignee",
+      "type": "string"
+    },
+    "due": {
+      "anyOf": [
+        {
+          "format": "date-time",
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Due"
+    },
+    "tasks": {
+      "items": {
+        "$ref": "#/$defs/SurveyTask"
+      },
+      "title": "Tasks",
+      "type": "array"
+    }
+  },
+  "required": [
+    "title",
+    "assignee"
+  ],
+  "title": "Survey",
+  "type": "object"
+}

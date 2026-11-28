@@ -109,7 +109,7 @@ def priority(damage_type: str | None, severity: str | None = None, active: bool 
         return "medium"  # not classified yet: the expert decides
     if active or severity == "structural" or entry["refer_to_engineer"]:
         return "high"
-    if (damage_type == "crack" and severity == "fine") or damage_type == "holes_burrows":
+    if (damage_type == "crack" and severity == "fine") or damage_type == "voids_burrows":
         return "low"
     return "medium"
 

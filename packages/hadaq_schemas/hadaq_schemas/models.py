@@ -177,7 +177,11 @@ class Evidence(BaseModel):
 
 
 class LiveMessage(BaseModel):
-    channel: Literal["reading", "event", "photo", "detection", "simulation", "risk"]
+    channel: Literal[
+        "reading", "event", "photo", "detection", "simulation", "risk",
+        # v2 (inspections, see hadaq_schemas.inspection)
+        "capture", "finding", "review", "work_order", "inspection",
+    ]
     data: dict[str, Any]
 
 

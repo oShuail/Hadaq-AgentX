@@ -1,0 +1,26 @@
+{
+  "properties": {
+    "channel": {
+      "enum": [
+        "capture",
+        "finding",
+        "review",
+        "work_order",
+        "inspection"
+      ],
+      "title": "Channel",
+      "type": "string"
+    },
+    "data": {
+      "additionalProperties": true,
+      "title": "Data",
+      "type": "object"
+    }
+  },
+  "required": [
+    "channel",
+    "data"
+  ],
+  "title": "LiveMessageV2",
+  "type": "object"
+}

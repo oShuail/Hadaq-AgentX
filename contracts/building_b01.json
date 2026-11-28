@@ -26,6 +26,10 @@
       "name": "Main facade, street-level front wall",
       "azimuth_deg": 270,
       "height_m": 7.2,
+      "width_m": 32.8,
+      "main_facade": true,
+      "visitor_route": true,
+      "original_fabric": "unknown",
       "rows": 4,
       "cols": 8,
       "base_line": {

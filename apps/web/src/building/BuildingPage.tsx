@@ -15,6 +15,7 @@ import { DAMAGE_FAMILIES, FAMILY_ORDER, familyOf } from "../twin/damage";
 import { type TwinDef, twinTitle } from "../twins";
 import type { RiskLevel, SensorSpec, WallSpec } from "../types/contracts";
 import DamageMap from "./DamageMap";
+import InspectionLinks from "../inspection/InspectionLinks";
 import ModelViewer from "./ModelViewer";
 
 interface Props {
@@ -28,11 +29,12 @@ interface Props {
   setLayer: (l: WallLayer) => void;
   cameraWallBox: number[] | null;
   onBack: () => void;
+  onOpenInspection: (inspectionId: string) => void;
 }
 
 const LEVELS: RiskLevel[] = ["low", "medium", "high", "very_high"];
 
-export default function BuildingPage({ twin, live, fallbackSensors, walls, zoneColors, attention, layer, setLayer, cameraWallBox, onBack }: Props) {
+export default function BuildingPage({ twin, live, fallbackSensors, walls, zoneColors, attention, layer, setLayer, cameraWallBox, onBack, onOpenInspection }: Props) {
   const [zone, setZone] = useState<string | null>(null);
   const reg = twin.registered;
   const sensors = reg ? live.building?.sensors ?? fallbackSensors : [];
@@ -214,6 +216,11 @@ export default function BuildingPage({ twin, live, fallbackSensors, walls, zoneC
           </section>
 
           {/* Damage map: the agent's latest damage report on its photo */}
+          <section className="bsec">
+            <h3>Field inspections</h3>
+            <InspectionLinks buildingId={twin.id} onOpen={onOpenInspection} />
+          </section>
+
           <section className="bsec">
             <h3>Damage map</h3>
             {reg ? (

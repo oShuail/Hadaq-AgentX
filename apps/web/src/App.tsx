@@ -1,6 +1,8 @@
 import { useEffect, useMemo, useState } from "react";
 
 import BuildingPage from "./building/BuildingPage";
+import InspectionLinks from "./inspection/InspectionLinks";
+import InspectionPage from "./inspection/InspectionPage";
 
 import AgentChat from "./chat/AgentChat";
 import { goldenHourToday } from "./clock";
@@ -39,9 +41,12 @@ const TAB_TITLES: Record<Tab, string> = {
   priority: "Priority · الأولويات",
 };
 
-// Two pages: the map (/) and a building's own twin page (/building/<id>). Plain history API, no router library.
-type Route = { page: "map" } | { page: "building"; id: string };
+// Three pages: the map (/), a building's own twin page (/building/<id>) and the conservator's review of one field
+// inspection (/inspection/<id>). Plain history API, no router library.
+type Route = { page: "map" } | { page: "building"; id: string } | { page: "inspection"; id: string };
 const parseRoute = (path: string): Route => {
+  const inspection = path.match(/^\/inspection\/([^/]+)\/?$/);
+  if (inspection) return { page: "inspection", id: decodeURIComponent(inspection[1]) };
   const m = path.match(/^\/building\/([^/]+)\/?$/);
   return m && twinById(decodeURIComponent(m[1])) ? { page: "building", id: decodeURIComponent(m[1]) } : { page: "map" };
 };
@@ -76,6 +81,8 @@ export default function App() {
     setRoute(parseRoute(path));
   };
   const openPage = (twinId: string) => navigate(`/building/${encodeURIComponent(twinId)}`);
+  const openInspection = (inspectionId: string) => navigate(`/inspection/${encodeURIComponent(inspectionId)}`);
+  const back = () => (window.history.state?.from === "app" ? window.history.back() : navigate("/"));
 
   // Qasr Salwa (or one of its wall zones) is selected: its wall grid, risk labels and reading cards show on the map.
   const focusSelected = selection?.kind === "zone" || (selection?.kind === "building" && selection.isFocus);
@@ -131,6 +138,7 @@ export default function App() {
   };
 
   const pageTwin = route.page === "building" ? twinById(route.id) : null;
+  const pageOpen = !!pageTwin || route.page === "inspection";
 
   return (
     <>
@@ -145,13 +153,15 @@ export default function App() {
           layer={layer}
           setLayer={setLayer}
           cameraWallBox={CAMERA_WALL_BOX}
-          onBack={() => (window.history.state?.from === "app" ? window.history.back() : navigate("/"))}
+          onBack={back}
+          onOpenInspection={openInspection}
         />
       )}
+      {route.page === "inspection" && <InspectionPage inspectionId={route.id} onBack={back} />}
       {/* The map stays loaded (and paused) while a building page is open, so going back is instant. */}
-      <div className={`app hud${tab !== "explore" ? " with-panel" : ""}`} style={pageTwin ? { display: "none" } : undefined}>
+      <div className={`app hud${tab !== "explore" ? " with-panel" : ""}`} style={pageOpen ? { display: "none" } : undefined}>
         <SiteMap
-          paused={!!pageTwin}
+          paused={pageOpen}
           buildingId={BUILDING_ID}
           wall={wall}
           zoneColors={zoneColors}
@@ -197,6 +207,8 @@ export default function App() {
               {tab === "priority" && <PriorityPanel priority={priority} onFly={flyToBuilding} />}
               {tab === "activity" && (
                 <div className="activity">
+                  <h3>Field inspections</h3>
+                  <InspectionLinks buildingId={BUILDING_ID} onOpen={openInspection} />
                   <SensorDemoPanel demo={demo} />
                   {live.connected && !demo.active && <>
                     <h3>Live controls</h3>

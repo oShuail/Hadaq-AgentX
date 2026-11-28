@@ -237,6 +237,33 @@ export interface Registry {
   buildings: BuildingInfo[];
 }
 
+export type TaskStatus = "not_started" | "partial" | "done" | "synced";
+
+// one wall to photograph; required_shots: "full" or column ranges like "C1-C2"
+export interface SurveyTask {
+  building_id: string;
+  wall_id: string;
+  required_shots: string[];
+  done_shots: string[];
+  status: TaskStatus;
+}
+
+export interface Survey {
+  survey_id: string;
+  title: string;
+  assignee: string;
+  due: string | null;
+  tasks: SurveyTask[];
+}
+
+// POST /api/v2/surveys (site_manager). done_shots and status are set by the core API
+export interface SurveyRequest {
+  title: string;
+  assignee?: string; // default "surveyor"
+  due?: string | null;
+  tasks: { building_id: string; wall_id: string; required_shots?: string[] }[]; // default ["full"]
+}
+
 export interface CaptureQuality {
   tilt_ok: boolean | null;
   exposure: "ok" | "dark" | "bright" | null;

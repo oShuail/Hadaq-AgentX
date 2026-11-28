@@ -89,12 +89,12 @@ public class EvidenceService {
             return simulationRunRepository.findById(id).map(run -> {
                 SimulationDTOOut sim = simulationService.toDTO(run);
                 Map<String, Object> value = new LinkedHashMap<>();
-                value.put("scenario", sim.result() == null ? null : sim.result().scenario());
-                value.put("engine", sim.result() == null ? null : sim.result().engine());
-                value.put("summary", sim.result() == null ? null : sim.result().summary());
-                value.put("threshold", sim.result() == null ? null : sim.result().threshold());
-                value.put("assumptions", sim.result() == null ? null : sim.result().assumptions());
-                value.put("weather_source", sim.result() == null ? null : sim.result().weatherSource());
+                value.put("scenario", sim.result() == null ? null : sim.result().get("scenario"));
+                value.put("engine", sim.result() == null ? null : sim.result().get("engine"));
+                value.put("summary", sim.result() == null ? null : sim.result().get("summary"));
+                value.put("threshold", sim.result() == null ? null : sim.result().get("threshold"));
+                value.put("assumptions", sim.result() == null ? null : sim.result().get("assumptions"));
+                value.put("weather_source", sim.result() == null ? null : sim.result().get("weather_source"));
                 return new EvidenceDTOOut(id, "simulation", sim.status().value(), sim.request(), value);
             });
         }

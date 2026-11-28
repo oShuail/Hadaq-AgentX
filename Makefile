@@ -4,7 +4,7 @@ VENV := .venv
 BIN := $(VENV)/bin
 LOAD_ENV := set -a; [ -f .env ] && . ./.env; set +a;
 
-.PHONY: setup venv vision-ml web-install hooks up down api core core-test agents web sensors camera vision sim test
+.PHONY: setup venv vision-ml web-install hooks up down api core core-test demo-reset agents web sensors camera vision sim test
 
 setup: venv web-install hooks ## everything a new teammate needs
 	@[ -f .env ] || cp .env.example .env
@@ -39,6 +39,9 @@ core: ## Turki, Spring Boot core API on http://localhost:8080 (needs XAMPP MySQL
 
 core-test: ## Turki, Spring tests (uses the database hadaq_test_db)
 	cd services/core && ./mvnw test
+
+demo-reset: ## Turki: empty the v2 demo data (stop core first; it reseeds the survey on start). Running core: curl -X POST localhost:8080/api/v2/demo/reset
+	bash tools/demo_reset.sh
 
 agents: ## Omar, http://localhost:8100/docs
 	$(LOAD_ENV) $(BIN)/uvicorn hadaq_agents.server:app --reload --port 8100

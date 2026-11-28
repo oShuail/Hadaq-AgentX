@@ -14,6 +14,7 @@ v = metres up from the base. A zone R{row}C{col} follows from (u, v) and the wal
 from __future__ import annotations
 
 import math
+import re
 from datetime import datetime
 from typing import Any, Literal
 
@@ -171,6 +172,34 @@ class Survey(BaseModel):
     assignee: str  # user id, e.g. "surveyor"
     due: datetime | None = None
     tasks: list[SurveyTask] = Field(default_factory=list)
+
+
+SHOT_PATTERN = r"^(full|C\d+-C\d+)$"  # "full" or a column range like "C1-C2"
+
+
+class SurveyTaskRequest(BaseModel):
+    """One wall to photograph in a new survey. done_shots and status are set by the core API."""
+
+    building_id: str
+    wall_id: str
+    required_shots: list[str] = Field(default_factory=lambda: ["full"], min_length=1)
+
+    @field_validator("required_shots")
+    @classmethod
+    def _shots(cls, value: list[str]) -> list[str]:
+        for shot in value:
+            if not re.match(SHOT_PATTERN, shot):
+                raise ValueError(f"required_shots: {shot!r} must be 'full' or a column range like 'C1-C2'")
+        return value
+
+
+class SurveyRequest(BaseModel):
+    """POST /api/v2/surveys (site_manager only). The core API answers 201 with the Survey."""
+
+    title: str = Field(min_length=1, max_length=200)
+    assignee: str = "surveyor"  # user id of the surveyor who gets it in the app
+    due: datetime | None = None
+    tasks: list[SurveyTaskRequest] = Field(min_length=1)
 
 
 # ---------------------------------------------------------------- captures (POST /api/v2/captures)

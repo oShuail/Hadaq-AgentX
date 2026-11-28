@@ -15,7 +15,9 @@ The Hadaq hub in Java 21 / Spring Boot 4.2 on MySQL/MariaDB (`hadaq_db`), on por
 
 1. Java 21, and MySQL/MariaDB running (XAMPP is fine). `hadaq_db` and its tables are created on first start.
 2. `make core`, or run `HadaqApplication` in IntelliJ (open `services/core`). API on http://localhost:8080.
-3. Web app: put `VITE_API_URL=http://localhost:8080` in `apps/web/.env.local`, then `make web`.
+3. Web app: put `VITE_API_URL=http://localhost:8080` and `VITE_CORE_URL=http://localhost:8080` in
+   `apps/web/.env.local`, then `make web`. The **Priority · الأولويات** tab (T3) shows `/api/v2/site/priority`, and
+   the twin buildings on the map get a ground tint by their worst escalation.
 4. Optional: `make agents` (`HADAQ_LLM=mock` works without a key) for the chat and the automatic damage reports,
    and `make up` for the MQTT broker (without it set `MQTT_ENABLED=false`; the API works over HTTP).
 
@@ -32,6 +34,7 @@ into the jar at build time from where the team keeps them: there is one copy of 
 | `PRIVACY_BLUR` | `true` | Hide faces before a photo is stored (YuNet, OpenCV) |
 | `HADAQ_REGISTRY` | the packed copy | Path to a registry file to read instead |
 | `AI_MODE`, `AI_URL` | `mock`, `http://localhost:8100` | v2 AI worker: `remote` calls `AI_URL/ai/process` |
+| `SIM_URL` | empty | Basma's simulation service (`http://localhost:8200`): simulations go to `SIM_URL/sim/run`, with the Java model as the fallback. Empty = the Java model only |
 | `CAPTURE_DIR` | `./data/captures` | v2 uploaded photos and rectified images |
 
 XAMPP's server is MariaDB 10.4: keep `jdbc:mariadb://`. The MySQL driver silently drops the microseconds of every
@@ -45,7 +48,8 @@ The routes of `contracts/README.md` "v2", base `http://<laptop-ip>:8080/api/v2`.
 | Route | What happens |
 | --- | --- |
 | `GET /registry` | The buildings and walls of `contracts/building_b01.json` |
-| `GET /surveys?assignee=` | A first survey ("Qasr Salwa, winter cycle", W01, shot `full`) is made at the first start |
+| `GET /surveys?assignee=` | Newest first. A first survey ("Qasr Salwa, winter cycle", W01, shot `full`) is made at the first start (`hadaq.seed-survey`) |
+| `POST /surveys` | Site manager only (403 otherwise). `SurveyRequest`: title, assignee (default `surveyor`), due, tasks (wall + `required_shots`, default `["full"]`, or column ranges like `C1-C4`). **201** `Survey`. 400 for an unknown wall, a range outside the wall's columns, or the same wall twice |
 | `POST /captures` | multipart `file` + `meta`. **202**. The same `client_uuid` again answers the first capture with `duplicate: true` (also guarded by a unique index). Faces are hidden here when the phone did not check (`faces_hidden: null`). The capture joins the wall's open inspection (one per wall per survey), the survey task gets the shot, and the AI worker gets a `ProcessRequest` |
 | `GET /captures/{id}`, `/file`, `/rectified`; `POST /captures/{id}/retry` | Retry only a `failed` capture (409 otherwise) |
 | `POST /captures/{id}/results` | The AI worker's callback (multipart `results` + optional `rectified`). Replaces earlier results of that capture. 400 for a wrong capture id or a non-suspected `structural_deformation` / `incompatible_repair`; 409 when a finding or work order id belongs to another capture |
@@ -54,6 +58,11 @@ The routes of `contracts/README.md` "v2", base `http://<laptop-ip>:8080/api/v2`.
 | `POST /inspections/{id}/approve` | 409 while any finding is `pending`, and when already approved |
 | `GET /site/priority` | One row per building, urgent first, then the longest since the last survey |
 | `POST /simulations`, `GET /evidence/{id}` | Simulations as in v1; evidence for `srv_`, `cap_`, `fnd_`, `wo_`, `ins_` and every v1 id |
+| `POST /demo/reset` | Demo reset (T4) while the API runs: empties surveys, inspections, captures, findings, work orders and the capture files, keeps the registry, seeds the first survey again. Only with `DEMO_ENABLED=true` (403 otherwise) |
+
+**Demo reset with the API stopped:** `make demo-reset` (or `bash tools/demo_reset.sh` in Git Bash). It runs
+`tools/demo_reset.sql` with the MySQL client (on the PATH, or XAMPP's on Windows and macOS) and empties
+`services/core/data/captures`. Starting core again seeds the first survey.
 
 Live (`/ws/live`): `capture`, `finding`, `review`, `work_order`, `inspection`, with the data in `contracts.ts`.
 
@@ -71,7 +80,22 @@ Our choices where the contract leaves it open (say if the team wants otherwise):
 - Open findings in the site list = the non-rejected findings of each wall's latest inspection, by the escalation the
   priority gave (a correction does not change it).
 - `faces_hidden_server` = faces hidden by the core API (when the phone did not check) plus those the AI worker reports.
-- `POST /api/v2/simulations` runs the built-in port of Basma's engine until the simulation service has `/sim/run`.
+- Simulations (T5): with `SIM_URL` set, `POST /simulations` and `POST /api/v2/simulations` go to `SIM_URL/sim/run`
+  (in the background; the answer is read with `GET /simulations/{run_id}`). The body the core sends, since the contract
+  only names its parts:
+
+  ```json
+  {"run_id": "sim_...", "building_id": "B01", "wall": <WallInfo>, "scenario": "storm_replay",
+   "weather": <v1 WeatherSpec>, "approved_findings": [<Finding>, ...], "requested_by": "web"}
+  ```
+
+  `approved_findings` = the non-rejected findings of the wall's last approved inspection. The answer must read as a
+  `SimulationResult` (with a `summary` per zone); it is kept as it is, extra fields included (e.g. the first hour each
+  zone crosses critical), with the core's `run_id`. When the service is down, errors or answers something else, the Java
+  model runs instead and says so in `assumptions`; `simulation_done` carries `engine_source`: `sim_service`,
+  `java_fallback` or `java`.
+- Requests to the AI worker and the simulation service carry a `Content-Length` (not a chunked body): a T5 rehearsal
+  with a plain Python server showed chunked bodies are refused by simple servers.
 
 ## Built-in demo (like https://hadaq.vercel.app)
 

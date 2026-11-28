@@ -1,0 +1,8 @@
+{
+  "title": "Qasr Salwa, after the January rain",
+  "assignee": "surveyor",
+  "due": "2026-12-05T12:00:00+03:00",
+  "tasks": [
+    {"building_id": "B01", "wall_id": "W01", "required_shots": ["C1-C4", "C5-C8"]}
+  ]
+}

@@ -57,6 +57,12 @@ class V2RemoteAiTest {
     static void aiWorker(DynamicPropertyRegistry registry) throws IOException {
         worker = HttpServer.create(new InetSocketAddress("127.0.0.1", 0), 0);
         worker.createContext("/ai/process", exchange -> {
+            // like a strict server: no Content-Length (a chunked body) = 411, so the core must send the length
+            if (exchange.getRequestHeaders().getFirst("Content-Length") == null) {
+                exchange.sendResponseHeaders(411, -1);
+                exchange.close();
+                return;
+            }
             REQUESTS.add(new String(exchange.getRequestBody().readAllBytes(), StandardCharsets.UTF_8));
             exchange.sendResponseHeaders(ANSWER.get(), -1);
             exchange.close();

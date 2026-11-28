@@ -15,7 +15,7 @@ import { acceleratedRaycast, computeBoundsTree, disposeBoundsTree } from "three-
 import { centroid, pointInRing, ringBounds } from "../site/poly";
 import type { SiteBuilding } from "../site/types";
 import { FOCUS_TWIN, TWINS } from "../twins";
-import type { WallSpec } from "../types/contracts";
+import type { Escalation, WallSpec } from "../types/contracts";
 import { type BuildingLayer, buildBuildings } from "./buildings";
 import type { AttentionItem } from "../twin/WallZones";
 import { type Callout, type FocusPlacement, WallOverlay, focusPlacement, loadFocusModel } from "./focus";
@@ -111,6 +111,10 @@ const GENERIC = /^(exit|tickets?|water|toilets?|parking|park mosque|مسجد|ب�
 // Names that would be confused with our own twins (a cafe called "Salwa" 1 km north is not Qasr Salwa).
 const CONFUSING = /^(salwa|سلوى)$/i;
 
+// The site priority tint under the twin buildings (T3): the plan's colours, the same as --rose, --gold, --sage.
+const ESCALATION_TINT: Record<Escalation, number> = { urgent: 0xc07a7a, high: 0xc9a24d, medium: 0x9c8f78, low: 0x6b9e78 };
+const ESCALATION_HALO_M = 4; // how far the patch reaches past the footprint, metres
+
 /** The twin page a mapped building opens, if any (matched on its OSM name, see twins.ts). */
 const twinFor = (b: SiteBuilding) => TWINS.find((t) => t.onMap !== "focus" && !!b.n && t.onMap.test(b.n)) ?? null;
 
@@ -154,6 +158,10 @@ export class Twin {
   private focusModel: THREE.Group | null = null;
   private place: FocusPlacement | null = null;
   private heritageRings: number[][] = [];
+  // the footprint (local ring) of every building with a twin page, by building id: fly-to and the escalation tint
+  private twinRings = new Map<string, number[]>();
+  private escalationGroup = new THREE.Group();
+  private escalations: Record<string, Escalation | null> = {};
   private poses = new Map<ViewId, Pose>();
   private groups = new Map<LayerId, THREE.Object3D[]>();
   private time = new Date();
@@ -299,6 +307,16 @@ export class Twin {
     this.buildings = buildBuildings(site, underFocus);
     this.scene.add(this.buildings.group);
     for (const m of this.buildings.meshes) m.geometry.computeBoundsTree();
+
+    // footprints of the twin buildings (our placed model, and the mapped buildings twins.ts names)
+    if (this.place?.footprint) this.twinRings.set(FOCUS_TWIN.id, this.place.footprint);
+    for (const b of site.pack.buildings) {
+      const twin = twinFor(b);
+      if (twin && !this.twinRings.has(twin.id)) this.twinRings.set(twin.id, b.o);
+    }
+    this.escalationGroup.name = "escalations";
+    this.scene.add(this.escalationGroup);
+    this.drawEscalations();
 
     status("Planting palms and laying roads");
     await new Promise((r) => setTimeout(r, 0));
@@ -476,8 +494,9 @@ export class Twin {
     this.controls.update();
   }
 
-  flyTo(view: ViewId, duration = 2.6) {
-    const to = this.poses.get(view);
+  /** A camera view, or "twin:<building id>" to fly to one of the twin buildings (the Priority list). */
+  flyTo(view: ViewId | `twin:${string}`, duration = 2.6) {
+    const to = view.startsWith("twin:") ? this.twinPose(view.slice(5)) : this.poses.get(view as ViewId);
     if (!to) return;
     const from = this.currentPose();
     // Turn the short way round.
@@ -601,6 +620,77 @@ export class Twin {
   }
   setAttention(items: AttentionItem[]) {
     this.overlay?.setAttention(items);
+  }
+
+  /** Worst open escalation per twin building (core API site priority): a tinted patch on the ground under it. */
+  setEscalations(escalations: Record<string, Escalation | null>) {
+    this.escalations = escalations;
+    this.drawEscalations();
+  }
+
+  // The focus building has its own front view; any other twin: look at its footprint from where the camera is.
+  private twinPose(buildingId: string): Pose | null {
+    if (buildingId === FOCUS_TWIN.id) return this.poses.get("focus") ?? null;
+    const ring = this.twinRings.get(buildingId);
+    if (!ring || !this.site) return null;
+    const [cx, cy] = centroid(ring);
+    const [x0, y0, x1, y1] = ringBounds(ring);
+    const span = Math.max(x1 - x0, y1 - y0);
+    return {
+      target: new THREE.Vector3(cx, this.site.ground(cx, cy) + 6, -cy),
+      distance: Math.max(140, span * 3.2),
+      heading: this.currentPose().heading,
+      pitch: 32,
+    };
+  }
+
+  // A patch slightly larger than the footprint, on the ground, in the escalation's colour (urgent pulses). It leaves
+  // the building's own materials alone, so the night glow of the focus model keeps working.
+  private drawEscalations() {
+    for (const child of [...this.escalationGroup.children]) {
+      this.escalationGroup.remove(child);
+      const m = child as THREE.Mesh;
+      m.geometry?.dispose();
+      (m.material as THREE.Material | undefined)?.dispose();
+    }
+    if (!this.site) return;
+    for (const [buildingId, escalation] of Object.entries(this.escalations)) {
+      const ring = this.twinRings.get(buildingId);
+      if (!escalation || !ring) continue;
+      const [cx, cy] = centroid(ring);
+      const grown: THREE.Vector2[] = [];
+      for (let i = 0; i < ring.length; i += 2) {
+        const dx = ring[i] - cx;
+        const dy = ring[i + 1] - cy;
+        const len = Math.hypot(dx, dy) || 1;
+        const k = (len + ESCALATION_HALO_M) / len;
+        grown.push(new THREE.Vector2(cx + dx * k, cy + dy * k));
+      }
+      const ground = buildingId === FOCUS_TWIN.id && this.place ? this.place.ground : this.site.ground(cx, cy);
+      const color = new THREE.Color(ESCALATION_TINT[escalation]);
+
+      const fill = new THREE.Mesh(
+        new THREE.ShapeGeometry(new THREE.Shape(grown)).rotateX(-Math.PI / 2), // (x, north) -> (x, 0, -north)
+        new THREE.MeshBasicMaterial({
+          color, transparent: true, opacity: 0.45, depthWrite: false, side: THREE.DoubleSide, toneMapped: false,
+          polygonOffset: true, polygonOffsetFactor: -2, polygonOffsetUnits: -2,
+        }),
+      );
+      fill.position.y = ground + 0.4;
+      fill.renderOrder = 2;
+      if (escalation === "urgent") {
+        const mat = fill.material as THREE.MeshBasicMaterial;
+        fill.onBeforeRender = () => {
+          mat.opacity = 0.35 + 0.2 * Math.sin(performance.now() / 320);
+        };
+      }
+      const edge = new THREE.LineLoop(
+        new THREE.BufferGeometry().setFromPoints(grown.map((p) => new THREE.Vector3(p.x, ground + 0.6, -p.y))),
+        new THREE.LineBasicMaterial({ color, transparent: true, opacity: 0.95, toneMapped: false }),
+      );
+      fill.name = edge.name = `escalation-${buildingId}-${escalation}`;
+      this.escalationGroup.add(fill, edge);
+    }
   }
   /** Reading cards pinned to the wall zones; shown only when the zones are on and the camera is close. */
   setCallouts(items: Callout[]) {

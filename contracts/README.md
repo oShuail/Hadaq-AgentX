@@ -186,6 +186,7 @@ Phase 2 adds field inspections: the surveyor app uploads a capture, the AI worke
 | --- | --- | --- | --- | --- |
 | GET | `/registry` | App, web | | `Registry` |
 | GET | `/surveys?assignee=surveyor` | App | | `[Survey]` |
+| POST | `/surveys` | Web (site_manager) | `SurveyRequest` | 201 `Survey` (`done_shots` empty, status `not_started`). 400 for an unknown wall, a column range outside the wall, or the same wall twice |
 | POST | `/captures` | App | multipart: `file` (JPEG, faces already hidden if the phone could), `meta` (`CaptureMeta` JSON) | 202 `CaptureAccepted`. The same `client_uuid` again returns the first capture with `duplicate: true` |
 | GET | `/captures/{id}` | App, web | | `Capture` |
 | GET | `/captures/{id}/file`, `/captures/{id}/rectified` | Web, AI worker | | The images |

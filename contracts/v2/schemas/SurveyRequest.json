@@ -1,0 +1,72 @@
+{
+  "$defs": {
+    "SurveyTaskRequest": {
+      "description": "One wall to photograph in a new survey. done_shots and status are set by the core API.",
+      "properties": {
+        "building_id": {
+          "title": "Building Id",
+          "type": "string"
+        },
+        "wall_id": {
+          "title": "Wall Id",
+          "type": "string"
+        },
+        "required_shots": {
+          "items": {
+            "type": "string"
+          },
+          "minItems": 1,
+          "title": "Required Shots",
+          "type": "array"
+        }
+      },
+      "required": [
+        "building_id",
+        "wall_id"
+      ],
+      "title": "SurveyTaskRequest",
+      "type": "object"
+    }
+  },
+  "description": "POST /api/v2/surveys (site_manager only). The core API answers 201 with the Survey.",
+  "properties": {
+    "title": {
+      "maxLength": 200,
+      "minLength": 1,
+      "title": "Title",
+      "type": "string"
+    },
+    "assignee": {
+      "default": "surveyor",
+      "title": "Assignee",
+      "type": "string"
+    },
+    "due": {
+      "anyOf": [
+        {
+          "format": "date-time",
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Due"
+    },
+    "tasks": {
+      "items": {
+        "$ref": "#/$defs/SurveyTaskRequest"
+      },
+      "minItems": 1,
+      "title": "Tasks",
+      "type": "array"
+    }
+  },
+  "required": [
+    "title",
+    "tasks"
+  ],
+  "title": "SurveyRequest",
+  "type": "object"
+}

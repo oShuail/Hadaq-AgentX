@@ -11,7 +11,7 @@ from pathlib import Path
 from hadaq_schemas import inspection as v2
 
 MODELS = [
-    v2.Registry, v2.Survey, v2.CaptureMeta, v2.Capture, v2.CaptureAccepted, v2.Finding,
+    v2.Registry, v2.Survey, v2.SurveyRequest, v2.CaptureMeta, v2.Capture, v2.CaptureAccepted, v2.Finding,
     v2.WorkOrderDraft, v2.ProcessRequest, v2.CaptureResults, v2.Inspection, v2.ReviewRequest,
     v2.SitePriorityRow, v2.LiveMessageV2,
 ]

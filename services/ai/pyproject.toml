@@ -1,0 +1,25 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "hadaq-ai"
+version = "0.1.0"
+description = "Hadaq AI worker: POST /ai/process (privacy, rectify, detect, findings, agent chain), served on the agents app at :8100"
+requires-python = ">=3.11"
+dependencies = [
+  "hadaq-schemas",
+  "hadaq-vision",
+  "hadaq-agents",
+  "hadaq-api",
+  "fastapi>=0.110",
+  "uvicorn[standard]>=0.29",
+  "httpx>=0.27",
+  "opencv-python-headless>=4.9",
+]
+
+[project.optional-dependencies]
+dev = ["pytest>=8"]
+
+[tool.setuptools.packages.find]
+include = ["hadaq_ai*"]

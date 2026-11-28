@@ -4,7 +4,7 @@ VENV := .venv
 BIN := $(VENV)/bin
 LOAD_ENV := set -a; [ -f .env ] && . ./.env; set +a;
 
-.PHONY: setup venv vision-ml web-install hooks up down api core core-test demo-reset agents web sensors camera vision sim test
+.PHONY: setup venv vision-ml web-install hooks up down api core core-test demo-reset agents ai web sensors camera vision sim test
 
 setup: venv web-install hooks ## everything a new teammate needs
 	@[ -f .env ] || cp .env.example .env
@@ -14,7 +14,7 @@ setup: venv web-install hooks ## everything a new teammate needs
 venv:
 	$(PY) -m venv $(VENV)
 	$(BIN)/pip install -U pip
-	$(BIN)/pip install -e packages/hadaq_schemas -e services/simulation -e services/api -e services/agents -e services/vision pytest
+	$(BIN)/pip install -e packages/hadaq_schemas -e services/simulation -e services/api -e services/agents -e services/vision -e services/ai pytest
 
 vision-ml: ## heavy: torch + RF-DETR (Abdurhmn, or anyone running the real model)
 	$(BIN)/pip install -e "services/vision[rfdetr]"
@@ -43,7 +43,10 @@ core-test: ## Turki, Spring tests (uses the database hadaq_test_db)
 demo-reset: ## Turki: empty the v2 demo data (stop core first; it reseeds the survey on start). Running core: curl -X POST localhost:8080/api/v2/demo/reset
 	bash tools/demo_reset.sh
 
-agents: ## Omar, http://localhost:8100/docs
+ai: ## AI worker + agents on one process, http://localhost:8100/docs (HADAQ_DETECTOR=rfdetr HADAQ_CHECKPOINT=... for the real model)
+	$(LOAD_ENV) $(BIN)/uvicorn hadaq_ai.server:app --reload --port 8100
+
+agents: ## agents only (make ai serves them too), http://localhost:8100/docs
 	$(LOAD_ENV) $(BIN)/uvicorn hadaq_agents.server:app --reload --port 8100
 
 web: ## http://localhost:5173 (phone panel: http://<laptop-ip>:5173/?panel=1)
@@ -62,4 +65,4 @@ sim: ## Basma: one scenario from the command line
 	$(LOAD_ENV) $(BIN)/python -m hadaq_sim.cli run --scenario storm_replay
 
 test:
-	$(BIN)/pytest -q packages/hadaq_schemas/tests services/simulation/tests services/api/tests services/agents/tests services/vision/tests devices/sensor-sim/tests
+	$(BIN)/pytest -q packages/hadaq_schemas/tests services/simulation/tests services/api/tests services/agents/tests services/vision/tests services/ai/tests devices/sensor-sim/tests

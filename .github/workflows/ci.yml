@@ -36,8 +36,8 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: "3.11"
-      - run: pip install -e packages/hadaq_schemas -e services/simulation -e services/api -e services/agents -e services/vision pytest
-      - run: pytest -q packages/hadaq_schemas/tests services/simulation/tests services/api/tests services/agents/tests services/vision/tests devices/sensor-sim/tests
+      - run: pip install -e packages/hadaq_schemas -e services/simulation -e services/api -e services/agents -e services/vision -e services/ai pytest
+      - run: pytest -q packages/hadaq_schemas/tests services/simulation/tests services/api/tests services/agents/tests services/vision/tests services/ai/tests devices/sensor-sim/tests
 
   web:
     runs-on: ubuntu-latest

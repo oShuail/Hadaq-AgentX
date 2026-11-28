@@ -1,0 +1,288 @@
+{
+  "schema_version": 1,
+  "title_ar": "حالات تتشابه في الصورة ويختلف علاجها",
+  "title_en": "Cases that look alike in a photo but need different treatments",
+  "notes": [
+    "Arabic case, option and treatment text is DGDA's wording, copied as written. English is the team's translation.",
+    "Which damage_type values trigger a pair, the row rule, and which evidence goes with which pair are team decisions. Each pair lists them under assumptions.",
+    "The agent never picks one of the two options. It shows both and asks for the evidence; the conservator decides."
+  ],
+  "sources": {
+    "dgda_qa_q8": {
+      "label_ar": "إجابات هيئة تطوير بوابة الدرعية على أسئلة الفريق، السؤال 8 (ماذا يحتاج المرمم غير الصورة)",
+      "label_en": "DGDA answers to the team's questions, Q8 (what a conservator needs besides the photo)",
+      "file": "At-Turaif_Challenge_QA.md (the two Q8 tables are printed under the Q9 heading)",
+      "tables": ["معلومات لازمة قبل قرار العلاج (evidence)", "حالات تتشابه في الصورة ويختلف علاجها (pairs)"]
+    },
+    "dgda_qa_q1": {
+      "label_ar": "إجابات الهيئة، السؤال 1 (نطاق الفحص): قائمة الفحص الدوري",
+      "label_en": "DGDA answers, Q1 (scope of inspection): the periodic inspection checklist",
+      "file": "At-Turaif_Challenge_QA.md"
+    }
+  },
+  "evidence": [
+    {
+      "id": "moisture_heights",
+      "label_ar": "قراءات الرطوبة على ارتفاعات مختلفة من الجدار",
+      "label_en": "Moisture readings at several heights of the wall",
+      "why_ar": "تحدد مصدر الرطوبة: صاعدة من الأرض، أو نازلة من السطح، أو من رذاذ المطر",
+      "source": "dgda_qa_q8"
+    },
+    {
+      "id": "roof_drainage",
+      "label_ar": "معاينة السطح والمرازيم والتصريف حول المبنى",
+      "label_en": "Inspection of the roof, scuppers and drainage around the building",
+      "why_ar": "أغلب تلف الطين سببه الماء، والعلاج يبدأ بإيقاف المصدر",
+      "source": "dgda_qa_q8"
+    },
+    {
+      "id": "intervention_history",
+      "label_ar": "تاريخ التدخلات السابقة ومواده (آخر لياسة، استخدام إسمنت أو جير)",
+      "label_en": "History of past interventions and their materials (last plaster, cement or lime)",
+      "why_ar": "يكشف المواد غير المتوافقة وأثرها، مثل حالة مسجد الظويهرة",
+      "source": "dgda_qa_q8"
+    },
+    {
+      "id": "tap_test",
+      "label_ar": "الفحص بالطرق الخفيف على اللياسة",
+      "label_en": "Light tap test on the plaster",
+      "why_ar": "يكشف الانفصال الخفي خلف سطح يبدو سليماً",
+      "source": "dgda_qa_q8"
+    },
+    {
+      "id": "crack_monitoring",
+      "label_ar": "مراقبة الشقوق بمؤشرات قياس على فترة زمنية",
+      "label_en": "Crack monitoring with gauges over a period of time",
+      "why_ar": "تحدد هل الشق نشط أو مستقر",
+      "source": "dgda_qa_q8"
+    },
+    {
+      "id": "foundation_loads",
+      "label_ar": "حالة الأساس الحجري والأحمال الإنشائية",
+      "label_en": "Condition of the stone foundation and the structural loads",
+      "why_ar": "تكشف الأسباب الإنشائية خلف التشققات والانهيارات",
+      "source": "dgda_qa_q8"
+    },
+    {
+      "id": "soil_salt_samples",
+      "label_ar": "تحليل عينات من التربة والأملاح",
+      "label_en": "Analysis of soil and salt samples",
+      "why_ar": "يضمن توافق مونة الترميم مع الأصل، ويحدد نوع الأملاح",
+      "source": "dgda_qa_q8"
+    },
+    {
+      "id": "last_rain",
+      "label_ar": "توقيت آخر أمطار أو أحداث جوية",
+      "label_en": "Timing of the last rain or weather event",
+      "why_ar": "يفسر حداثة التلف ونشاطه",
+      "source": "dgda_qa_q8"
+    },
+    {
+      "id": "pest_signs",
+      "label_ar": "آثار الحشرات والقوارض",
+      "label_en": "Signs of insect or rodent activity",
+      "why_ar": "من قائمة الفحص الدوري التي ذكرتها الهيئة",
+      "source": "dgda_qa_q1"
+    },
+    {
+      "id": "previous_inspection",
+      "label_ar": "المقارنة بالفحص السابق",
+      "label_en": "Comparison with the previous inspection",
+      "why_ar": "الهيئة تقارن نتائج كل فحص بالفحص السابق",
+      "source": "dgda_qa_q1"
+    }
+  ],
+  "pairs": [
+    {
+      "id": "vertical_crack",
+      "case_ar": "شق رأسي",
+      "case_en": "Vertical crack",
+      "damage_types": ["crack"],
+      "rows": "any",
+      "options": [
+        {
+          "label_ar": "شق انكماش سطحي في اللياسة",
+          "label_en": "surface shrinkage crack in the plaster",
+          "treatment_ar": "إعادة لياسة",
+          "treatment_en": "re-plaster"
+        },
+        {
+          "label_ar": "شق إنشائي في جسم الجدار بسبب هبوط أو أحمال",
+          "label_en": "structural crack in the wall body from settlement or loads",
+          "treatment_ar": "مهندس إنشائي، ثم تخييط",
+          "treatment_en": "structural engineer, then stitching"
+        }
+      ],
+      "evidence": ["crack_monitoring", "foundation_loads", "intervention_history"],
+      "note_ar": "الشق قد يكون انكماشاً سطحياً في اللياسة أو شقاً إنشائياً في جسم الجدار",
+      "source": "dgda_qa_q8",
+      "assumptions": [
+        "DGDA names a vertical crack. A finding has no crack direction, so the pair applies to every crack: missing a structural crack costs more than one extra question (DGDA Q9).",
+        "intervention_history is included because of the Al-Dhawihra mosque case (DGDA Q3): loads from a past repair caused the damage."
+      ]
+    },
+    {
+      "id": "dark_stain_base",
+      "case_ar": "بقعة داكنة عند القاعدة",
+      "case_en": "Dark stain at the base",
+      "damage_types": ["base_erosion"],
+      "rows": "base",
+      "options": [
+        {
+          "label_ar": "رطوبة صاعدة نشطة",
+          "label_en": "active rising damp",
+          "treatment_ar": "تصريف وإصلاح الأساس",
+          "treatment_en": "drainage and foundation repair"
+        },
+        {
+          "label_ar": "أثر رطوبة قديمة جافة",
+          "label_en": "old dry moisture stain",
+          "treatment_ar": "مراقبة فقط",
+          "treatment_en": "monitor only"
+        }
+      ],
+      "evidence": ["moisture_heights", "last_rain", "roof_drainage"],
+      "note_ar": "البقعة الداكنة عند القاعدة قد تكون رطوبة صاعدة نشطة أو أثراً قديماً جافاً",
+      "source": "dgda_qa_q8",
+      "assumptions": [
+        "The glossary has no stain class. A dark patch at the foot of the wall is reported as base_erosion, as in contracts/v2/examples/capture_results.json, so the pair is attached to base_erosion.",
+        "Only on the base row (R1): DGDA's case is a stain at the base."
+      ]
+    },
+    {
+      "id": "plaster_loss_cause",
+      "case_ar": "تساقط لياسة",
+      "case_en": "Plaster loss",
+      "damage_types": ["plaster_loss"],
+      "rows": "any",
+      "options": [
+        {
+          "label_ar": "انتهاء العمر الطبيعي للياسة التضحوية",
+          "label_en": "natural end of life of the sacrificial plaster",
+          "treatment_ar": "تجديد دوري",
+          "treatment_en": "periodic renewal"
+        },
+        {
+          "label_ar": "انفصال بسبب لياسة إسمنتية غير متوافقة",
+          "label_en": "detachment caused by an incompatible cement plaster",
+          "treatment_ar": "إزالة الإسمنت أولاً",
+          "treatment_en": "remove the cement first"
+        }
+      ],
+      "evidence": ["intervention_history", "tap_test"],
+      "note_ar": "تساقط اللياسة قد يكون نهاية عمرها الطبيعي أو انفصالاً بسبب لياسة إسمنتية غير متوافقة",
+      "source": "dgda_qa_q8",
+      "assumptions": []
+    },
+    {
+      "id": "facade_groove",
+      "case_ar": "أخدود على الواجهة",
+      "case_en": "Groove on the facade",
+      "damage_types": ["rain_grooves"],
+      "rows": "any",
+      "options": [
+        {
+          "label_ar": "جريان مياه من مرزام تالف",
+          "label_en": "water runoff from a damaged scupper",
+          "treatment_ar": "إصلاح المرزام ثم ملء الأخدود",
+          "treatment_en": "repair the scupper, then fill the groove"
+        },
+        {
+          "label_ar": "تآكل رياح",
+          "label_en": "wind erosion",
+          "treatment_ar": "لياسة واقية",
+          "treatment_en": "protective plaster"
+        }
+      ],
+      "evidence": ["roof_drainage", "last_rain"],
+      "note_ar": "الأخدود قد يكون من جريان مياه مرزام تالف أو من تآكل الرياح",
+      "source": "dgda_qa_q8",
+      "assumptions": []
+    },
+    {
+      "id": "white_spots",
+      "case_ar": "بقع بيضاء",
+      "case_en": "White spots",
+      "damage_types": ["salt_efflorescence"],
+      "rows": "any",
+      "options": [
+        {
+          "label_ar": "تزهّر أملاح",
+          "label_en": "salt efflorescence",
+          "treatment_ar": "معالجة الرطوبة وإزالة الأملاح",
+          "treatment_en": "treat the moisture and remove the salts"
+        },
+        {
+          "label_ar": "بقايا جير أو ترميم حديث",
+          "label_en": "lime residue or a recent repair",
+          "treatment_ar": "لا تحتاج تدخلاً",
+          "treatment_en": "no intervention needed"
+        }
+      ],
+      "evidence": ["soil_salt_samples", "intervention_history", "moisture_heights"],
+      "note_ar": "البقع البيضاء قد تكون تزهّر أملاح أو بقايا جير أو ترميم حديث",
+      "source": "dgda_qa_q8",
+      "assumptions": []
+    },
+    {
+      "id": "smooth_surface",
+      "case_ar": "سطح متجانس ونظيف",
+      "case_en": "Smooth, clean surface",
+      "damage_types": ["incompatible_repair"],
+      "rows": "any",
+      "options": [
+        {
+          "label_ar": "نسيج أصلي سليم",
+          "label_en": "sound original fabric",
+          "treatment_ar": "لا تدخل",
+          "treatment_en": "no intervention"
+        },
+        {
+          "label_ar": "ترميم حديث يخفي تلفاً تحته",
+          "label_en": "recent repair hiding damage underneath",
+          "treatment_ar": "فحص بالطرق",
+          "treatment_en": "tap test"
+        }
+      ],
+      "evidence": ["tap_test", "intervention_history"],
+      "note_ar": "السطح المتجانس قد يكون نسيجاً أصلياً سليماً أو ترميماً حديثاً يخفي تلفاً تحته",
+      "source": "dgda_qa_q8",
+      "assumptions": [
+        "A smooth surface is not damage, so no damage class finds it. The detector only reports such a patch as a suspected incompatible_repair, so the pair is attached to incompatible_repair. DGDA Q8 also lists 'plaster that looks intact but is an incompatible past repair, such as cement mortar'."
+      ]
+    },
+    {
+      "id": "wall_hole",
+      "case_ar": "فجوة في الجدار",
+      "case_en": "Hole in the wall",
+      "damage_types": ["voids_burrows"],
+      "rows": "any",
+      "options": [
+        {
+          "label_ar": "جحر قوارض أو حشرات",
+          "label_en": "rodent or insect burrow",
+          "treatment_ar": "مكافحة ثم ملء",
+          "treatment_en": "pest control, then fill"
+        },
+        {
+          "label_ar": "فتحة أصلية (تهوية أو تثبيت خشب)",
+          "label_en": "original opening (ventilation or timber fixing)",
+          "treatment_ar": "لا تُملأ",
+          "treatment_en": "do not fill"
+        }
+      ],
+      "evidence": ["pest_signs", "previous_inspection"],
+      "note_ar": "الفجوة قد تكون جحر قوارض أو حشرات أو فتحة أصلية للتهوية أو لتثبيت الخشب",
+      "source": "dgda_qa_q8",
+      "assumptions": [
+        "None of DGDA's eight evidence items tells a burrow from an original opening, so this pair uses two items from DGDA's routine inspection checklist (Q1): signs of insects or rodents, and comparison with the previous inspection."
+      ]
+    }
+  ],
+  "not_paired": {
+    "structural_deformation": "Suspected only and always referred to the specialist (DGDA Q11); no look-alike question.",
+    "parapet_loss": "Bonus type; DGDA lists no look-alike case for it.",
+    "timber_decay": "Bonus type; DGDA lists no look-alike case for it.",
+    "biological_growth": "Bonus type; DGDA lists no look-alike case for it."
+  }
+}

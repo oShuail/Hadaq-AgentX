@@ -47,6 +47,14 @@ Crack width comes from a crack gauge in the same zone (`B01-S06` at `R2C5`), els
 
 To change what the agent recommends, edit the JSON (not the code) and run the tests.
 
+## The look-alike table (v2, DGDA Q8)
+
+`hadaq_agents/lookalikes.json` holds DGDA's 7 cases that look the same in a photo but need different treatments (Q8, table "حالات تتشابه في الصورة ويختلف علاجها"), with the evidence that tells them apart (Q8, table "معلومات لازمة قبل قرار العلاج", plus two items from the Q1 inspection checklist). Arabic is DGDA's wording; English is ours. Which damage type triggers a pair and which evidence goes with it are our decisions, listed per pair under `assumptions`.
+
+`lookalikes.lookalike_for(finding)` takes a v2 `Finding` (or a dict with `damage_type` and `zone_id`) and returns the contract's `Lookalike` (`pair_id`, `options`, `evidence_needed`, `note_ar`) or `None`. `lang="ar"` gives Arabic options and evidence. The dark-stain pair (`dark_stain_base`, on `base_erosion`) applies only on the base row R1. The agent never picks one of the two options; it asks for the evidence and the conservator decides.
+
+`python -m hadaq_agents.lookalikes` prints the table in Arabic as markdown (for the slide and for DGDA to check).
+
 ## Damage report payload
 
 `propose_damage_report` posts a `recommendation_ready` event (no contract change: `payload` is free-form). The tool, not the LLM, fills the treatment, materials and tools from the table, so the stored report cannot contain invented items.

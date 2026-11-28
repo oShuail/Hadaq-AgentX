@@ -10,22 +10,27 @@ struct QueueView: View {
         List {
             if !uploader.online {
                 Label("بدون اتصال: الصور محفوظة وسترفع تلقائياً", systemImage: "wifi.slash")
-                    .foregroundStyle(.orange)
+                    .foregroundStyle(HadaqTheme.goldText).hadaqPanel()
             }
             if items.isEmpty {
                 ContentUnavailableView("لا توجد صور", systemImage: "camera",
                                        description: Text("صوّر جداراً من تبويب المهام"))
+                    .hadaqPanel()
             }
             ForEach(items) { item in
                 NavigationLink { CaptureDetailView(item: item) } label: { QueueRow(item: item) }
+                    .hadaqPanel()
             }
             .onDelete { offsets in offsets.map { items[$0] }.forEach { CaptureStore.shared.delete($0) } }
             if let last = uploader.lastSync {
                 Text("آخر مزامنة \(last.formatted(date: .omitted, time: .standard))")
-                    .font(.caption2).foregroundStyle(.secondary)
+                    .font(.caption2).foregroundStyle(HadaqTheme.muted).hadaqPanel()
             }
         }
+        .hadaqList()
+        .safeAreaInset(edge: .top, spacing: 0) { HadaqHeader(title: "الصور", subtitle: "CAPTURE QUEUE · OFFLINE READY") }
         .navigationTitle("الصور")
+        .navigationBarTitleDisplayMode(.inline)
         .refreshable {
             await Uploader.shared.drain(force: true)
             await TaskStore.shared.refresh()
@@ -39,6 +44,7 @@ struct QueueRow: View {
     var body: some View {
         HStack(spacing: 12) {
             Thumbnail(url: item.imageURL).frame(width: 56, height: 56).clipShape(RoundedRectangle(cornerRadius: 8))
+                .overlay(RoundedRectangle(cornerRadius: 8).stroke(HadaqTheme.line))
             VStack(alignment: .leading, spacing: 2) {
                 Text("\(item.buildingId) · \(item.wallId) · \(item.segment)").bold()
                 Text(item.queueStatus.labelAr).font(.caption).foregroundStyle(color)
@@ -49,7 +55,7 @@ struct QueueRow: View {
             Spacer()
             if item.urgent {
                 Text("عاجل").font(.caption.bold()).padding(6)
-                    .background(.red.opacity(0.85)).foregroundStyle(.white).clipShape(Capsule())
+                    .background(HadaqTheme.rose).foregroundStyle(HadaqTheme.background).clipShape(Capsule())
             }
             if item.queueStatus == .analyzed {
                 Text("\(item.findingsCount) تلف").font(.caption)
@@ -66,9 +72,9 @@ struct QueueRow: View {
 
     private var color: Color {
         switch item.queueStatus {
-        case .analyzed: return .green
-        case .failed, .rejected: return .red
-        case .queued: return .orange
+        case .analyzed: return HadaqTheme.sage
+        case .failed, .rejected: return HadaqTheme.rose
+        case .queued: return HadaqTheme.goldText
         default: return .secondary
         }
     }
@@ -116,6 +122,7 @@ struct CaptureDetailView: View {
             }
             .padding()
         }
+        .background(HadaqTheme.background.ignoresSafeArea())
         .navigationTitle(item.clientUuid.prefix(8))
         .task { image = UIImage(contentsOfFile: item.imageURL.path) }
     }

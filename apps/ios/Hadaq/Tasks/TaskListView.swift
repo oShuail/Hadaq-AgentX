@@ -13,7 +13,7 @@ struct TaskListView: View {
             if let survey = store.currentSurvey {
                 Section {
                     VStack(alignment: .leading, spacing: 4) {
-                        Text(survey.title).font(.headline)
+                        Text(survey.title).font(.headline).foregroundStyle(HadaqTheme.goldText)
                         if let due = survey.due {
                             Text("الموعد: \(due.formatted(date: .abbreviated, time: .shortened))").font(.caption).foregroundStyle(.secondary)
                         }
@@ -22,9 +22,11 @@ struct TaskListView: View {
                         }
                     }
                 }
+                .hadaqPanel()
             }
             if !uploader.online {
-                Label("بدون اتصال: يمكنك التصوير، والصور تُرفع لاحقاً", systemImage: "wifi.slash").foregroundStyle(.orange)
+                Label("بدون اتصال: يمكنك التصوير، والصور تُرفع لاحقاً", systemImage: "wifi.slash")
+                    .foregroundStyle(HadaqTheme.goldText).hadaqPanel()
             }
             ForEach(store.buildingsToSurvey) { entry in
                 Section(entry.building.nameAr + " · " + entry.building.id) {
@@ -36,12 +38,17 @@ struct TaskListView: View {
                         }
                     }
                 }
+                .hadaqPanel()
             }
             Section {
                 LeaveSiteCheck(missing: missingSummary)
             }
+            .hadaqPanel()
         }
-        .navigationTitle("مهام المسح")
+        .hadaqList()
+        .safeAreaInset(edge: .top, spacing: 0) { HadaqHeader(title: "مهام المسح", subtitle: "FIELD SURVEY · AT-TURAIF") }
+        .navigationTitle("المهام")
+        .navigationBarTitleDisplayMode(.inline)
         .refreshable { await store.refresh() }
     }
 
@@ -76,7 +83,7 @@ struct WallRow: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 4) {
             HStack {
-                Text(wall.id).bold()
+                Text(wall.id).bold().foregroundStyle(HadaqTheme.goldText)
                 Text(wall.name).font(.caption).foregroundStyle(.secondary).lineLimit(1)
                 Spacer()
                 Text(progress.labelAr).font(.caption.bold()).foregroundStyle(color)
@@ -91,9 +98,9 @@ struct WallRow: View {
 
     private var color: Color {
         switch progress {
-        case .synced: return .green
-        case .captured: return .blue
-        case .partial: return .orange
+        case .synced: return HadaqTheme.sage
+        case .captured: return HadaqTheme.goldText
+        case .partial: return HadaqTheme.gold
         case .notStarted: return .red
         }
     }

@@ -25,7 +25,7 @@ struct CornersView: View {
     var body: some View {
         NavigationStack {
             VStack(spacing: 12) {
-                Text("اسحب النقاط الأربع إلى زوايا الجدار").font(.headline)
+                Text("اسحب النقاط الأربع إلى زوايا الجدار").font(.headline).foregroundStyle(HadaqTheme.goldText)
                 Text("1 أعلى اليسار (طرف C1)، 2 أعلى اليمين، 3 أسفل اليمين، 4 أسفل اليسار")
                     .font(.caption).foregroundStyle(.secondary)
 
@@ -37,12 +37,12 @@ struct CornersView: View {
                             p.addLines(pts.map { CGPoint(x: $0.x * size.width, y: $0.y * size.height) })
                             p.closeSubpath()
                         }
-                        .stroke(.yellow, lineWidth: 2)
+                        .stroke(HadaqTheme.goldText, lineWidth: 2)
                         ForEach(0..<4, id: \.self) { i in
                             ZStack {
-                                Circle().fill(.yellow.opacity(0.35)).frame(width: 44, height: 44)
-                                Circle().stroke(.yellow, lineWidth: 3).frame(width: 28, height: 28)
-                                Text(labels[i]).font(.caption2.bold()).foregroundStyle(.black)
+                                Circle().fill(HadaqTheme.gold.opacity(0.35)).frame(width: 44, height: 44)
+                                Circle().stroke(HadaqTheme.goldText, lineWidth: 3).frame(width: 28, height: 28)
+                                Text(labels[i]).font(.caption2.bold()).foregroundStyle(HadaqTheme.background)
                             }
                             .position(x: pts[i].x * size.width, y: pts[i].y * size.height)
                             .gesture(DragGesture(minimumDistance: 0, coordinateSpace: .named("photo")).onChanged { v in
@@ -71,11 +71,12 @@ struct CornersView: View {
                     Button("كامل الصورة") { save(useCorners: false) }
                         .buttonStyle(.bordered)
                     Button("حفظ") { save(useCorners: true) }
-                        .buttonStyle(.borderedProminent)
+                        .buttonStyle(.borderedProminent).tint(HadaqTheme.gold)
                 }
                 .disabled(saving)
             }
             .padding()
+            .background(HadaqTheme.background.ignoresSafeArea())
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) { Button("إلغاء") { dismiss() } }

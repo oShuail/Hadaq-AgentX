@@ -25,20 +25,26 @@ struct SettingsView: View {
             } footer: {
                 Text("عنوان اللابتوب على نفس نقطة الاتصال الشخصية، مثل http://192.168.43.10:8080. افتح http://<ip>:8080/health في سفاري أولاً.")
             }
+            .hadaqPanel()
 
             Section("المستخدم") {
                 Picker("المستخدم", selection: $user) {
                     ForEach(AppSettings.roles, id: \.id) { role in Text(role.nameAr).tag(role.id) }
                 }
             }
+            .hadaqPanel()
 
             Section {
                 Button("إعادة ضبط الصور (\(items.count))", role: .destructive) { confirmReset = true }
             } footer: {
                 Text("يحذف كل الصور من قائمة الهاتف وملفاتها، للعرض التجريبي. لا يحذف شيئاً من الخادم.")
             }
+            .hadaqPanel()
         }
+        .hadaqList()
+        .safeAreaInset(edge: .top, spacing: 0) { HadaqHeader(title: "الإعدادات", subtitle: "CONNECTION · SURVEYOR") }
         .navigationTitle("الإعدادات")
+        .navigationBarTitleDisplayMode(.inline)
         .onChange(of: serverURL) { _, _ in health = nil }
         .confirmationDialog("حذف كل الصور من الهاتف؟", isPresented: $confirmReset, titleVisibility: .visible) {
             Button("حذف \(items.count) صورة", role: .destructive) { CaptureStore.shared.reset() }

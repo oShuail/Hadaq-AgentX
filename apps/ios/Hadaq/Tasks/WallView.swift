@@ -30,6 +30,7 @@ struct WallView: View {
                     LabeledContent("المقاس", value: String(format: "%.1f × %.1f م", w, h))
                 }
             }
+            .hadaqPanel()
 
             Section("اللقطة") {
                 if shots.count > 1 {
@@ -43,9 +44,17 @@ struct WallView: View {
                         .foregroundStyle(done ? .green : .red)
                 }
             }
+            .hadaqPanel()
 
             Section {
-                Button { showCamera = true } label: { Label("التقط صورة", systemImage: "camera.fill") }
+                Button { showCamera = true } label: {
+                    Label("التقط صورة", systemImage: "camera.fill")
+                        .font(.headline)
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, 8)
+                }
+                .buttonStyle(.borderedProminent)
+                .tint(HadaqTheme.gold)
                 PhotosPicker(selection: $picked, matching: .images) {
                     Label(importing ? "جاري الاستيراد..." : "استيراد من الصور", systemImage: "photo.on.rectangle")
                 }
@@ -54,6 +63,7 @@ struct WallView: View {
             } footer: {
                 Text("صوّر عمودياً على الواجهة، بإضاءة متساوية بلا ظل الظهيرة الحاد، ومع مقياس غير ملصق على الجدار إن أمكن.")
             }
+            .hadaqPanel()
 
             if !items.isEmpty {
                 Section("صور هذا الجدار") {
@@ -61,8 +71,10 @@ struct WallView: View {
                         NavigationLink { CaptureDetailView(item: item) } label: { QueueRow(item: item) }
                     }
                 }
+                .hadaqPanel()
             }
         }
+        .hadaqList()
         .navigationTitle(wall.id)
         .onAppear { segment = firstMissingShot() }
         .fullScreenCover(isPresented: $showCamera) {

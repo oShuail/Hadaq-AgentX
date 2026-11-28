@@ -41,9 +41,9 @@ struct CaptureView: View {
                     }
                     Spacer()
                     Text("\(buildingId) · \(wallId) · \(segment)").font(.caption.bold()).padding(8)
-                        .background(.black.opacity(0.5)).clipShape(Capsule())
+                        .background(HadaqTheme.panel.opacity(0.92)).clipShape(Capsule())
                     if savedCount > 0 {
-                        Text("حُفظت \(savedCount)").font(.caption.bold()).padding(8).background(.green.opacity(0.8)).clipShape(Capsule())
+                        Text("حُفظت \(savedCount)").font(.caption.bold()).padding(8).background(HadaqTheme.sage).clipShape(Capsule())
                     }
                 }
                 .foregroundStyle(.white)
@@ -53,20 +53,23 @@ struct CaptureView: View {
 
                 if let error { Text(error).font(.caption).padding(8).background(.red.opacity(0.85)).foregroundStyle(.white).clipShape(Capsule()) }
 
-                HStack(spacing: 8) {
+                LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 8) {
                     chip(level.available ? "مستوي \(Int(level.tiltDeg.rounded()))°" : "مستوي ؟", ok: level.ok)
                     chip("ثابت", ok: level.steady)
                     chip(lightLabel, ok: camera.exposure == "ok")
                     Toggle(isOn: $scaleRef) { Text("مقياس").font(.caption.bold()) }
                         .toggleStyle(.button)
-                        .tint(scaleRef ? Color.green : Color.orange)
+                        .tint(scaleRef ? HadaqTheme.sage : HadaqTheme.gold)
                 }
                 .foregroundStyle(.white)
+                .padding(10)
+                .frame(maxWidth: 360)
+                .background(HadaqTheme.panel.opacity(0.92), in: RoundedRectangle(cornerRadius: 14))
 
                 Button(action: shoot) {
                     ZStack {
-                        Circle().stroke(.white, lineWidth: 4).frame(width: 80, height: 80)
-                        Circle().fill(level.ok ? Color.white : Color.orange).frame(width: 66, height: 66)
+                        Circle().stroke(HadaqTheme.goldText, lineWidth: 4).frame(width: 80, height: 80)
+                        Circle().fill(level.ok ? Color.white : HadaqTheme.gold).frame(width: 66, height: 66)
                         if processing || camera.busy { ProgressView().tint(.black) }
                     }
                 }
@@ -98,8 +101,8 @@ struct CaptureView: View {
     }
 
     private func chip(_ title: String, ok: Bool) -> some View {
-        Text(title).font(.caption.bold()).padding(8)
-            .background(ok ? Color.green.opacity(0.8) : Color.orange.opacity(0.85))
+        Text(title).font(.caption.bold()).padding(8).frame(maxWidth: .infinity)
+            .background(ok ? HadaqTheme.sage : HadaqTheme.gold)
             .clipShape(Capsule())
     }
 

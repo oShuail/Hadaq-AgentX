@@ -342,6 +342,15 @@ class V2ApiTest {
                 .andExpect(jsonPath("$.tasks[0].required_shots[0]", is("full")));
     }
 
+    // the test profile runs with DEMO_ENABLED=false: the demo reset must refuse
+    @Test
+    void demoResetIsOffOutsideDemoMode() throws Exception {
+        mvc.perform(post("/api/v2/demo/reset"))
+                .andExpect(status().isForbidden())
+                .andExpect(jsonPath("$.message", is("Demo reset is off (DEMO_ENABLED=false)")));
+        assertEquals(1, surveys.count());
+    }
+
     @Autowired
     org.springframework.jdbc.core.JdbcTemplate jdbc;
 

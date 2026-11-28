@@ -4,6 +4,7 @@ import com.example.hadaq.DTOIn.SimulationRequestDTOIn;
 import com.example.hadaq.DTOIn.SurveyRequestDTOIn;
 import com.example.hadaq.Util.Roles;
 import org.springframework.web.bind.annotation.RequestHeader;
+import com.example.hadaq.Service.DemoResetService;
 import com.example.hadaq.Service.EvidenceService;
 import com.example.hadaq.Service.SimulationService;
 import com.example.hadaq.Service.SitePriorityService;
@@ -31,6 +32,13 @@ public class SiteController {
     private final SitePriorityService sitePriorityService;
     private final SimulationService simulationService;
     private final EvidenceService evidenceService;
+    private final DemoResetService demoResetService;
+
+    // T4: empty the v2 demo data and reseed the first survey, so every demo starts the same (DEMO_ENABLED=true only)
+    @PostMapping("/demo/reset")
+    public ResponseEntity<?> demoReset() {
+        return ResponseEntity.ok(demoResetService.reset());
+    }
 
     @GetMapping("/registry")
     public ResponseEntity<?> registry() {

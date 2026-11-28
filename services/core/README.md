@@ -55,6 +55,11 @@ The routes of `contracts/README.md` "v2", base `http://<laptop-ip>:8080/api/v2`.
 | `POST /inspections/{id}/approve` | 409 while any finding is `pending`, and when already approved |
 | `GET /site/priority` | One row per building, urgent first, then the longest since the last survey |
 | `POST /simulations`, `GET /evidence/{id}` | Simulations as in v1; evidence for `srv_`, `cap_`, `fnd_`, `wo_`, `ins_` and every v1 id |
+| `POST /demo/reset` | Demo reset (T4) while the API runs: empties surveys, inspections, captures, findings, work orders and the capture files, keeps the registry, seeds the first survey again. Only with `DEMO_ENABLED=true` (403 otherwise) |
+
+**Demo reset with the API stopped:** `make demo-reset` (or `bash tools/demo_reset.sh` in Git Bash). It runs
+`tools/demo_reset.sql` with the MySQL client (on the PATH, or XAMPP's on Windows and macOS) and empties
+`services/core/data/captures`. Starting core again seeds the first survey.
 
 Live (`/ws/live`): `capture`, `finding`, `review`, `work_order`, `inspection`, with the data in `contracts.ts`.
 

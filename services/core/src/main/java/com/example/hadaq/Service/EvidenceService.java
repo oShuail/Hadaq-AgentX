@@ -5,6 +5,11 @@ import com.example.hadaq.DTOOut.EvidenceDTOOut;
 import com.example.hadaq.DTOOut.SimulationDTOOut;
 import com.example.hadaq.Entity.SensorReading;
 import com.example.hadaq.Mapper.DTOMapper;
+import com.example.hadaq.Mapper.V2Mapper;
+import com.example.hadaq.Repository.CaptureRepository;
+import com.example.hadaq.Repository.FindingRepository;
+import com.example.hadaq.Repository.SurveyRepository;
+import com.example.hadaq.Repository.WorkOrderRepository;
 import com.example.hadaq.Repository.DetectionRepository;
 import com.example.hadaq.Repository.EventRepository;
 import com.example.hadaq.Repository.EvidenceRepository;
@@ -32,12 +37,38 @@ public class EvidenceService {
     private final EvidenceRepository evidenceRepository;
     private final SimulationService simulationService;
     private final JsonMapper jsonMapper;
+    // v2
+    private final SurveyRepository surveyRepository;
+    private final CaptureRepository captureRepository;
+    private final FindingRepository findingRepository;
+    private final WorkOrderRepository workOrderRepository;
+    private final InspectionService inspectionService;
 
     public EvidenceDTOOut get(String evidenceId) {
         return find(evidenceId).orElseThrow(() -> ApiException.notFound("Unknown evidence id"));
     }
 
     private Optional<EvidenceDTOOut> find(String id) {
+        // v2 ids: srv_, cap_, fnd_, wo_, ins_
+        if (id.startsWith("srv_")) {
+            return surveyRepository.findById(id).map(s -> EvidenceDTOOut.of(id, "survey", V2Mapper.toDTO(s)));
+        }
+        if (id.startsWith("cap_")) {
+            return captureRepository.findById(id).map(c -> EvidenceDTOOut.of(id, "capture", V2Mapper.toDTO(c)));
+        }
+        if (id.startsWith("fnd_")) {
+            return findingRepository.findById(id).map(f -> EvidenceDTOOut.of(id, "finding", V2Mapper.toDTO(f)));
+        }
+        if (id.startsWith("wo_")) {
+            return workOrderRepository.findById(id).map(w -> EvidenceDTOOut.of(id, "work_order", V2Mapper.toDTO(w)));
+        }
+        if (id.startsWith("ins_")) {
+            try {
+                return Optional.of(EvidenceDTOOut.of(id, "inspection", inspectionService.get(id)));
+            } catch (ApiException unknown) {
+                return Optional.empty();
+            }
+        }
         if (id.startsWith(SensorReading.EVIDENCE_PREFIX)) {
             long rowId;
             try {

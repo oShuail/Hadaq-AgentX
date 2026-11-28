@@ -129,6 +129,14 @@
                 <directory>${project.basedir}/../api/hadaq_api/models</directory>
                 <targetPath>models</targetPath>
             </resource>
+            <!-- the team's treatment table (the mock AI worker builds its work orders from it) -->
+            <resource>
+                <directory>${project.basedir}/../agents/hadaq_agents</directory>
+                <targetPath>treatments</targetPath>
+                <includes>
+                    <include>treatments.json</include>
+                </includes>
+            </resource>
         </resources>
         <plugins>
             <plugin>

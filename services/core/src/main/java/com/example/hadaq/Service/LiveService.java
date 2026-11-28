@@ -24,6 +24,12 @@ public class LiveService {
     public static final String DETECTION = "detection";
     public static final String SIMULATION = "simulation";
     public static final String RISK = "risk";
+    // v2 (contracts/README.md "v2"; the v1 channels stay as they are)
+    public static final String CAPTURE = "capture";
+    public static final String FINDING = "finding";
+    public static final String REVIEW = "review";
+    public static final String WORK_ORDER = "work_order";
+    public static final String INSPECTION = "inspection";
 
     private final JsonMapper jsonMapper;
 

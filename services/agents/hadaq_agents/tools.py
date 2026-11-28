@@ -16,7 +16,9 @@ from pydantic import BaseModel, Field
 from hadaq_agents import knowledge as KB
 
 API_URL = os.getenv("API_URL", "http://localhost:8000")
+CORE_URL = os.getenv("CORE_URL", "http://localhost:8080")  # Spring core API (v2 inspections)
 _client: httpx.Client = httpx.Client(base_url=API_URL, timeout=60)
+_core: httpx.Client = httpx.Client(base_url=CORE_URL, timeout=30)
 _registry_cache: dict[str, dict] = {}
 
 
@@ -24,6 +26,12 @@ def set_client(client: httpx.Client) -> None:
     """Tests swap in FastAPI's TestClient here."""
     global _client
     _client = client
+
+
+def set_core_client(client: httpx.Client) -> None:
+    """Tests swap in a stand-in core API here."""
+    global _core
+    _core = client
 
 
 def _dumps(data) -> str:
@@ -342,6 +350,29 @@ def list_damage_types() -> str:
     ])
 
 
+@tool
+def get_latest_inspection(building_id: str = "B01") -> str:
+    """The latest field inspection (v2 survey) of a building from the core API: each finding with its zone, damage type,
+    severity, escalation (urgent, high, medium, low) and score, the evidence still needed when the photo cannot tell two
+    damages apart (lookalike), the conservator's review status, and the work order drafts. Use it for "what did the last
+    survey or inspection find?". The final decision is always the conservator's."""
+    from hadaq_agents.chain import brief
+    from hadaq_schemas import Inspection
+
+    try:
+        response = _core.get(f"/api/v2/buildings/{building_id}/inspections")
+        response.raise_for_status()
+        rows = response.json()
+    except (httpx.HTTPError, ValueError) as exc:
+        return _dumps({"error": f"core API not reachable at {CORE_URL} ({type(exc).__name__})"})
+    if not rows:
+        return _dumps({"building_id": building_id, "note": "no inspection yet for this building"})
+    try:
+        return _dumps(brief(Inspection.model_validate(rows[0])))  # the core lists them newest first
+    except Exception as exc:  # noqa: BLE001 - a shape mismatch must not crash the chat
+        return _dumps({"error": f"unexpected inspection format from the core API ({type(exc).__name__})"})
+
+
 class ReportItem(BaseModel):
     detection_id: str = Field(description="A detection_id from get_damage_findings")
     damage_type: str = Field(description="Damage type from the table; normally the one get_damage_findings gave")
@@ -424,7 +455,8 @@ def propose_damage_report(building_id: str = "B01", items: list[ReportItem] | No
     })
 
 
-ORCHESTRATOR_TOOLS = [get_building_status, get_sensor_overview, get_sensor_history, get_zone_detail, get_recent_events, get_risk]
+ORCHESTRATOR_TOOLS = [get_building_status, get_sensor_overview, get_sensor_history, get_zone_detail, get_recent_events, get_risk,
+                      get_latest_inspection]
 ADVISOR_TOOLS = [get_building_status, get_sensor_overview, get_zone_detail, run_rain_simulation, compare_scenarios, get_risk,
                  propose_recommendation]
 DAMAGE_TOOLS = [get_damage_findings, get_treatment, list_damage_types, propose_damage_report]

@@ -24,6 +24,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from langchain_core.messages import AIMessage, HumanMessage, ToolMessage
 
 from hadaq_agents import knowledge as KB
+from hadaq_agents import lookalikes as LA
 from hadaq_agents import tools as T
 from hadaq_agents.prompts import DAMAGE_TRIGGER_PROMPT, MOISTURE_TRIGGER_PROMPT
 from hadaq_agents.verifier import verify
@@ -54,6 +55,7 @@ DAMAGE_WORDS = (
     "املاح", "فجو", "جحور", "شرفات", "خشب", "إسمنت", "اسمنت", "صور",
 )
 REPORT_WORDS = ("report", "submit", "تقرير", "ارفع", "أرسل", "ارسل")
+INSPECTION_WORDS = ("survey", "inspection", "مسح", "الفحص الميداني", "آخر فحص", "اخر فحص")
 TYPE_WORDS = {
     "crack": ("crack", "شق", "تشقق"),
     "plaster_loss": ("plaster", "render", "لياس", "طلاء"),
@@ -67,6 +69,7 @@ TYPE_WORDS = {
     "biological_growth": ("biological", "moss", "lichen", "fung", "mould", "mold", "نمو حيوي", "فطري", "طحالب"),
     "structural_deformation": ("structural", "leaning", "bulg", "settlement", "إنشائي", "انشائي", "ميلان", "هبوط", "انتفاخ"),
 }
+KB_ESCALATION_AR = {"urgent": "عاجل", "high": "مرتفع", "medium": "متوسط", "low": "منخفض"}
 RISK_LEVEL_AR = {"low": "منخفض", "medium": "متوسط", "high": "عالي", "very_high": "عالي جداً"}
 
 
@@ -318,6 +321,31 @@ def _mock_damage_summary(call: Callable, lines: list[str], building_id: str, ar:
                  else f"Ask how to treat {'it' if len(parts) == 1 else 'them'} to see the treatment, materials and tools.")
 
 
+def _mock_inspection(call: Callable, lines: list[str], building_id: str, ar: bool) -> None:
+    """The latest v2 inspection from the core API, urgent first, with the evidence still needed for look-alikes."""
+    ins = call(T.get_latest_inspection, building_id=building_id)
+    if ins.get("error") or not ins.get("findings"):
+        lines.append(("ما قدرت أقرأ آخر فحص ميداني: " if ar else "Could not read the latest field inspection: ")
+                     + (ins.get("error") or ("ما فيه نتائج بعد" if ar else "no findings yet")))
+        return
+    status_ar = "معتمد" if ins["status"] == "approved" else "مفتوح"
+    lines.append(f"**آخر فحص ميداني** ({ins['wall_id']}، {status_ar}) [{ins['inspection_id']}]" if ar
+                 else f"**Latest field inspection** ({ins['wall_id']}, {ins['status']}) [{ins['inspection_id']}]")
+    for f in ins["findings"]:
+        level = KB_ESCALATION_AR.get(f["escalation"], f["escalation"]) if ar else f["escalation"]
+        flag = (" (اشتباه)" if ar else " (suspected)") if f["suspected"] else ""
+        lines.append(f"- **{f['zone']}:** {f['name_ar']} {f['severity_ar']}{flag}، {level} [{f['finding_id']}]" if ar
+                     else f"- **{f['zone']}:** {f['name_en']}, severity {f['severity']}{flag}, {level} [{f['finding_id']}]")
+        if f["lookalike"]:
+            pair = LA.pairs().get(f["lookalike"]["pair_id"])
+            needed = ("، ".join(LA.evidence()[e]["label_ar"] for e in pair["evidence"]) if ar and pair
+                      else "; ".join(f["lookalike"]["evidence_needed"]))
+            lines.append(f"  - **يلزم دليل قبل المعالجة:** {needed}" if ar else f"  - **Evidence needed first:** {needed}")
+    if ins["pending_review"]:
+        lines.append(f"- **بانتظار مراجعة المختص:** {ins['pending_review']}" if ar else f"- **Waiting for the conservator's review:** {ins['pending_review']}")
+    lines.append("القرار النهائي للمختص." if ar else "The final decision is the conservator's.")
+
+
 def run_mock(message: str, building_id: str, trigger: bool = False, track: str | None = None) -> ChatResponse:
     """Fixed plan with the real tools, for development without an LLM key. Every number comes from a tool output."""
     outputs: list[str] = []
@@ -335,8 +363,9 @@ def run_mock(message: str, building_id: str, trigger: bool = False, track: str |
     moisture_trigger = trigger and not damage_trigger
     wants_compare = not trigger and _has(text, COMPARE_WORDS)
     wants_sim = moisture_trigger or wants_compare or (not trigger and _has(text, RAIN_WORDS))
-    wants_damage = damage_trigger or (not trigger and (_has(text, DAMAGE_WORDS) or bool(_mentioned_types(text))))
-    general = not (wants_sim or wants_damage)
+    wants_inspection = not trigger and _has(text, INSPECTION_WORDS)
+    wants_damage = not wants_inspection and (damage_trigger or (not trigger and (_has(text, DAMAGE_WORDS) or bool(_mentioned_types(text)))))
+    general = not (wants_sim or wants_damage or wants_inspection)
     submit = damage_trigger or (wants_damage and _has(text, REPORT_WORDS))
     lines: list[str] = []  # no label on top: mock mode is visible in GET /health ("llm": "mock")
 
@@ -416,6 +445,8 @@ def run_mock(message: str, building_id: str, trigger: bool = False, track: str |
         else:
             lines.append("- ما فيه درجات خطر بعد: شغّل محاكاة أولاً." if ar else "- No risk scores yet: run a simulation first.")
 
+    if wants_inspection:
+        _mock_inspection(call, lines, building_id, ar)
     if wants_damage:
         _mock_damage(call, lines, building_id, "" if trigger else text, ar, submit, brief=trigger)
     elif general:

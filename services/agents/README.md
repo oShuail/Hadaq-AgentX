@@ -22,7 +22,7 @@ flowchart LR
 
 | Agent | Job | Tools |
 | --- | --- | --- |
-| Orchestrator | Reads the building state, sends the work to the right specialist, merges the answer | `get_building_status`, `get_recent_events`, `get_risk`, `ask_damage_advisor`, `ask_simulation_advisor` |
+| Orchestrator | Reads the building state, sends the work to the right specialist, merges the answer, answers "what did the last survey find?" | `get_building_status`, `get_recent_events`, `get_risk`, `get_latest_inspection` (v2, core API at `CORE_URL`), `ask_damage_advisor`, `ask_simulation_advisor` |
 | Damage and Treatment (new) | Turns the latest photo's detections into a damage report: type, zone, severity, treatment, materials, tools, source | `get_damage_findings`, `get_treatment`, `list_damage_types`, `propose_damage_report` |
 | Simulation and Advisory | Rain and moisture: runs the wall simulation, compares scenarios, scores risk | `get_building_status`, `run_rain_simulation`, `compare_scenarios`, `get_risk`, `propose_recommendation` |
 
@@ -54,6 +54,24 @@ To change what the agent recommends, edit the JSON (not the code) and run the te
 `lookalikes.lookalike_for(finding)` takes a v2 `Finding` (or a dict with `damage_type` and `zone_id`) and returns the contract's `Lookalike` (`pair_id`, `options`, `evidence_needed`, `note_ar`) or `None`. `lang="ar"` gives Arabic options and evidence. The dark-stain pair (`dark_stain_base`, on `base_erosion`) applies only on the base row R1. The agent never picks one of the two options; it asks for the evidence and the conservator decides.
 
 `python -m hadaq_agents.lookalikes` prints the table in Arabic as markdown (for the slide and for DGDA to check).
+
+## The v2 chain (`chain.py`, O2)
+
+The AI worker calls `chain.process(request, findings, detector=...)` with the core's `ProcessRequest` and the detector's findings, and posts the `CaptureResults` it returns. No LLM is needed for any decision; the steps are plain rules:
+
+| Step | What happens | Source |
+| --- | --- | --- |
+| 1 Change | Same zone and type in `previous_findings`: `unchanged`, or `grown` if the severity went up; otherwise `new`. Only when the worker left `change` empty | ASSUMED rule |
+| 2 Suspected | `structural_deformation`, `incompatible_repair` (and anything marked suspected) get a priority but no treatment: referred to the specialist | DGDA Q11 |
+| 3 Look-alike | `lookalikes.lookalike_for(finding)`; the chain never picks an option | DGDA Q8 |
+| 4 Priority | `prioritize(finding, wall)`: six criteria and four levels; scores and weights are ours | DGDA Q4, Q14; ASSUMED numbers (`priority_fallback.py`, until B2) |
+| 5 Work order | One draft per confirmed finding from `treatments.json` (until B1): look-alike evidence first, then the table's first steps and treatment, materials, tools. Always `draft_needs_field_check` | Treatment table |
+| 6 Verifier | `verifier.check_work_order`: no citation, or a team proposal cited as approved, keeps the draft out | DGDA Q7 |
+| 7 Summary | Template in Arabic and English ending "القرار النهائي للمختص". An LLM may reword it (text only); a changed number or zone, or a missing closing, keeps the template. `chain` says which was used | DGDA Q14: the agent flags, the conservator decides |
+
+Citations: a row is `approved_library` only when its source is the authority **and** the source document is named in `treatments.json` (`sources.*.document`). Today no document is named, so every draft says `team_proposal`. Name the document there to switch.
+
+B2 replaces the priority by changing one import in `chain.py` (`prioritize(finding, wall) -> Priority`). B1 replaces the library in `work_order_for` and `citation_for`.
 
 ## Damage report payload
 

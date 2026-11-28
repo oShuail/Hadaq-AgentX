@@ -34,6 +34,7 @@ into the jar at build time from where the team keeps them: there is one copy of 
 | `PRIVACY_BLUR` | `true` | Hide faces before a photo is stored (YuNet, OpenCV) |
 | `HADAQ_REGISTRY` | the packed copy | Path to a registry file to read instead |
 | `AI_MODE`, `AI_URL` | `mock`, `http://localhost:8100` | v2 AI worker: `remote` calls `AI_URL/ai/process` |
+| `SIM_URL` | empty | Basma's simulation service (`http://localhost:8200`): simulations go to `SIM_URL/sim/run`, with the Java model as the fallback. Empty = the Java model only |
 | `CAPTURE_DIR` | `./data/captures` | v2 uploaded photos and rectified images |
 
 XAMPP's server is MariaDB 10.4: keep `jdbc:mariadb://`. The MySQL driver silently drops the microseconds of every
@@ -79,7 +80,22 @@ Our choices where the contract leaves it open (say if the team wants otherwise):
 - Open findings in the site list = the non-rejected findings of each wall's latest inspection, by the escalation the
   priority gave (a correction does not change it).
 - `faces_hidden_server` = faces hidden by the core API (when the phone did not check) plus those the AI worker reports.
-- `POST /api/v2/simulations` runs the built-in port of Basma's engine until the simulation service has `/sim/run`.
+- Simulations (T5): with `SIM_URL` set, `POST /simulations` and `POST /api/v2/simulations` go to `SIM_URL/sim/run`
+  (in the background; the answer is read with `GET /simulations/{run_id}`). The body the core sends, since the contract
+  only names its parts:
+
+  ```json
+  {"run_id": "sim_...", "building_id": "B01", "wall": <WallInfo>, "scenario": "storm_replay",
+   "weather": <v1 WeatherSpec>, "approved_findings": [<Finding>, ...], "requested_by": "web"}
+  ```
+
+  `approved_findings` = the non-rejected findings of the wall's last approved inspection. The answer must read as a
+  `SimulationResult` (with a `summary` per zone); it is kept as it is, extra fields included (e.g. the first hour each
+  zone crosses critical), with the core's `run_id`. When the service is down, errors or answers something else, the Java
+  model runs instead and says so in `assumptions`; `simulation_done` carries `engine_source`: `sim_service`,
+  `java_fallback` or `java`.
+- Requests to the AI worker and the simulation service carry a `Content-Length` (not a chunked body): a T5 rehearsal
+  with a plain Python server showed chunked bodies are refused by simple servers.
 
 ## Built-in demo (like https://hadaq.vercel.app)
 

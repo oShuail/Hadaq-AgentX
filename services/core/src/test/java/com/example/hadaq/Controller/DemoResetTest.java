@@ -53,14 +53,24 @@ class DemoResetTest {
     @Autowired
     WorkOrderRepository workOrders;
 
+    // the capture folder of the test profile (other test classes leave their photos there)
+    static final java.nio.file.Path CAPTURES = java.nio.file.Path.of("target/test-captures");
+
     @BeforeEach
-    void clean() {
+    void clean() throws Exception {
         workOrders.deleteAll();
         findings.deleteAll();
         captures.deleteAll();
         inspections.deleteAll();
         surveys.deleteAll();
         surveyService.seed();
+        if (Files.isDirectory(CAPTURES)) {
+            try (var files = Files.list(CAPTURES)) {
+                for (var f : files.toList()) {
+                    Files.deleteIfExists(f);
+                }
+            }
+        }
     }
 
     @Test
@@ -91,6 +101,9 @@ class DemoResetTest {
                 .andExpect(jsonPath("$.surveys[0].tasks[0].status", is("not_started")))
                 .andExpect(jsonPath("$.surveys[0].tasks[0].done_shots", hasSize(0)));
         mvc.perform(get("/api/v2/captures/" + captureId)).andExpect(status().isNotFound());
+        try (var left = Files.list(CAPTURES)) {
+            assertEquals(0, left.count(), "the capture folder is empty");
+        }
         mvc.perform(get("/api/v2/site/priority"))
                 .andExpect(jsonPath("$[0].worst_escalation").value((Object) null))
                 .andExpect(jsonPath("$[0].last_survey_at").value((Object) null));

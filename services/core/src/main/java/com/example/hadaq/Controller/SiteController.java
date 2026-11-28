@@ -1,6 +1,9 @@
 package com.example.hadaq.Controller;
 
 import com.example.hadaq.DTOIn.SimulationRequestDTOIn;
+import com.example.hadaq.DTOIn.SurveyRequestDTOIn;
+import com.example.hadaq.Util.Roles;
+import org.springframework.web.bind.annotation.RequestHeader;
 import com.example.hadaq.Service.EvidenceService;
 import com.example.hadaq.Service.SimulationService;
 import com.example.hadaq.Service.SitePriorityService;
@@ -38,6 +41,13 @@ public class SiteController {
     @GetMapping("/surveys")
     public ResponseEntity<?> surveys(@RequestParam(required = false) String assignee) {
         return ResponseEntity.ok(surveyService.list(assignee));
+    }
+
+    // a new round of photos for the surveyor app: site_manager only (X-Hadaq-User: site_manager), 201 Survey
+    @PostMapping("/surveys")
+    public ResponseEntity<?> createSurvey(@RequestBody @Valid SurveyRequestDTOIn request,
+                                          @RequestHeader(value = Roles.HEADER, required = false) String user) {
+        return ResponseEntity.status(201).body(surveyService.create(request, user));
     }
 
     // one row per building, urgent first, then by days since the last survey

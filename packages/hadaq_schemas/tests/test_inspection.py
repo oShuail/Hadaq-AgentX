@@ -16,6 +16,7 @@ from hadaq_schemas import (
     ReviewRequest,
     SitePriorityRow,
     Survey,
+    SurveyRequest,
     WorkOrderDraft,
     load_registry,
     zone_from_wall_m,
@@ -35,6 +36,7 @@ def _load(name: str):
     [
         (Registry, "registry.json"),
         (Survey, "survey.json"),
+        (SurveyRequest, "survey_request.json"),
         (CaptureMeta, "capture_meta.json"),
         (CaptureAccepted, "capture_accepted.json"),
         (Finding, "finding.json"),

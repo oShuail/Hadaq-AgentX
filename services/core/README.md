@@ -45,7 +45,8 @@ The routes of `contracts/README.md` "v2", base `http://<laptop-ip>:8080/api/v2`.
 | Route | What happens |
 | --- | --- |
 | `GET /registry` | The buildings and walls of `contracts/building_b01.json` |
-| `GET /surveys?assignee=` | A first survey ("Qasr Salwa, winter cycle", W01, shot `full`) is made at the first start |
+| `GET /surveys?assignee=` | Newest first. A first survey ("Qasr Salwa, winter cycle", W01, shot `full`) is made at the first start (`hadaq.seed-survey`) |
+| `POST /surveys` | Site manager only (403 otherwise). `SurveyRequest`: title, assignee (default `surveyor`), due, tasks (wall + `required_shots`, default `["full"]`, or column ranges like `C1-C4`). **201** `Survey`. 400 for an unknown wall, a range outside the wall's columns, or the same wall twice |
 | `POST /captures` | multipart `file` + `meta`. **202**. The same `client_uuid` again answers the first capture with `duplicate: true` (also guarded by a unique index). Faces are hidden here when the phone did not check (`faces_hidden: null`). The capture joins the wall's open inspection (one per wall per survey), the survey task gets the shot, and the AI worker gets a `ProcessRequest` |
 | `GET /captures/{id}`, `/file`, `/rectified`; `POST /captures/{id}/retry` | Retry only a `failed` capture (409 otherwise) |
 | `POST /captures/{id}/results` | The AI worker's callback (multipart `results` + optional `rectified`). Replaces earlier results of that capture. 400 for a wrong capture id or a non-suspected `structural_deformation` / `incompatible_repair`; 409 when a finding or work order id belongs to another capture |

@@ -101,7 +101,7 @@ After pulling the 3D map change, run `cd apps/web && npm install` once (Cesium w
 - **Everyone:** read `docs/challenge-plan.md` and answer its open questions (section 12). Pull `main` once the integration PR (`omar/integration`) is merged, then `make setup` and `npm install` in `apps/web` once. Your old branches are all inside it; start new work from `main`.
 - **Omar:** decide the new demo story and the contract changes for expert review and face blurring (`docs/challenge-plan.md` sections 9 and 10); fill the building pages (wall condition details, camera per wall, per-building agent context); register B02 in `contracts/` when it gets sensors; check the wall zones line up with the B01 facade in the Focus building view; full demo run twice.
 - **Agents task owner:** put the LLM key in `.env` (`HADAQ_LLM=anthropic:claude-sonnet-5-5`) and run the chat suggestions in Arabic and English with the real model (no verifier warnings, damage report on a new photo); then build the approval step (approve, then a work order) with the expert review screen once Omar approves the contract changes.
-- **Turki:** v2 core API is on branch `Turki` (see Current state). Next: run it with the real AI worker once `/ai/process` exists (`AI_MODE=remote`), a way to create surveys (only the seeded one exists; the contract has no route for it yet), and a Render setup for `services/core` so the hosted demo can move off `services/api`. Panel polish in the Building twin tab is still open.
+- **Turki:** v2 core API is on branch `Turki` (see Current state). Next: run it with the real AI worker once `/ai/process` exists (`AI_MODE=remote`), a screen for the site manager to create surveys (the route `POST /api/v2/surveys` exists, see Session log), and a Render setup for `services/core` so the hosted demo can move off `services/api`. Panel polish in the Building twin tab is still open.
 - **AI worker (Abdurhmn, Omar):** the core API sends `ProcessRequest` to `AI_URL/ai/process` and expects 202, then the multipart callback on `callback_url`. Finding and work order ids must be new (the core refuses an id that belongs to another capture with 409). `previous_findings` = the non-rejected findings of the wall's last approved inspection.
 - **Basma:** `POST /api/v2/simulations` runs the Java port of `hadaq_sim` for now; when `/sim/run` exists on :8200, agree its body (wall, approved findings, scenario, weather mode) so the core can forward to it.
 - **Omar (contract):** the core made a few choices the v2 spec leaves open (listed in `services/core/README.md`, "Our choices"): what approval does to work orders, what counts as an open finding in `/site/priority`, `faces_hidden_server`. Say if any should change.
@@ -122,6 +122,13 @@ After pulling the 3D map change, run `cd apps/web && npm install` once (Cesium w
 - Real LLM answers: add `HADAQ_LLM` and `ANTHROPIC_API_KEY` in the Render dashboard (Environment). Without them the agent runs the mock plan.
 
 ## Session log
+
+### 2026-11-28, evening (Turki): create surveys (contract change, please review)
+
+- v2 had no way to create a survey (only `GET /surveys`). Added `POST /api/v2/surveys` for the site manager (`X-Hadaq-User: site_manager`): body `SurveyRequest` (title, assignee, due, tasks with `required_shots`), answer 201 `Survey` with empty `done_shots` and status `not_started`.
+- Changed together, as "Changing v2" asks: `contracts/README.md` (one row), `inspection.py` (`SurveyRequest`, `SurveyTaskRequest`, exported), `contracts.ts` (`TaskStatus`, `SurveyTask`, `Survey`, `SurveyRequest`; `Survey` was missing there), a new example `contracts/v2/examples/survey_request.json`, the regenerated schemas (only `SurveyRequest.json` is new; the other 13 came out identical), and the example in `test_inspection.py`. Nothing existing changed shape.
+- `services/core`: the route, with checks (wall exists, column range inside the wall, no wall twice). The seeded survey stays for the demo.
+- Checked: 26 Python schema tests, 31 Java tests (the new example validates against the Java DTO; create, list, a partial shot, 403 and 400 cases), web `npm run build`.
 
 ### 2026-11-28, review (Omar, with an AI assistant): PR #12 merged
 

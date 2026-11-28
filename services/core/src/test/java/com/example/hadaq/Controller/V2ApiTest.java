@@ -138,6 +138,7 @@ class V2ApiTest {
         assertEquals(Set.of(), validator.validate(jsonMapper.treeToValue(example(jsonMapper, "finding"), FindingDTOIn.class)));
         assertEquals(Set.of(), validator.validate(jsonMapper.treeToValue(example(jsonMapper, "work_order"), WorkOrderDTOIn.class)));
         assertEquals(Set.of(), validator.validate(jsonMapper.treeToValue(example(jsonMapper, "review_request"), ReviewRequestDTOIn.class)));
+        assertEquals(Set.of(), validator.validate(jsonMapper.treeToValue(example(jsonMapper, "survey_request"), com.example.hadaq.DTOIn.SurveyRequestDTOIn.class)));
 
         // our registry has the same fields as the contract's example
         JsonNode ours = json(mvc.perform(get("/api/v2/registry")).andExpect(status().isOk()).andReturn());
@@ -283,6 +284,62 @@ class V2ApiTest {
                 .andExpect(jsonPath("$.kind", is("work_order")));
         mvc.perform(get("/api/v2/evidence/" + surveys.findAll().get(0).getSurveyId())).andExpect(jsonPath("$.kind", is("survey")));
         mvc.perform(get("/api/v2/evidence/fnd_000000000000")).andExpect(status().isNotFound());
+    }
+
+    // the site manager plans a round; the surveyor sees it, and a partial shot leaves it partial
+    @Test
+    void siteManagerCreatesASurvey() throws Exception {
+        String body = example(jsonMapper, "survey_request").toString();
+        MvcResult created = mvc.perform(post("/api/v2/surveys").header("X-Hadaq-User", "site_manager")
+                        .contentType(MediaType.APPLICATION_JSON).content(body))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.survey_id", startsWith("srv_")))
+                .andExpect(jsonPath("$.title", is("Qasr Salwa, after the January rain")))
+                .andExpect(jsonPath("$.due", is("2026-12-05T09:00:00Z")))
+                .andExpect(jsonPath("$.tasks[0].required_shots", hasSize(2)))
+                .andExpect(jsonPath("$.tasks[0].done_shots", hasSize(0)))
+                .andExpect(jsonPath("$.tasks[0].status", is("not_started")))
+                .andReturn();
+        String surveyId = json(created).path("survey_id").asString();
+        mvc.perform(get("/api/v2/surveys").param("assignee", "surveyor"))
+                .andExpect(jsonPath("$", hasSize(2)))
+                .andExpect(jsonPath("$[0].survey_id", is(surveyId)));
+
+        // one of the two shots arrives: partial
+        ObjectNode meta = meta("survey-shot-c1-c4");
+        meta.put("survey_id", surveyId);
+        meta.put("segment", "C1-C4");
+        waitFor(json(upload(meta)).path("capture_id").asString(), "analyzed");
+        mvc.perform(get("/api/v2/surveys"))
+                .andExpect(jsonPath("$[?(@.survey_id == '" + surveyId + "')].tasks[0].status", org.hamcrest.Matchers.contains("partial")))
+                .andExpect(jsonPath("$[?(@.survey_id == '" + surveyId + "')].tasks[0].done_shots[0]", org.hamcrest.Matchers.contains("C1-C4")));
+
+        // only the site manager, and only walls and columns that exist
+        mvc.perform(post("/api/v2/surveys").contentType(MediaType.APPLICATION_JSON).content(body)).andExpect(status().isForbidden());
+        mvc.perform(post("/api/v2/surveys").header("X-Hadaq-User", "surveyor").contentType(MediaType.APPLICATION_JSON).content(body))
+                .andExpect(status().isForbidden());
+        String[][] bad = {
+                {"{\"title\": \"x\", \"tasks\": []}", "tasks needs at least one wall"},
+                {"{\"title\": \"\", \"tasks\": [{\"building_id\": \"B01\", \"wall_id\": \"W01\"}]}", "title is required"},
+                {"{\"title\": \"x\", \"tasks\": [{\"building_id\": \"B01\", \"wall_id\": \"W09\"}]}", "Unknown wall W09 on building B01"},
+                {"{\"title\": \"x\", \"tasks\": [{\"building_id\": \"B01\", \"wall_id\": \"W01\", \"required_shots\": [\"C7-C9\"]}]}", "Shot C7-C9 is outside wall W01 (columns C1 to C8)"},
+                {"{\"title\": \"x\", \"tasks\": [{\"building_id\": \"B01\", \"wall_id\": \"W01\", \"required_shots\": [\"left side\"]}]}", "required_shots must be 'full' or a column range like 'C1-C2'"},
+                {"{\"title\": \"x\", \"tasks\": [{\"building_id\": \"B01\", \"wall_id\": \"W01\"}, {\"building_id\": \"B01\", \"wall_id\": \"W01\"}]}", "Wall W01 of B01 is listed twice; put all its shots in one task"}};
+        for (String[] c : bad) {
+            mvc.perform(post("/api/v2/surveys").header("X-Hadaq-User", "site_manager").contentType(MediaType.APPLICATION_JSON).content(c[0]))
+                    .andExpect(status().isBadRequest())
+                    .andExpect(jsonPath("$.message", is(c[1])));
+        }
+        mvc.perform(post("/api/v2/surveys").header("X-Hadaq-User", "site_manager").contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"title\": \"x\", \"tasks\": [{\"building_id\": \"B99\", \"wall_id\": \"W01\"}]}"))
+                .andExpect(status().isNotFound());
+        // a default task is one "full" shot, and the default assignee is the surveyor
+        mvc.perform(post("/api/v2/surveys").header("X-Hadaq-User", "site_manager").contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"title\": \"Quick round\", \"tasks\": [{\"building_id\": \"B01\", \"wall_id\": \"W01\"}]}"))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.assignee", is("surveyor")))
+                .andExpect(jsonPath("$.due").value((Object) null))
+                .andExpect(jsonPath("$.tasks[0].required_shots[0]", is("full")));
     }
 
     @Autowired
